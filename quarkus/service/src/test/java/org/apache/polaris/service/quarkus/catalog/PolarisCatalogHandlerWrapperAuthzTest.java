@@ -59,9 +59,7 @@ import org.apache.polaris.core.entity.PrincipalEntity;
 import org.apache.polaris.core.persistence.PolarisMetaStoreManager;
 import org.apache.polaris.service.catalog.PolarisCatalogHandlerWrapper;
 import org.apache.polaris.service.quarkus.admin.PolarisAuthzTestBase;
-import org.apache.polaris.service.types.NotificationRequest;
-import org.apache.polaris.service.types.NotificationType;
-import org.apache.polaris.service.types.TableUpdateNotification;
+import org.apache.polaris.service.types.*;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -567,6 +565,42 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
         () -> {
           newWrapper(Set.of(PRINCIPAL_ROLE2)).dropTableWithPurge(newtable);
         });
+  }
+
+  @Test
+  public void testCreatePolicyAllSufficientPrivileges() {
+    Assertions.assertThat(
+                    adminService.grantPrivilegeOnCatalogToRole(
+                            CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.TABLE_DROP))
+            .isTrue();
+    Assertions.assertThat(
+                    adminService.grantPrivilegeOnCatalogToRole(
+                            CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.TABLE_WRITE_DATA))
+            .isTrue();
+
+    final TableIdentifier newtable = TableIdentifier.of(NS2, "newtable");
+    final CreateTableRequest createRequest =
+            CreateTableRequest.builder().withName("newtable").withSchema(SCHEMA).build();
+
+    final CreatePolicyRequest createPolicyRequest = CreatePolicyRequest.builder().setName("policy_test")
+            .setType("example_type").setContent("exmaple_content").setDescription("description_test").build();
+
+    // Use PRINCIPAL_ROLE1 for privilege-testing, PRINCIPAL_ROLE2 for cleanup.
+    doTestSufficientPrivileges(
+            List.of(
+                    PolarisPrivilege.TABLE_CREATE,
+                    PolarisPrivilege.TABLE_FULL_METADATA,
+                    PolarisPrivilege.CATALOG_MANAGE_CONTENT),
+            () -> {
+              LoadPolicyResult result = newWrapper(Set.of(PRINCIPAL_ROLE1)).createPolicy(NS2, createPolicyRequest);
+              Assertions.assertThat(result.getPolicy().getName()).isEqualTo("policy_test");
+              Assertions.assertThat(result.getPolicy().getPolicyType()).isEqualTo("example_type");
+              Assertions.assertThat(result.getPolicy().getContent()).isEqualTo("exmaple_content");
+              Assertions.assertThat(result.getPolicy().getDescription()).isEqualTo("description_test");
+            },
+            () -> {
+//              newWrapper(Set.of(PRINCIPAL_ROLE2)).dropTableWithPurge(newtable);
+            });
   }
 
   @Test

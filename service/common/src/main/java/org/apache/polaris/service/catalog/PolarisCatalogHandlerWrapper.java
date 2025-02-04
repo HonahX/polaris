@@ -83,10 +83,7 @@ import org.apache.polaris.core.auth.PolarisAuthorizableOperation;
 import org.apache.polaris.core.auth.PolarisAuthorizer;
 import org.apache.polaris.core.catalog.PolarisCatalogHelpers;
 import org.apache.polaris.core.context.RealmContext;
-import org.apache.polaris.core.entity.CatalogEntity;
-import org.apache.polaris.core.entity.PolarisBaseEntity;
-import org.apache.polaris.core.entity.PolarisEntitySubType;
-import org.apache.polaris.core.entity.PolarisEntityType;
+import org.apache.polaris.core.entity.*;
 import org.apache.polaris.core.persistence.PolarisEntityManager;
 import org.apache.polaris.core.persistence.PolarisMetaStoreManager;
 import org.apache.polaris.core.persistence.PolarisMetaStoreSession;
@@ -98,7 +95,10 @@ import org.apache.polaris.core.persistence.resolver.ResolverStatus;
 import org.apache.polaris.core.storage.PolarisStorageActions;
 import org.apache.polaris.service.catalog.io.FileIOFactory;
 import org.apache.polaris.service.task.TaskExecutor;
+import org.apache.polaris.service.types.CreatePolicyRequest;
+import org.apache.polaris.service.types.LoadPolicyResult;
 import org.apache.polaris.service.types.NotificationRequest;
+import org.apache.polaris.service.types.Policy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1194,5 +1194,123 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
       throw new BadRequestException("Cannot rename view on external catalogs.");
     }
     CatalogHandlers.renameView(viewCatalog, request);
+  }
+
+  public LoadPolicyResult createPolicy(Namespace namespace, CreatePolicyRequest request) {
+    // PolarisAuthorizableOperation op = PolarisAuthorizableOperation.
+    authorizeCreatePolicyUnderNamespaceOperationOrThrow(namespace, request.getName());
+
+    // TODO: replace it with PolicyIdentifier
+    TableIdentifier identifier = TableIdentifier.of(namespace, request.getName());
+
+    PolarisResolvedPathWrapper resolvedPolicyEntities =
+        resolutionManifest.getPassthroughResolvedPath(identifier);
+    if (resolvedPolicyEntities != null
+        && resolvedPolicyEntities.getRawLeafEntity().getType() != PolarisEntityType.POLICY) {
+      // TODO: formalize this into getPassthroughResolvedPath
+      throw new UnsupportedOperationException();
+    }
+
+    List<PolarisEntity> resolvedNamespace =
+        resolvedPolicyEntities == null
+            ? resolutionManifest.getResolvedPath(identifier.namespace()).getRawFullPath()
+            : resolvedPolicyEntities.getRawParentPath();
+
+    PolicyEntity entity =
+        PolicyEntity.of(
+            resolvedPolicyEntities == null ? null : resolvedPolicyEntities.getRawLeafEntity());
+
+    if (null == entity) {
+      entity =
+          new PolicyEntity.Builder(namespace, request.getName(), request.getType())
+              .setDescription(request.getDescription())
+              .setContent(request.getContent())
+              .setId(getMetaStoreManager().generateNewEntityId(session).getId())
+              .build();
+    } else {
+      // TODO this should be the track to throw AlreadyExist
+      throw new UnsupportedOperationException();
+    }
+
+    PolicyEntity policyEntity = PolicyEntity.of(createPolicy(namespace, request.getName(), entity));
+
+    return LoadPolicyResult.builder()
+        .setPolicy(
+            Policy.builder()
+                .setPolicyId(Long.toString(policyEntity.getId()))
+                .setOwnerEntityId(Long.toString(policyEntity.getParentId()))
+                .setPolicyType(policyEntity.getPolicyType())
+                .setName(policyEntity.getName())
+                .setDescription(policyEntity.getDescription())
+                .setContent(policyEntity.getContent())
+                .setVersion(Integer.valueOf(policyEntity.getPolicyVersion()))
+                .setCreatedAtMs(policyEntity.getCreateTimestamp())
+                .setUpdatedAtMs(policyEntity.getLastUpdateTimestamp())
+                .build())
+        .build();
+  }
+
+  private void authorizeCreatePolicyUnderNamespaceOperationOrThrow(
+      Namespace namespace, String policyName) {
+    resolutionManifest =
+        entityManager.prepareResolutionManifest(session, securityContext, catalogName);
+    resolutionManifest.addPath(
+        new ResolverPath(Arrays.asList(namespace.levels()), PolarisEntityType.NAMESPACE),
+        namespace);
+
+    // TODO: need a policyIdentifier
+    resolutionManifest.addPassthroughPath(
+        new ResolverPath(
+            PolarisCatalogHelpers.tableIdentifierToList(TableIdentifier.of(namespace, policyName)),
+            PolarisEntityType.POLICY,
+            true /* optional */),
+        TableIdentifier.of(namespace, policyName));
+    resolutionManifest.resolveAll();
+    PolarisResolvedPathWrapper target = resolutionManifest.getResolvedPath(namespace, true);
+    if (target == null) {
+      throw new NoSuchNamespaceException("Namespace does not exist: %s", namespace);
+    }
+
+    // TODO: authorize
+
+    initializeCatalog();
+  }
+
+  private PolarisEntity createPolicy(Namespace namespace, String policyName, PolarisEntity entity) {
+    TableIdentifier identifier = TableIdentifier.of(namespace, policyName);
+    PolarisResolvedPathWrapper resolvedParent = resolutionManifest.getResolvedPath(namespace);
+    if (resolvedParent == null) {
+      // Illegal state because the namespace should've already been in the static resolution set.
+      throw new IllegalStateException(
+          String.format("Failed to fetch resolved parent for Policy '%s'", identifier));
+    }
+
+    List<PolarisEntity> catalogPath = resolvedParent.getRawFullPath();
+    if (entity.getParentId() <= 0) {
+      // TODO: Validate catalogPath size is at least 1 for catalog entity?
+      entity =
+          new PolarisEntity.Builder(entity)
+              .setParentId(resolvedParent.getRawLeafEntity().getId())
+              .build();
+    }
+
+    entity =
+        new PolarisEntity.Builder(entity).setCreateTimestamp(System.currentTimeMillis()).build();
+
+    PolarisEntity returnedEntity =
+        PolarisEntity.of(
+            getMetaStoreManager()
+                .createEntityIfNotExists(session, PolarisEntity.toCoreList(catalogPath), entity));
+
+    LOGGER.debug("Created Policy entity {} with TableIdentifier {}", entity, identifier);
+    if (returnedEntity == null) {
+      // TODO: Error or retry?
+    }
+
+    return returnedEntity;
+  }
+
+  private PolarisMetaStoreManager getMetaStoreManager() {
+    return metaStoreManager;
   }
 }

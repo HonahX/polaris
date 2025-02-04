@@ -70,9 +70,7 @@ import org.apache.polaris.service.catalog.api.IcebergRestCatalogApiService;
 import org.apache.polaris.service.catalog.api.IcebergRestConfigurationApiService;
 import org.apache.polaris.service.catalog.io.FileIOFactory;
 import org.apache.polaris.service.task.TaskExecutor;
-import org.apache.polaris.service.types.CommitTableRequest;
-import org.apache.polaris.service.types.CommitViewRequest;
-import org.apache.polaris.service.types.NotificationRequest;
+import org.apache.polaris.service.types.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -646,5 +644,68 @@ public class IcebergCatalogAdapter
                         .build())
                 .build())
         .build();
+  }
+
+  @Override
+  public Response createPolicy(
+      String prefix,
+      String namespace,
+      CreatePolicyRequest createPolicyRequest,
+      RealmContext realmContext,
+      SecurityContext securityContext) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public Response getPolicy(
+      String prefix,
+      String namespace,
+      String policy,
+      RealmContext realmContext,
+      SecurityContext securityContext) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public Response updatePolicy(
+      String prefix,
+      String namespace,
+      String policy,
+      UpdatePolicyRequest updatePolicyRequest,
+      RealmContext realmContext,
+      SecurityContext securityContext) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public Response deletePolicy(
+      String prefix,
+      String namespace,
+      String policy,
+      RealmContext realmContext,
+      SecurityContext securityContext) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public Response setPolicy(
+      String prefix,
+      String namespace,
+      String policy,
+      SetPolicyRequest setPolicyRequest,
+      RealmContext realmContext,
+      SecurityContext securityContext) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public Response unsetPolicy(
+      String prefix,
+      String namespace,
+      String policy,
+      UnsetPolicyRequest unsetPolicyRequest,
+      RealmContext realmContext,
+      SecurityContext securityContext) {
+    throw new UnsupportedOperationException();
   }
 }

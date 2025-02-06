@@ -95,10 +95,7 @@ import org.apache.polaris.core.persistence.resolver.ResolverStatus;
 import org.apache.polaris.core.storage.PolarisStorageActions;
 import org.apache.polaris.service.catalog.io.FileIOFactory;
 import org.apache.polaris.service.task.TaskExecutor;
-import org.apache.polaris.service.types.CreatePolicyRequest;
-import org.apache.polaris.service.types.LoadPolicyResult;
-import org.apache.polaris.service.types.NotificationRequest;
-import org.apache.polaris.service.types.Policy;
+import org.apache.polaris.service.types.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1237,8 +1234,7 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     return LoadPolicyResult.builder()
         .setPolicy(
             Policy.builder()
-                .setPolicyId(Long.toString(policyEntity.getId()))
-                .setOwnerEntityId(Long.toString(policyEntity.getParentId()))
+                .setOwnerEntity(NamespaceIdentifier.builder().setCatalog(catalogName).setNamespace(Arrays.asList(namespace.levels())).build()) // TODO: we may need to manually build the type
                 .setPolicyType(policyEntity.getPolicyType())
                 .setName(policyEntity.getName())
                 .setDescription(policyEntity.getDescription())

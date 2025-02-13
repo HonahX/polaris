@@ -2252,10 +2252,12 @@ public class PolarisMetaStoreManagerImpl implements PolarisMetaStoreManager {
       return new AttachmentResult(BaseResult.ReturnStatus.POLICY_MAPPING_NOT_FOUND, null);
     }
 
+    this.detachPolicyMappingRecord(session, mappingRecord);
+
     return new AttachmentResult(mappingRecord);
   }
 
-  // TODO: this will be optional
+  // TODO: this can be optional, just integrate with the above method
   private void detachPolicyMappingRecord(
       @NotNull PolarisMetaStoreSession session, @NotNull PolarisPolicyMappingRecord mappingRecord) {
     diagnostics.checkNotNull(mappingRecord, "unexpected_null_mappingRecord");
@@ -2319,7 +2321,45 @@ public class PolarisMetaStoreManagerImpl implements PolarisMetaStoreManager {
       @NotNull PolarisEntityCore target,
       @NotNull List<PolarisEntityCore> catalogPath,
       @NotNull String policyType) {
-    return null;
+    return session.runInReadTransaction(() -> this.doLoadPoliciesOnEntityByType(session, target, catalogPath, policyType));
+  }
+
+  public LoadPolicyMappingsResult doLoadPoliciesOnEntityByType(
+          @NotNull PolarisMetaStoreSession session,
+          @NotNull PolarisEntityCore target,
+          @NotNull List<PolarisEntityCore> catalogPath,
+          @NotNull String policyType
+  ) {
+    // TODO: do we need to resolve to make sure the entity is correct?
+    PolarisEntityId policyToLoad = null;
+    Set<String> exisingPoliciesType = new HashSet<>();
+
+    PolarisPolicyMappingRecord directPolicyMappingRecord = session.lookupPolicyMappingRecordByType(target.getId(), policyType);
+    if (directPolicyMappingRecord != null) {
+      policyToLoad = new PolarisEntityId(directPolicyMappingRecord.getPolicyCatalogId(), directPolicyMappingRecord.getPolicyId());
+    }
+
+    for (int i = catalogPath.size() - 1; i >= 0; i--) {
+      PolarisEntityCore parent = catalogPath.get(i);
+      PolarisPolicyMappingRecord parentMappingRecord = session.lookupPolicyMappingRecordByType(parent.getId(), policyType);
+      if (parentMappingRecord != null) {
+        policyToLoad = new PolarisEntityId(parentMappingRecord.getPolicyCatalogId(), parentMappingRecord.getPolicyId());
+        break;
+      }
+    }
+
+    if (policyToLoad == null) {
+      // TODO: it makes sense to succeed with no policy mapping found
+      return new LoadPolicyMappingsResult(List.of(), List.of());
+    }
+
+    PolicyEntity policy = PolicyEntity.of(session.lookupEntity(policyToLoad.getCatalogId(), policyToLoad.getId()));
+    if (policy == null) {
+      return new LoadPolicyMappingsResult(BaseResult.ReturnStatus.ENTITY_NOT_FOUND, null);
+    }
+
+    // TODO: we may not need to return the direct mapping at all, we will see.
+    return new LoadPolicyMappingsResult(List.of(), List.of(policy));
   }
 
   private PolarisEntityResolver resolveAttachPolicyToEntity(

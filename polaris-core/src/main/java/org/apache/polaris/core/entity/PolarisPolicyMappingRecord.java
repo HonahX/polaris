@@ -33,6 +33,7 @@ public class PolarisPolicyMappingRecord {
   private static final ObjectMapper MAPPER = new ObjectMapper();
   private long targetId;
   private long policyId;
+  private long policyCatalogId;
   private String policyType;
   private String parameters;
 
@@ -62,6 +63,14 @@ public class PolarisPolicyMappingRecord {
     this.policyType = policyType;
   }
 
+  public long getPolicyCatalogId() {
+    return policyCatalogId;
+  }
+
+  public void setPolicyCatalogId(long policyCatalogId) {
+    this.policyCatalogId = policyCatalogId;
+  }
+
   public String getParameters() {
     return parameters;
   }
@@ -84,7 +93,8 @@ public class PolarisPolicyMappingRecord {
 
   public void setParametersAsMap(Map<String, String> parameters) {
     try {
-      this.parameters = parameters == null ? null : MAPPER.writeValueAsString(parameters);
+      this.parameters =
+          parameters == null ? EMPTY_MAP_STRING : MAPPER.writeValueAsString(parameters);
     } catch (JsonProcessingException ex) {
       throw new IllegalStateException(
           String.format("Failed to serialize json. properties %s", parameters), ex);
@@ -94,25 +104,41 @@ public class PolarisPolicyMappingRecord {
   @JsonCreator
   public PolarisPolicyMappingRecord(
       @JsonProperty("targetId") long targetId,
-      @JsonProperty("policyId") long policyId,
       @JsonProperty("policyType") String policyType,
+      @JsonProperty("policyId") long policyId,
+      @JsonProperty("policyCatalogId") long policyCatalogId,
       @JsonProperty("parameters") String parameters) {
     this.targetId = targetId;
     this.policyId = policyId;
     this.policyType = policyType;
+    this.policyCatalogId = policyCatalogId;
     this.parameters = parameters;
   }
 
   public PolarisPolicyMappingRecord(
-      long targetId, long policyId, String policyType, Map<String, String> parameters) {
+      long targetId,
+      String policyType,
+      long policyId,
+      long policyCatalogId,
+      Map<String, String> parameters) {
     this.targetId = targetId;
     this.policyId = policyId;
+    this.policyCatalogId = policyCatalogId;
     this.policyType = policyType;
     this.setParametersAsMap(parameters);
   }
 
+  public PolarisPolicyMappingRecord(PolarisPolicyMappingRecord policyMappingRecord) {
+    this.targetId = policyMappingRecord.getTargetId();
+    this.policyId = policyMappingRecord.getPolicyId();
+    this.policyCatalogId = policyMappingRecord.getPolicyCatalogId();
+    this.policyType = policyMappingRecord.getPolicyType();
+    this.parameters = policyMappingRecord.getParameters();
+  }
+
   @Override
   public String toString() {
+    // TODO: add catalog id
     return "PolarisPolicyMappingRec{"
         + "targetId="
         + targetId
@@ -132,7 +158,13 @@ public class PolarisPolicyMappingRecord {
     PolarisPolicyMappingRecord that = (PolarisPolicyMappingRecord) o;
     return targetId == that.targetId
         && policyId == that.policyId
+        && policyCatalogId == that.policyCatalogId
         && Objects.equals(policyType, that.policyType)
         && Objects.equals(parameters, that.parameters);
+  }
+
+  @Override
+  public int hashCode() {
+    return java.util.Objects.hash(targetId, policyId, policyCatalogId, policyType, parameters);
   }
 }

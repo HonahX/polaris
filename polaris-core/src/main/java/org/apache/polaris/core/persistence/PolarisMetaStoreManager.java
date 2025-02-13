@@ -35,6 +35,7 @@ import org.apache.polaris.core.entity.PolarisEntitySubType;
 import org.apache.polaris.core.entity.PolarisEntityType;
 import org.apache.polaris.core.entity.PolarisPrincipalSecrets;
 import org.apache.polaris.core.persistence.cache.PolarisRemoteCache;
+import org.apache.polaris.core.policy.PolarisPolicyMappingManager;
 import org.apache.polaris.core.storage.PolarisCredentialVendor;
 
 /**
@@ -45,7 +46,8 @@ public interface PolarisMetaStoreManager
     extends PolarisSecretsManager,
         PolarisGrantManager,
         PolarisRemoteCache,
-        PolarisCredentialVendor {
+        PolarisCredentialVendor,
+        PolarisPolicyMappingManager {
 
   /**
    * Bootstrap the Polaris service, creating the root catalog, root principal, and associated

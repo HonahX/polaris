@@ -26,10 +26,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.apache.polaris.core.PolarisDiagnostics;
-import org.apache.polaris.core.entity.PolarisBaseEntity;
-import org.apache.polaris.core.entity.PolarisEntityCore;
-import org.apache.polaris.core.entity.PolarisGrantRecord;
-import org.apache.polaris.core.entity.PolarisPrincipalSecrets;
+import org.apache.polaris.core.entity.*;
 
 /** Implements a simple in-memory store for Polaris, using tree-map */
 public class PolarisTreeMapStore {
@@ -214,6 +211,8 @@ public class PolarisTreeMapStore {
   // slice to store principal secrets
   private final Slice<PolarisPrincipalSecrets> slicePrincipalSecrets;
 
+  private final Slice<PolarisPolicyMappingRecord> slicePolicyMappingRecords;
+
   // next id generator
   private final AtomicLong nextId = new AtomicLong();
 
@@ -293,6 +292,16 @@ public class PolarisTreeMapStore {
         new Slice<>(
             principalSecrets -> String.format("%s", principalSecrets.getPrincipalClientId()),
             PolarisPrincipalSecrets::new);
+
+    this.slicePolicyMappingRecords =
+        new Slice<>(
+            policyMappingRecord ->
+                String.format(
+                    "%d::%s::%d",
+                    policyMappingRecord.getTargetId(),
+                    policyMappingRecord.getPolicyType(),
+                    policyMappingRecord.getPolicyId()),
+            PolarisPolicyMappingRecord::new);
 
     // no transaction open yet
     this.diagnosticServices = diagnostics;
@@ -375,6 +384,7 @@ public class PolarisTreeMapStore {
     this.sliceGrantRecords.startWriteTransaction();
     this.sliceGrantRecordsByGrantee.startWriteTransaction();
     this.slicePrincipalSecrets.startWriteTransaction();
+    this.slicePolicyMappingRecords.startWriteTransaction();
   }
 
   /** Rollback transaction */
@@ -387,6 +397,7 @@ public class PolarisTreeMapStore {
     this.sliceGrantRecords.rollback();
     this.sliceGrantRecordsByGrantee.rollback();
     this.slicePrincipalSecrets.rollback();
+    this.slicePolicyMappingRecords.rollback();
   }
 
   /** Ensure that a read/write FDB transaction has been started */
@@ -515,6 +526,10 @@ public class PolarisTreeMapStore {
 
   public Slice<PolarisPrincipalSecrets> getSlicePrincipalSecrets() {
     return slicePrincipalSecrets;
+  }
+
+  public Slice<PolarisPolicyMappingRecord> getSlicePolicyMappingRecords() {
+    return slicePolicyMappingRecords;
   }
 
   /**

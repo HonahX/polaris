@@ -39,21 +39,7 @@ import java.util.stream.Collectors;
 import org.apache.polaris.core.PolarisConfigurationStore;
 import org.apache.polaris.core.PolarisDiagnostics;
 import org.apache.polaris.core.context.RealmContext;
-import org.apache.polaris.core.entity.AsyncTaskType;
-import org.apache.polaris.core.entity.PolarisBaseEntity;
-import org.apache.polaris.core.entity.PolarisChangeTrackingVersions;
-import org.apache.polaris.core.entity.PolarisEntitiesActiveKey;
-import org.apache.polaris.core.entity.PolarisEntity;
-import org.apache.polaris.core.entity.PolarisEntityActiveRecord;
-import org.apache.polaris.core.entity.PolarisEntityConstants;
-import org.apache.polaris.core.entity.PolarisEntityCore;
-import org.apache.polaris.core.entity.PolarisEntityId;
-import org.apache.polaris.core.entity.PolarisEntitySubType;
-import org.apache.polaris.core.entity.PolarisEntityType;
-import org.apache.polaris.core.entity.PolarisGrantRecord;
-import org.apache.polaris.core.entity.PolarisPrincipalSecrets;
-import org.apache.polaris.core.entity.PolarisPrivilege;
-import org.apache.polaris.core.entity.PolarisTaskConstants;
+import org.apache.polaris.core.entity.*;
 import org.apache.polaris.core.storage.PolarisCredentialProperty;
 import org.apache.polaris.core.storage.PolarisStorageActions;
 import org.apache.polaris.core.storage.PolarisStorageConfigurationInfo;
@@ -2165,5 +2151,183 @@ public class PolarisMetaStoreManagerImpl implements PolarisMetaStoreManager {
                 entityType,
                 entityCatalogId,
                 entityId));
+  }
+
+  @Override
+  public AttachmentResult attachPolicyToEntity(
+      @NotNull PolarisMetaStoreSession session,
+      @NotNull PolarisEntityCore target,
+      @NotNull List<PolarisEntityCore> targetCatalogPath,
+      @NotNull PolicyEntity policy,
+      @NotNull List<PolarisEntityCore> policyCatalogPath,
+      Map<String, String> parameters) {
+    return session.runInTransaction(
+        () ->
+            this.doAttachPolicyToEntity(
+                session, target, targetCatalogPath, policy, policyCatalogPath, parameters));
+  }
+
+  private @Nonnull AttachmentResult doAttachPolicyToEntity(
+      @NotNull PolarisMetaStoreSession session,
+      @NotNull PolarisEntityCore target,
+      @NotNull List<PolarisEntityCore> targetCatalogPath,
+      @NotNull PolicyEntity policy,
+      @NotNull List<PolarisEntityCore> policyCatalogPath,
+      Map<String, String> parameters) {
+    // TODO: need to consider combined them together, may be extend functionality of other policies
+    PolarisEntityResolver targetResolver =
+        this.resolveAttachPolicyToEntity(session, target, targetCatalogPath);
+    PolarisEntityResolver policyResolver =
+        this.resolveAttachPolicyToEntity(session, policy, policyCatalogPath);
+    if (targetResolver.isFailure() || policyResolver.isFailure()) {
+      return new AttachmentResult(BaseResult.ReturnStatus.ENTITY_CANNOT_BE_RESOLVED, null);
+    }
+
+    PolarisPolicyMappingRecord existingRecordOfSameType =
+        session.lookupPolicyMappingRecordByType(target.getId(), policy.getPolicyType());
+    if (existingRecordOfSameType != null
+        && existingRecordOfSameType.getPolicyId() != policy.getId()) {
+      // TODO: the status should be policyOfSameType is already granted. Or we can consider to
+      // override.
+      return new AttachmentResult(BaseResult.ReturnStatus.ENTITY_CANNOT_BE_RESOLVED, null);
+    }
+
+    PolarisPolicyMappingRecord mappingRecord =
+        this.persistNewPolicyMappingRecord(session, target, policy, parameters);
+    return new AttachmentResult(mappingRecord);
+  }
+
+  private @Nonnull PolarisPolicyMappingRecord persistNewPolicyMappingRecord(
+      @Nonnull PolarisMetaStoreSession ms,
+      @NotNull PolarisEntityCore target,
+      @NotNull PolicyEntity policy,
+      Map<String, String> parameters) {
+    diagnostics.checkNotNull(target, "unexpected_null_target");
+    diagnostics.checkNotNull(policy, "unexpected_null_policy");
+
+    PolarisPolicyMappingRecord mappingRecord =
+        new PolarisPolicyMappingRecord(
+            target.getId(),
+            policy.getPolicyType(),
+            policy.getId(),
+            policy.getCatalogId(),
+            parameters);
+
+    ms.writeToPolicyMappingRecords(mappingRecord);
+
+    return mappingRecord;
+  }
+
+  @Override
+  public AttachmentResult detachPolicyFromEntity(
+      @NotNull PolarisMetaStoreSession session,
+      @NotNull PolarisEntityCore target,
+      @NotNull List<PolarisEntityCore> targetCatalogPath,
+      @NotNull PolicyEntity policy,
+      @NotNull List<PolarisEntityCore> policyCatalogPath) {
+    return session.runInTransaction(
+        () ->
+            this.doDetachPolicyFromEntity(
+                session, target, targetCatalogPath, policy, policyCatalogPath));
+  }
+
+  private AttachmentResult doDetachPolicyFromEntity(
+      @NotNull PolarisMetaStoreSession session,
+      @NotNull PolarisEntityCore target,
+      @NotNull List<PolarisEntityCore> targetCatalogPath,
+      @NotNull PolicyEntity policy,
+      @NotNull List<PolarisEntityCore> policyCatalogPath) {
+    PolarisEntityResolver targetResolver =
+        this.resolveAttachPolicyToEntity(session, target, targetCatalogPath);
+    PolarisEntityResolver policyResolver =
+        this.resolveAttachPolicyToEntity(session, policy, policyCatalogPath);
+    if (targetResolver.isFailure() || policyResolver.isFailure()) {
+      return new AttachmentResult(
+          BaseResult.ReturnStatus.POLICY_MAPPING_OF_SAME_TYPE_ALREADY_EXISTS, null);
+    }
+
+    PolarisPolicyMappingRecord mappingRecord =
+        session.lookupPolicyMappingRecord(target.getId(), policy.getPolicyType(), policy.getId());
+    if (mappingRecord == null) {
+      return new AttachmentResult(BaseResult.ReturnStatus.POLICY_MAPPING_NOT_FOUND, null);
+    }
+
+    return new AttachmentResult(mappingRecord);
+  }
+
+  // TODO: this will be optional
+  private void detachPolicyMappingRecord(
+      @NotNull PolarisMetaStoreSession session, @NotNull PolarisPolicyMappingRecord mappingRecord) {
+    diagnostics.checkNotNull(mappingRecord, "unexpected_null_mappingRecord");
+
+    session.deleteFromPolicyMappingRecords(mappingRecord);
+  }
+
+  @Override
+  public LoadPolicyMappingsResult loadPoliciesOnEntity(
+      @NotNull PolarisMetaStoreSession session,
+      @NotNull PolarisEntityCore target,
+      @NotNull List<PolarisEntityCore> catalogPath) {
+    return session.runInReadTransaction(
+        () -> this.doLoadPoliciesOnEntity(session, target, catalogPath));
+  }
+
+  private LoadPolicyMappingsResult doLoadPoliciesOnEntity(
+      @NotNull PolarisMetaStoreSession session,
+      @NotNull PolarisEntityCore target,
+      @NotNull List<PolarisEntityCore> catalogPath) {
+    // TODO: do we need to resolve to make sure the entity is correct?
+    List<PolarisEntityId> policyIdsToLoad = new ArrayList<>();
+    Set<String> exisingPoliciesType = new HashSet<>();
+    // Should assume that policy type is inheritable
+    List<PolarisPolicyMappingRecord> directMappingRecords =
+        session.loadAllPoliciesOnTarget(target.getId());
+    directMappingRecords.forEach(
+        mappingRecord -> {
+          policyIdsToLoad.add(
+              new PolarisEntityId(mappingRecord.getPolicyCatalogId(), mappingRecord.getPolicyId()));
+          exisingPoliciesType.add(mappingRecord.getPolicyType());
+        });
+
+    for (int i = catalogPath.size() - 1; i >= 0; i--) {
+      PolarisEntityCore parent = catalogPath.get(i);
+      List<PolarisPolicyMappingRecord> parentMappingRecords =
+          session.loadAllPoliciesOnTarget(parent.getId());
+      parentMappingRecords.forEach(
+          mappingRecord -> {
+            if (!exisingPoliciesType.contains(mappingRecord.getPolicyType())) {
+              // TODO: another condition is that policyType should be inheritable
+              policyIdsToLoad.add(
+                  new PolarisEntityId(
+                      mappingRecord.getPolicyCatalogId(), mappingRecord.getPolicyId()));
+              exisingPoliciesType.add(mappingRecord.getPolicyType());
+            }
+          });
+    }
+
+    // TODO: check whether this could contain null
+    List<PolarisBaseEntity> entities = session.lookupEntities(policyIdsToLoad);
+    List<PolicyEntity> policies =
+        entities.stream().map(PolicyEntity::of).collect(Collectors.toList());
+
+    return new LoadPolicyMappingsResult(directMappingRecords, policies);
+  }
+
+  @Override
+  public LoadPolicyMappingsResult loadPoliciesOnEntityByType(
+      @NotNull PolarisMetaStoreSession session,
+      @NotNull PolarisEntityCore target,
+      @NotNull List<PolarisEntityCore> catalogPath,
+      @NotNull String policyType) {
+    return null;
+  }
+
+  private PolarisEntityResolver resolveAttachPolicyToEntity(
+      @Nonnull PolarisMetaStoreSession ms,
+      @Nonnull PolarisEntityCore entity,
+      @Nonnull List<PolarisEntityCore> catalogPath) {
+    diagnostics.checkNotNull(entity, "unexpected_null_entity");
+    diagnostics.checkNotNull(catalogPath, "unexpected_null_catalog_path");
+    return new PolarisEntityResolver(diagnostics, ms, catalogPath, entity);
   }
 }

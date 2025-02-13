@@ -27,15 +27,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.polaris.core.PolarisDiagnostics;
-import org.apache.polaris.core.entity.PolarisBaseEntity;
-import org.apache.polaris.core.entity.PolarisChangeTrackingVersions;
-import org.apache.polaris.core.entity.PolarisEntitiesActiveKey;
-import org.apache.polaris.core.entity.PolarisEntityActiveRecord;
-import org.apache.polaris.core.entity.PolarisEntityCore;
-import org.apache.polaris.core.entity.PolarisEntityId;
-import org.apache.polaris.core.entity.PolarisEntityType;
-import org.apache.polaris.core.entity.PolarisGrantRecord;
-import org.apache.polaris.core.entity.PolarisPrincipalSecrets;
+import org.apache.polaris.core.entity.*;
 import org.apache.polaris.core.storage.PolarisStorageConfigurationInfo;
 import org.apache.polaris.core.storage.PolarisStorageIntegration;
 import org.apache.polaris.core.storage.PolarisStorageIntegrationProvider;
@@ -502,6 +494,53 @@ public class PolarisTreeMapMetaStoreSessionImpl implements PolarisMetaStoreSessi
 
     // delete these secrets
     this.store.getSlicePrincipalSecrets().delete(clientId);
+  }
+
+  @Override
+  public void writeToPolicyMappingRecords(@Nonnull PolarisPolicyMappingRecord record) {
+    this.store.getSlicePolicyMappingRecords().write(record);
+  }
+
+  @Override
+  public void deleteFromPolicyMappingRecords(@Nonnull PolarisPolicyMappingRecord record) {
+    this.store.getSlicePolicyMappingRecords().delete(record);
+  }
+
+  @Override
+  public void deleteAllPolicyMappingRecords(@Nonnull PolarisEntityCore entity) {
+    String prefix = this.store.buildPrefixKeyComposite(entity.getId());
+    this.store.getSlicePolicyMappingRecords().delete(prefix);
+  }
+
+  @Override
+  public @Nullable PolarisPolicyMappingRecord lookupPolicyMappingRecord(
+      long targetId, String policyType, long policyId) {
+    return this.store
+        .getSlicePolicyMappingRecords()
+        .read(this.store.buildPrefixKeyComposite(targetId, policyType, policyId));
+  }
+
+  @Override
+  public @Nullable PolarisPolicyMappingRecord lookupPolicyMappingRecordByType(
+      long targetId, String policyType) {
+    List<PolarisPolicyMappingRecord> recs =
+        this.store
+            .getSlicePolicyMappingRecords()
+            .readRange(this.store.buildPrefixKeyComposite(targetId, policyType));
+    if (recs.size() != 1) {
+      throw new IllegalStateException(
+          String.format(
+              "The multiple policies of the type %s has been grant to entity with id %d",
+              policyType, targetId));
+    }
+    return recs.get(0);
+  }
+
+  @Override
+  public @Nonnull List<PolarisPolicyMappingRecord> loadAllPoliciesOnTarget(long targetId) {
+    return this.store
+        .getSlicePolicyMappingRecords()
+        .readRange(this.store.buildPrefixKeyComposite(targetId));
   }
 
   /** {@inheritDoc} */

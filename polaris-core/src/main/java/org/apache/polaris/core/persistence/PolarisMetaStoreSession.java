@@ -24,15 +24,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import org.apache.polaris.core.entity.PolarisBaseEntity;
-import org.apache.polaris.core.entity.PolarisChangeTrackingVersions;
-import org.apache.polaris.core.entity.PolarisEntitiesActiveKey;
-import org.apache.polaris.core.entity.PolarisEntityActiveRecord;
-import org.apache.polaris.core.entity.PolarisEntityCore;
-import org.apache.polaris.core.entity.PolarisEntityId;
-import org.apache.polaris.core.entity.PolarisEntityType;
-import org.apache.polaris.core.entity.PolarisGrantRecord;
-import org.apache.polaris.core.entity.PolarisPrincipalSecrets;
+import org.apache.polaris.core.entity.*;
 import org.apache.polaris.core.storage.PolarisStorageConfigurationInfo;
 import org.apache.polaris.core.storage.PolarisStorageIntegration;
 
@@ -400,6 +392,35 @@ public interface PolarisMetaStoreSession {
    * @param principalId the id of the principal whose secrets are dropped
    */
   void deletePrincipalSecrets(@Nonnull String clientId, long principalId);
+
+  default void writeToPolicyMappingRecords(@Nonnull PolarisPolicyMappingRecord record) {
+    throw new UnsupportedOperationException();
+  }
+
+  default void deleteFromPolicyMappingRecords(@Nonnull PolarisPolicyMappingRecord record) {
+    throw new UnsupportedOperationException();
+  }
+
+  default void deleteAllPolicyMappingRecords(@Nonnull PolarisEntityCore entity) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Nullable
+  default PolarisPolicyMappingRecord lookupPolicyMappingRecord(
+      long targetId, String policyType, long policyId) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Nullable
+  default PolarisPolicyMappingRecord lookupPolicyMappingRecordByType(
+      long targetId, String policyType) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Nonnull
+  default List<PolarisPolicyMappingRecord> loadAllPoliciesOnTarget(long targetId) {
+    throw new UnsupportedOperationException();
+  }
 
   /**
    * Create an in-memory storage integration

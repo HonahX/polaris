@@ -213,6 +213,8 @@ public class PolarisTreeMapStore {
 
   private final Slice<PolarisPolicyMappingRecord> slicePolicyMappingRecords;
 
+  private final Slice<PolarisPolicyMappingRecord> slicePolicyMappingRecordsByPolicy;
+
   // next id generator
   private final AtomicLong nextId = new AtomicLong();
 
@@ -303,6 +305,16 @@ public class PolarisTreeMapStore {
                     policyMappingRecord.getPolicyId()),
             PolarisPolicyMappingRecord::new);
 
+    this.slicePolicyMappingRecordsByPolicy =
+        new Slice<>(
+            policyMappingRecord ->
+                String.format(
+                    "%d::%s::%d",
+                    policyMappingRecord.getPolicyId(),
+                    policyMappingRecord.getPolicyType(),
+                    policyMappingRecord.getTargetId()),
+            PolarisPolicyMappingRecord::new);
+
     // no transaction open yet
     this.diagnosticServices = diagnostics;
     this.tr = null;
@@ -385,6 +397,7 @@ public class PolarisTreeMapStore {
     this.sliceGrantRecordsByGrantee.startWriteTransaction();
     this.slicePrincipalSecrets.startWriteTransaction();
     this.slicePolicyMappingRecords.startWriteTransaction();
+    this.slicePolicyMappingRecordsByPolicy.startWriteTransaction();
   }
 
   /** Rollback transaction */
@@ -398,6 +411,7 @@ public class PolarisTreeMapStore {
     this.sliceGrantRecordsByGrantee.rollback();
     this.slicePrincipalSecrets.rollback();
     this.slicePolicyMappingRecords.rollback();
+    this.slicePolicyMappingRecordsByPolicy.rollback();
   }
 
   /** Ensure that a read/write FDB transaction has been started */
@@ -532,6 +546,10 @@ public class PolarisTreeMapStore {
     return slicePolicyMappingRecords;
   }
 
+  public Slice<PolarisPolicyMappingRecord> getSlicePolicyMappingRecordsByPolicy() {
+    return slicePolicyMappingRecordsByPolicy;
+  }
+
   /**
    * Next sequence number generator
    *
@@ -552,5 +570,7 @@ public class PolarisTreeMapStore {
     this.sliceGrantRecordsByGrantee.deleteAll();
     this.sliceGrantRecords.deleteAll();
     this.slicePrincipalSecrets.deleteAll();
+    this.slicePolicyMappingRecords.deleteAll();
+    this.slicePolicyMappingRecordsByPolicy.deleteAll();
   }
 }

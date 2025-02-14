@@ -499,17 +499,19 @@ public class PolarisTreeMapMetaStoreSessionImpl implements PolarisMetaStoreSessi
   @Override
   public void writeToPolicyMappingRecords(@Nonnull PolarisPolicyMappingRecord record) {
     this.store.getSlicePolicyMappingRecords().write(record);
+    this.store.getSlicePolicyMappingRecordsByPolicy().write(record);
   }
 
   @Override
   public void deleteFromPolicyMappingRecords(@Nonnull PolarisPolicyMappingRecord record) {
     this.store.getSlicePolicyMappingRecords().delete(record);
+    this.store.getSlicePolicyMappingRecordsByPolicy().delete(record);
   }
 
   @Override
-  public void deleteAllPolicyMappingRecords(@Nonnull PolarisEntityCore entity) {
-    String prefix = this.store.buildPrefixKeyComposite(entity.getId());
-    this.store.getSlicePolicyMappingRecords().delete(prefix);
+  public void deleteAllPolicyMappingRecords(
+      @Nonnull List<PolarisPolicyMappingRecord> policyMappings) {
+    policyMappings.forEach(this::deleteFromPolicyMappingRecords);
   }
 
   @Override
@@ -541,6 +543,13 @@ public class PolarisTreeMapMetaStoreSessionImpl implements PolarisMetaStoreSessi
     return this.store
         .getSlicePolicyMappingRecords()
         .readRange(this.store.buildPrefixKeyComposite(targetId));
+  }
+
+  @Override
+  public @Nonnull List<PolarisPolicyMappingRecord> loadAllPoliciesOnPolicy(long policyId) {
+    return this.store
+        .getSlicePolicyMappingRecordsByPolicy()
+        .readRange(this.store.buildPrefixKeyComposite(policyId));
   }
 
   /** {@inheritDoc} */

@@ -401,7 +401,8 @@ public interface PolarisMetaStoreSession {
     throw new UnsupportedOperationException();
   }
 
-  default void deleteAllPolicyMappingRecords(@Nonnull PolarisEntityCore entity) {
+  default void deleteAllPolicyMappingRecords(
+      @Nonnull List<PolarisPolicyMappingRecord> policyMappings) {
     throw new UnsupportedOperationException();
   }
 
@@ -419,6 +420,11 @@ public interface PolarisMetaStoreSession {
 
   @Nonnull
   default List<PolarisPolicyMappingRecord> loadAllPoliciesOnTarget(long targetId) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Nonnull
+  default List<PolarisPolicyMappingRecord> loadAllPoliciesOnPolicy(long policyId) {
     throw new UnsupportedOperationException();
   }
 

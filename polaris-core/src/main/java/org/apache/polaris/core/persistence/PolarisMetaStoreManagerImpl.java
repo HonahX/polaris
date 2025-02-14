@@ -284,6 +284,18 @@ public class PolarisMetaStoreManagerImpl implements PolarisMetaStoreManager {
         ms.writeToEntitiesChangeTracking(entityGrantChanged);
       }
 
+      // TODO: need to delete all policy mapping
+
+      List<PolarisPolicyMappingRecord> policyMappingRecords = null;
+      if (entity.getType().equals(PolarisEntityType.POLICY)) {
+        policyMappingRecords = ms.loadAllPoliciesOnPolicy(entity.getId());
+      } else {
+        policyMappingRecords = ms.loadAllPoliciesOnTarget(entity.getId());
+      }
+
+      ms.deleteAllPolicyMappingRecords(policyMappingRecords);
+      // TODO: finish deleting
+
       // remove the entity being dropped now
       ms.deleteFromEntities(entity);
       ms.deleteFromEntitiesChangeTracking(entity);
@@ -2321,29 +2333,35 @@ public class PolarisMetaStoreManagerImpl implements PolarisMetaStoreManager {
       @NotNull PolarisEntityCore target,
       @NotNull List<PolarisEntityCore> catalogPath,
       @NotNull String policyType) {
-    return session.runInReadTransaction(() -> this.doLoadPoliciesOnEntityByType(session, target, catalogPath, policyType));
+    return session.runInReadTransaction(
+        () -> this.doLoadPoliciesOnEntityByType(session, target, catalogPath, policyType));
   }
 
   public LoadPolicyMappingsResult doLoadPoliciesOnEntityByType(
-          @NotNull PolarisMetaStoreSession session,
-          @NotNull PolarisEntityCore target,
-          @NotNull List<PolarisEntityCore> catalogPath,
-          @NotNull String policyType
-  ) {
+      @NotNull PolarisMetaStoreSession session,
+      @NotNull PolarisEntityCore target,
+      @NotNull List<PolarisEntityCore> catalogPath,
+      @NotNull String policyType) {
     // TODO: do we need to resolve to make sure the entity is correct?
     PolarisEntityId policyToLoad = null;
-    Set<String> exisingPoliciesType = new HashSet<>();
 
-    PolarisPolicyMappingRecord directPolicyMappingRecord = session.lookupPolicyMappingRecordByType(target.getId(), policyType);
+    PolarisPolicyMappingRecord directPolicyMappingRecord =
+        session.lookupPolicyMappingRecordByType(target.getId(), policyType);
     if (directPolicyMappingRecord != null) {
-      policyToLoad = new PolarisEntityId(directPolicyMappingRecord.getPolicyCatalogId(), directPolicyMappingRecord.getPolicyId());
+      policyToLoad =
+          new PolarisEntityId(
+              directPolicyMappingRecord.getPolicyCatalogId(),
+              directPolicyMappingRecord.getPolicyId());
     }
 
     for (int i = catalogPath.size() - 1; i >= 0; i--) {
       PolarisEntityCore parent = catalogPath.get(i);
-      PolarisPolicyMappingRecord parentMappingRecord = session.lookupPolicyMappingRecordByType(parent.getId(), policyType);
+      PolarisPolicyMappingRecord parentMappingRecord =
+          session.lookupPolicyMappingRecordByType(parent.getId(), policyType);
       if (parentMappingRecord != null) {
-        policyToLoad = new PolarisEntityId(parentMappingRecord.getPolicyCatalogId(), parentMappingRecord.getPolicyId());
+        policyToLoad =
+            new PolarisEntityId(
+                parentMappingRecord.getPolicyCatalogId(), parentMappingRecord.getPolicyId());
         break;
       }
     }
@@ -2353,7 +2371,8 @@ public class PolarisMetaStoreManagerImpl implements PolarisMetaStoreManager {
       return new LoadPolicyMappingsResult(List.of(), List.of());
     }
 
-    PolicyEntity policy = PolicyEntity.of(session.lookupEntity(policyToLoad.getCatalogId(), policyToLoad.getId()));
+    PolicyEntity policy =
+        PolicyEntity.of(session.lookupEntity(policyToLoad.getCatalogId(), policyToLoad.getId()));
     if (policy == null) {
       return new LoadPolicyMappingsResult(BaseResult.ReturnStatus.ENTITY_NOT_FOUND, null);
     }

@@ -24,6 +24,7 @@ import java.time.ZoneId;
 import org.apache.polaris.core.PolarisConfigurationStore;
 import org.apache.polaris.core.PolarisDefaultDiagServiceImpl;
 import org.apache.polaris.core.PolarisDiagnostics;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 public class PolarisTreeMapMetaStoreManagerTest extends BasePolarisMetaStoreManagerTest {
@@ -41,5 +42,10 @@ public class PolarisTreeMapMetaStoreManagerTest extends BasePolarisMetaStoreMana
             timeSource.withZone(ZoneId.systemDefault())),
         session,
         diagServices);
+  }
+
+  @Test
+  void testPolicyMapping() {
+    this.getPolarisTestMetaStoreManager().testPolicyMapping();
   }
 }

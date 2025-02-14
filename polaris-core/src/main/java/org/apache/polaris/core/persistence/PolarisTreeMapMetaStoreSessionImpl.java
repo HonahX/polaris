@@ -529,7 +529,9 @@ public class PolarisTreeMapMetaStoreSessionImpl implements PolarisMetaStoreSessi
         this.store
             .getSlicePolicyMappingRecords()
             .readRange(this.store.buildPrefixKeyComposite(targetId, policyType));
-    if (recs.size() != 1) {
+    if (recs.isEmpty()) {
+      return null;
+    } else if (recs.size() > 1) {
       throw new IllegalStateException(
           String.format(
               "The multiple policies of the type %s has been grant to entity with id %d",

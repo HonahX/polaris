@@ -30,20 +30,9 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.polaris.core.PolarisDiagnostics;
 import org.apache.polaris.core.auth.PolarisGrantManager.LoadGrantsResult;
-import org.apache.polaris.core.entity.PolarisBaseEntity;
-import org.apache.polaris.core.entity.PolarisChangeTrackingVersions;
-import org.apache.polaris.core.entity.PolarisEntity;
-import org.apache.polaris.core.entity.PolarisEntityActiveRecord;
-import org.apache.polaris.core.entity.PolarisEntityConstants;
-import org.apache.polaris.core.entity.PolarisEntityCore;
-import org.apache.polaris.core.entity.PolarisEntityId;
-import org.apache.polaris.core.entity.PolarisEntitySubType;
-import org.apache.polaris.core.entity.PolarisEntityType;
-import org.apache.polaris.core.entity.PolarisGrantRecord;
-import org.apache.polaris.core.entity.PolarisPrincipalSecrets;
-import org.apache.polaris.core.entity.PolarisPrivilege;
-import org.apache.polaris.core.entity.PolarisTaskConstants;
+import org.apache.polaris.core.entity.*;
 import org.apache.polaris.core.persistence.cache.PolarisRemoteCache.CachedEntryResult;
+import org.apache.polaris.core.policy.PolarisPolicyMappingManager;
 import org.assertj.core.api.Assertions;
 
 /** Test the Polaris persistence layer */
@@ -2066,6 +2055,117 @@ public class PolarisTestMetaStoreManager {
         polarisMetaStoreManager.loadGrantsToGrantee(polarisMetaStoreSession, 0L, PR900.getId());
     Assertions.assertThat(loadGrantsResult).isNotNull();
     Assertions.assertThat(loadGrantsResult.getGrantRecords()).hasSize(0);
+  }
+
+  void testPolicyMapping() {
+    PolarisBaseEntity catalog = this.createTestCatalog("test");
+    Assertions.assertThat(catalog).isNotNull();
+
+    PolarisBaseEntity N1 =
+        this.ensureExistsByName(List.of(catalog), PolarisEntityType.NAMESPACE, "N1");
+    PolarisBaseEntity N1_N2 =
+        this.ensureExistsByName(List.of(catalog, N1), PolarisEntityType.NAMESPACE, "N2");
+    PolarisBaseEntity N5 =
+        this.ensureExistsByName(List.of(catalog), PolarisEntityType.NAMESPACE, "N5");
+
+    PolarisBaseEntity N1_N2_T1 =
+        this.ensureExistsByName(
+            List.of(catalog, N1, N1_N2),
+            PolarisEntityType.TABLE_LIKE,
+            PolarisEntitySubType.ANY_SUBTYPE,
+            "T1");
+
+    PolarisBaseEntity N1_P1 = this.createPolicy(List.of(catalog, N1), "P1", "testType");
+
+    this.ensureExistsByName(List.of(catalog, N1), PolarisEntityType.POLICY, "P1");
+
+    polarisMetaStoreManager.attachPolicyToEntity(
+        polarisMetaStoreSession,
+        N1_N2_T1,
+        List.of(catalog, N1, N1_N2),
+        PolicyEntity.of(N1_P1),
+        List.of(catalog, N1),
+        null);
+    PolarisPolicyMappingManager.LoadPolicyMappingsResult directSearch =
+        polarisMetaStoreManager.loadPoliciesOnEntity(
+            polarisMetaStoreSession, N1_N2_T1, List.of(catalog, N1, N1_N2));
+    List<PolicyEntity> record = directSearch.getPolicyEntities();
+    Assertions.assertThat(record).isNotNull();
+    Assertions.assertThat(record.size()).isEqualTo(1);
+    Assertions.assertThat(record.get(0).getName()).isEqualTo("P1");
+    Assertions.assertThat(record.get(0).getPolicyType()).isEqualTo("testType");
+    PolarisPolicyMappingManager.LoadPolicyMappingsResult onTypeSearch =
+        polarisMetaStoreManager.loadPoliciesOnEntityByType(
+            polarisMetaStoreSession, N1_N2_T1, List.of(catalog, N1, N1_N2), "testType");
+    List<PolicyEntity> recordOnTypeSearch = onTypeSearch.getPolicyEntities();
+    Assertions.assertThat(recordOnTypeSearch).isNotNull();
+    Assertions.assertThat(recordOnTypeSearch.size()).isEqualTo(1);
+    Assertions.assertThat(recordOnTypeSearch.get(0).getName()).isEqualTo("P1");
+    Assertions.assertThat(recordOnTypeSearch.get(0).getPolicyType()).isEqualTo("testType");
+  }
+
+  PolarisBaseEntity createPolicy(
+      List<PolarisEntityCore> catalogPath, String name, String policyType) {
+    long parentId;
+    long catalogId;
+    long entityId = polarisMetaStoreManager.generateNewEntityId(polarisMetaStoreSession).getId();
+    if (catalogPath != null) {
+      catalogId = catalogPath.get(0).getId();
+      parentId = catalogPath.get(catalogPath.size() - 1).getId();
+    } else {
+      catalogId = PolarisEntityConstants.getNullId();
+      parentId = PolarisEntityConstants.getRootEntityId();
+    }
+    PolarisBaseEntity newEntity =
+        new PolarisBaseEntity(
+            catalogId,
+            entityId,
+            PolarisEntityType.POLICY,
+            PolarisEntitySubType.NULL_SUBTYPE,
+            parentId,
+            name);
+    newEntity.setPropertiesAsMap(Map.of("policy-type", policyType));
+    PolarisBaseEntity entity =
+        polarisMetaStoreManager
+            .createEntityIfNotExists(polarisMetaStoreSession, catalogPath, newEntity)
+            .getEntity();
+    Assertions.assertThat(entity).isNotNull();
+
+    // same id
+    Assertions.assertThat(entity.getId()).isEqualTo(newEntity.getId());
+
+    // ensure well created
+    this.ensureExistsById(
+        catalogPath,
+        entity.getId(),
+        true,
+        name,
+        PolarisEntityType.POLICY,
+        PolarisEntitySubType.NULL_SUBTYPE);
+
+    // retry if we are asked to
+    if (this.doRetry) {
+      PolarisBaseEntity retryEntity =
+          polarisMetaStoreManager
+              .createEntityIfNotExists(polarisMetaStoreSession, catalogPath, newEntity)
+              .getEntity();
+      Assertions.assertThat(retryEntity).isNotNull();
+
+      // same id
+      Assertions.assertThat(entity.getId()).isEqualTo(retryEntity.getId());
+
+      // ensure well created
+      this.ensureExistsById(
+          catalogPath,
+          retryEntity.getId(),
+          true,
+          name,
+          PolarisEntityType.POLICY,
+          PolarisEntitySubType.NULL_SUBTYPE);
+    }
+
+    // return it
+    return entity;
   }
 
   /**

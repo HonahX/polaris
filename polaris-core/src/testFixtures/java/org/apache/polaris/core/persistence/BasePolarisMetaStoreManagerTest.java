@@ -72,6 +72,10 @@ public abstract class BasePolarisMetaStoreManagerTest {
 
   protected abstract PolarisTestMetaStoreManager createPolarisTestMetaStoreManager();
 
+  protected PolarisTestMetaStoreManager getPolarisTestMetaStoreManager() {
+    return polarisTestMetaStoreManager;
+  }
+
   /** validate that the root catalog was properly constructed */
   @Test
   void validateBootstrap() {

@@ -18,66 +18,10 @@
  */
 package org.apache.polaris.core.auth;
 
-import static org.apache.polaris.core.entity.PolarisPrivilege.CATALOG_CREATE;
-import static org.apache.polaris.core.entity.PolarisPrivilege.CATALOG_DROP;
-import static org.apache.polaris.core.entity.PolarisPrivilege.CATALOG_LIST;
-import static org.apache.polaris.core.entity.PolarisPrivilege.CATALOG_LIST_GRANTS;
-import static org.apache.polaris.core.entity.PolarisPrivilege.CATALOG_MANAGE_GRANTS_ON_SECURABLE;
-import static org.apache.polaris.core.entity.PolarisPrivilege.CATALOG_READ_PROPERTIES;
-import static org.apache.polaris.core.entity.PolarisPrivilege.CATALOG_ROLE_CREATE;
-import static org.apache.polaris.core.entity.PolarisPrivilege.CATALOG_ROLE_DROP;
-import static org.apache.polaris.core.entity.PolarisPrivilege.CATALOG_ROLE_LIST;
-import static org.apache.polaris.core.entity.PolarisPrivilege.CATALOG_ROLE_LIST_GRANTS;
-import static org.apache.polaris.core.entity.PolarisPrivilege.CATALOG_ROLE_MANAGE_GRANTS_FOR_GRANTEE;
-import static org.apache.polaris.core.entity.PolarisPrivilege.CATALOG_ROLE_MANAGE_GRANTS_ON_SECURABLE;
-import static org.apache.polaris.core.entity.PolarisPrivilege.CATALOG_ROLE_READ_PROPERTIES;
-import static org.apache.polaris.core.entity.PolarisPrivilege.CATALOG_ROLE_WRITE_PROPERTIES;
-import static org.apache.polaris.core.entity.PolarisPrivilege.CATALOG_WRITE_PROPERTIES;
-import static org.apache.polaris.core.entity.PolarisPrivilege.NAMESPACE_CREATE;
-import static org.apache.polaris.core.entity.PolarisPrivilege.NAMESPACE_DROP;
-import static org.apache.polaris.core.entity.PolarisPrivilege.NAMESPACE_LIST;
-import static org.apache.polaris.core.entity.PolarisPrivilege.NAMESPACE_LIST_GRANTS;
-import static org.apache.polaris.core.entity.PolarisPrivilege.NAMESPACE_MANAGE_GRANTS_ON_SECURABLE;
-import static org.apache.polaris.core.entity.PolarisPrivilege.NAMESPACE_READ_PROPERTIES;
-import static org.apache.polaris.core.entity.PolarisPrivilege.NAMESPACE_WRITE_PROPERTIES;
-import static org.apache.polaris.core.entity.PolarisPrivilege.PRINCIPAL_CREATE;
-import static org.apache.polaris.core.entity.PolarisPrivilege.PRINCIPAL_DROP;
-import static org.apache.polaris.core.entity.PolarisPrivilege.PRINCIPAL_LIST;
-import static org.apache.polaris.core.entity.PolarisPrivilege.PRINCIPAL_LIST_GRANTS;
-import static org.apache.polaris.core.entity.PolarisPrivilege.PRINCIPAL_MANAGE_GRANTS_FOR_GRANTEE;
-import static org.apache.polaris.core.entity.PolarisPrivilege.PRINCIPAL_MANAGE_GRANTS_ON_SECURABLE;
-import static org.apache.polaris.core.entity.PolarisPrivilege.PRINCIPAL_READ_PROPERTIES;
-import static org.apache.polaris.core.entity.PolarisPrivilege.PRINCIPAL_RESET_CREDENTIALS;
-import static org.apache.polaris.core.entity.PolarisPrivilege.PRINCIPAL_ROLE_CREATE;
-import static org.apache.polaris.core.entity.PolarisPrivilege.PRINCIPAL_ROLE_DROP;
-import static org.apache.polaris.core.entity.PolarisPrivilege.PRINCIPAL_ROLE_LIST;
-import static org.apache.polaris.core.entity.PolarisPrivilege.PRINCIPAL_ROLE_LIST_GRANTS;
-import static org.apache.polaris.core.entity.PolarisPrivilege.PRINCIPAL_ROLE_MANAGE_GRANTS_FOR_GRANTEE;
-import static org.apache.polaris.core.entity.PolarisPrivilege.PRINCIPAL_ROLE_MANAGE_GRANTS_ON_SECURABLE;
-import static org.apache.polaris.core.entity.PolarisPrivilege.PRINCIPAL_ROLE_READ_PROPERTIES;
-import static org.apache.polaris.core.entity.PolarisPrivilege.PRINCIPAL_ROLE_WRITE_PROPERTIES;
-import static org.apache.polaris.core.entity.PolarisPrivilege.PRINCIPAL_ROTATE_CREDENTIALS;
-import static org.apache.polaris.core.entity.PolarisPrivilege.PRINCIPAL_WRITE_PROPERTIES;
-import static org.apache.polaris.core.entity.PolarisPrivilege.SERVICE_MANAGE_ACCESS;
-import static org.apache.polaris.core.entity.PolarisPrivilege.TABLE_CREATE;
-import static org.apache.polaris.core.entity.PolarisPrivilege.TABLE_DROP;
-import static org.apache.polaris.core.entity.PolarisPrivilege.TABLE_LIST;
-import static org.apache.polaris.core.entity.PolarisPrivilege.TABLE_LIST_GRANTS;
-import static org.apache.polaris.core.entity.PolarisPrivilege.TABLE_MANAGE_GRANTS_ON_SECURABLE;
-import static org.apache.polaris.core.entity.PolarisPrivilege.TABLE_READ_DATA;
-import static org.apache.polaris.core.entity.PolarisPrivilege.TABLE_READ_PROPERTIES;
-import static org.apache.polaris.core.entity.PolarisPrivilege.TABLE_WRITE_DATA;
-import static org.apache.polaris.core.entity.PolarisPrivilege.TABLE_WRITE_PROPERTIES;
-import static org.apache.polaris.core.entity.PolarisPrivilege.VIEW_CREATE;
-import static org.apache.polaris.core.entity.PolarisPrivilege.VIEW_DROP;
-import static org.apache.polaris.core.entity.PolarisPrivilege.VIEW_LIST;
-import static org.apache.polaris.core.entity.PolarisPrivilege.VIEW_LIST_GRANTS;
-import static org.apache.polaris.core.entity.PolarisPrivilege.VIEW_MANAGE_GRANTS_ON_SECURABLE;
-import static org.apache.polaris.core.entity.PolarisPrivilege.VIEW_READ_PROPERTIES;
-import static org.apache.polaris.core.entity.PolarisPrivilege.VIEW_WRITE_PROPERTIES;
-
 import java.util.EnumSet;
 import org.apache.polaris.core.entity.PolarisPrivilege;
+
+import static org.apache.polaris.core.entity.PolarisPrivilege.*;
 
 /**
  * Denotes the fine-grained expansion of all Polaris operations that are associated with some set of
@@ -182,6 +126,20 @@ public enum PolarisAuthorizableOperation {
   REVOKE_VIEW_GRANT_FROM_CATALOG_ROLE(
       VIEW_MANAGE_GRANTS_ON_SECURABLE, CATALOG_ROLE_MANAGE_GRANTS_FOR_GRANTEE),
   LIST_GRANTS_ON_VIEW(VIEW_LIST_GRANTS),
+  CREATE_POLICY(POLICY_CREATE),
+  GET_POLICY(POLICY_READ),
+  DROP_POLICY(POLICY_DROP),
+  UPDATE_POLICY(POLICY_WRITE),
+  ATTACH_POLICY(POLICY_ATTACH),
+  DETACH_POLICY(POLICY_DETACH),
+  ATTACH_POLICY_TO_CATALOG(CATALOG_ATTACH_POLICY),
+  ATTACH_POLICY_TO_NAMESPACE(NAMESPACE_ATTACH_POLICY),
+  ATTACH_POLICY_TO_TABLE(TABLE_ATTACH_POLICY),
+  ATTACH_POLICY_TO_VIEW(VIEW_ATTACH_POLICY),
+  DETACH_POLICY_FROM_CATALOG(CATALOG_ATTACH_POLICY),
+  DETACH_POLICY_FROM_NAMESPACE(NAMESPACE_ATTACH_POLICY),
+  DETACH_POLICY_FROM_TABLE(TABLE_DETACH_POLICY),
+  DETACH_POLICY_FROM_VIEW(VIEW_DETACH_POLICY),
   ;
 
   private final EnumSet<PolarisPrivilege> privilegesOnTarget;

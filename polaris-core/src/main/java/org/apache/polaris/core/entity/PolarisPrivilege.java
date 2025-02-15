@@ -102,6 +102,21 @@ public enum PolarisPrivilege {
   CATALOG_ROLE_FULL_METADATA(67, PolarisEntityType.CATALOG_ROLE),
   CATALOG_ROLE_MANAGE_GRANTS_ON_SECURABLE(68, PolarisEntityType.CATALOG_ROLE),
   CATALOG_ROLE_MANAGE_GRANTS_FOR_GRANTEE(69, PolarisEntityType.CATALOG_ROLE),
+  POLICY_CREATE(70, PolarisEntityType.POLICY),
+  POLICY_READ(71, PolarisEntityType.POLICY),
+  POLICY_DROP(72, PolarisEntityType.POLICY),
+  POLICY_WRITE(73, PolarisEntityType.POLICY),
+  POLICY_LIST(74, PolarisEntityType.POLICY),
+  POLICY_ATTACH(75, PolarisEntityType.POLICY),
+  POLICY_DETACH(76, PolarisEntityType.POLICY),
+  CATALOG_ATTACH_POLICY(77, PolarisEntityType.CATALOG),
+  NAMESPACE_ATTACH_POLICY(78, PolarisEntityType.NAMESPACE),
+  TABLE_ATTACH_POLICY(79, PolarisEntityType.TABLE_LIKE, PolarisEntitySubType.TABLE),
+  VIEW_ATTACH_POLICY(80, PolarisEntityType.TABLE_LIKE, PolarisEntitySubType.VIEW),
+  CATALOG_DETACH_POLICY(81, PolarisEntityType.CATALOG),
+  NAMESPACE_DETACH_POLICY(82, PolarisEntityType.NAMESPACE),
+  TABLE_DETACH_POLICY(83, PolarisEntityType.TABLE_LIKE, PolarisEntitySubType.TABLE),
+  VIEW_DETACH_POLICY(84, PolarisEntityType.TABLE_LIKE, PolarisEntitySubType.VIEW),
   ;
 
   /**

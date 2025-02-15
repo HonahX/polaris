@@ -608,9 +608,7 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
     // Use PRINCIPAL_ROLE1 for privilege-testing, PRINCIPAL_ROLE2 for cleanup.
     doTestSufficientPrivileges(
             List.of(
-                    PolarisPrivilege.TABLE_CREATE,
-                    PolarisPrivilege.TABLE_FULL_METADATA,
-                    PolarisPrivilege.CATALOG_MANAGE_CONTENT),
+                   PolarisPrivilege.POLICY_CREATE),
             () -> {
               LoadPolicyResult result = newWrapper(Set.of(PRINCIPAL_ROLE1)).createPolicy(NS2, createPolicyRequest);
               Assertions.assertThat(result.getPolicy().getName()).isEqualTo("policy_test");

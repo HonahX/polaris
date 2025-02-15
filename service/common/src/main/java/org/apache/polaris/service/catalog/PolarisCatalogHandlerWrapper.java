@@ -1153,7 +1153,8 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
 
   public LoadPolicyResult createPolicy(Namespace namespace, CreatePolicyRequest request) {
     // PolarisAuthorizableOperation op = PolarisAuthorizableOperation.
-    authorizeCreatePolicyUnderNamespaceOperationOrThrow(namespace, request.getName());
+    PolarisAuthorizableOperation op = PolarisAuthorizableOperation.CREATE_POLICY;
+    authorizeCreatePolicyUnderNamespaceOperationOrThrow(op, namespace, request.getName());
 
     // TODO: replace it with PolicyIdentifier
     TableIdentifier identifier = TableIdentifier.of(namespace, request.getName());
@@ -1205,7 +1206,7 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
   }
 
   private void authorizeCreatePolicyUnderNamespaceOperationOrThrow(
-      Namespace namespace, String policyName) {
+          PolarisAuthorizableOperation op, Namespace namespace, String policyName) {
     resolutionManifest =
         entityManager.prepareResolutionManifest(session, securityContext, catalogName);
     resolutionManifest.addPath(
@@ -1226,7 +1227,13 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     }
 
     // TODO: authorize
-
+    authorizer.authorizeOrThrow(
+            realmContext,
+            authenticatedPrincipal,
+            resolutionManifest.getAllActivatedCatalogRoleAndPrincipalRoles(),
+            op,
+            target,
+            null /* secondary */);
     initializeCatalog();
   }
 

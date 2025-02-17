@@ -1217,12 +1217,13 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     return constructPolicyResult(namespace, policy);
   }
 
-  public LoadPolicyResult updatePolicy(Namespace namespace, String policyName, UpdatePolicyRequest request) {
+  public LoadPolicyResult updatePolicy(
+      Namespace namespace, String policyName, UpdatePolicyRequest request) {
     PolarisAuthorizableOperation op = PolarisAuthorizableOperation.UPDATE_POLICY;
     authorizeBasicPolicyOperationOrThrow(op, namespace, policyName);
 
     PolarisResolvedPathWrapper resolvedEntities =
-            resolutionManifest.getPassthroughResolvedPath(TableIdentifier.of(namespace, policyName));
+        resolutionManifest.getPassthroughResolvedPath(TableIdentifier.of(namespace, policyName));
     PolicyEntity policy = null;
 
     if (resolvedEntities != null) {
@@ -1354,12 +1355,18 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
       // TODO: change to Policy
       // Illegal state because the identifier should've already been in the static resolution set.
       throw new IllegalStateException(
-              String.format("Failed to fetch resolved TableIdentifier '%s'", identifier));
+          String.format("Failed to fetch resolved TableIdentifier '%s'", identifier));
     }
 
     List<PolarisEntity> catalogPath = resolvedEntities.getRawParentPath();
-    PolarisEntity returnedEntity = Optional.ofNullable(
-            getMetaStoreManager().updateEntityPropertiesIfNotChanged(session, PolarisEntity.toCoreList(catalogPath), entity).getEntity()).map(PolarisEntity::new).orElse(null);
+    PolarisEntity returnedEntity =
+        Optional.ofNullable(
+                getMetaStoreManager()
+                    .updateEntityPropertiesIfNotChanged(
+                        session, PolarisEntity.toCoreList(catalogPath), entity)
+                    .getEntity())
+            .map(PolarisEntity::new)
+            .orElse(null);
     if (returnedEntity == null) {
       // TODO: Error or retry?
       // TODO: remove

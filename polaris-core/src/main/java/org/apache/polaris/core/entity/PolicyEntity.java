@@ -64,7 +64,7 @@ public class PolicyEntity extends PolarisEntity {
       setName(policyName);
       setPolicyType(policyType);
       // TODO: check whether version starts from 0
-      setVersion(0);
+      setPolicyVersion(0);
     }
 
     public Builder(PolicyEntity original) {
@@ -95,7 +95,7 @@ public class PolicyEntity extends PolarisEntity {
       return this;
     }
 
-    public Builder setVersion(long version) {
+    public Builder setPolicyVersion(long version) {
       properties.put(POLICY_VERSION_KEY, Long.toString(version));
       return this;
     }

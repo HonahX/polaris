@@ -1217,6 +1217,42 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     return constructPolicyResult(namespace, policy);
   }
 
+  public LoadPolicyResult updatePolicy(Namespace namespace, String policyName, UpdatePolicyRequest request) {
+    PolarisAuthorizableOperation op = PolarisAuthorizableOperation.UPDATE_POLICY;
+    authorizeBasicPolicyOperationOrThrow(op, namespace, policyName);
+
+    PolarisResolvedPathWrapper resolvedEntities =
+            resolutionManifest.getPassthroughResolvedPath(TableIdentifier.of(namespace, policyName));
+    PolicyEntity policy = null;
+
+    if (resolvedEntities != null) {
+      if (resolvedEntities.getRawLeafEntity().getType() == PolarisEntityType.POLICY) {
+        policy = PolicyEntity.of(resolvedEntities.getRawLeafEntity());
+      }
+    }
+
+    if (policy == null) {
+      // TODO: change to NoSuchPolicyException
+      throw new NoSuchTableException("Policy does not exist: %s", policyName);
+    }
+
+    PolicyEntity.Builder newPolicyBuilder = new PolicyEntity.Builder(policy);
+
+    if (request.getContent() != null) {
+      // TODO: need to validate the content
+      newPolicyBuilder.setContent(request.getContent());
+    }
+
+    if (request.getDescription() != null) {
+      newPolicyBuilder.setDescription(request.getDescription());
+    }
+
+    PolicyEntity newPolicyEntity = newPolicyBuilder.build();
+    newPolicyEntity = PolicyEntity.of(updatePolicy(namespace, policyName, newPolicyEntity));
+
+    return constructPolicyResult(namespace, newPolicyEntity);
+  }
+
   private void authorizeCreatePolicyUnderNamespaceOperationOrThrow(
       PolarisAuthorizableOperation op, Namespace namespace, String policyName) {
     resolutionManifest =
@@ -1306,6 +1342,28 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     LOGGER.debug("Created Policy entity {} with TableIdentifier {}", entity, identifier);
     if (returnedEntity == null) {
       // TODO: Error or retry?
+    }
+
+    return returnedEntity;
+  }
+
+  private PolarisEntity updatePolicy(Namespace namespace, String policyName, PolarisEntity entity) {
+    TableIdentifier identifier = TableIdentifier.of(namespace, policyName);
+    PolarisResolvedPathWrapper resolvedEntities = resolutionManifest.getResolvedPath(identifier);
+    if (resolvedEntities == null) {
+      // TODO: change to Policy
+      // Illegal state because the identifier should've already been in the static resolution set.
+      throw new IllegalStateException(
+              String.format("Failed to fetch resolved TableIdentifier '%s'", identifier));
+    }
+
+    List<PolarisEntity> catalogPath = resolvedEntities.getRawParentPath();
+    PolarisEntity returnedEntity = Optional.ofNullable(
+            getMetaStoreManager().updateEntityPropertiesIfNotChanged(session, PolarisEntity.toCoreList(catalogPath), entity).getEntity()).map(PolarisEntity::new).orElse(null);
+    if (returnedEntity == null) {
+      // TODO: Error or retry?
+      // TODO: remove
+      throw new IllegalStateException("Failed to update Policy entity");
     }
 
     return returnedEntity;

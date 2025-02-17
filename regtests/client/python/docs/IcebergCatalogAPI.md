@@ -1,23 +1,3 @@
-<!--
-
- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
-
-   http://www.apache.org/licenses/LICENSE-2.0
-
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
-
--->
 # polaris.catalog.IcebergCatalogAPI
 
 All URIs are relative to *https://localhost*
@@ -26,14 +6,18 @@ Method | HTTP request | Description
 ------------- | ------------- | -------------
 [**commit_transaction**](IcebergCatalogAPI.md#commit_transaction) | **POST** /v1/{prefix}/transactions/commit | Commit updates to multiple tables in an atomic operation
 [**create_namespace**](IcebergCatalogAPI.md#create_namespace) | **POST** /v1/{prefix}/namespaces | Create a namespace
+[**create_policy**](IcebergCatalogAPI.md#create_policy) | **POST** /v1/{prefix}/namespaces/{namespace}/policies | Create a policy in the given namespace
 [**create_table**](IcebergCatalogAPI.md#create_table) | **POST** /v1/{prefix}/namespaces/{namespace}/tables | Create a table in the given namespace
 [**create_view**](IcebergCatalogAPI.md#create_view) | **POST** /v1/{prefix}/namespaces/{namespace}/views | Create a view in the given namespace
+[**delete_policy**](IcebergCatalogAPI.md#delete_policy) | **DELETE** /v1/{prefix}/namespaces/{namespace}/policies/{policyName} | Delete a policy from the catalog
 [**drop_namespace**](IcebergCatalogAPI.md#drop_namespace) | **DELETE** /v1/{prefix}/namespaces/{namespace} | Drop a namespace from the catalog. Namespace must be empty.
 [**drop_table**](IcebergCatalogAPI.md#drop_table) | **DELETE** /v1/{prefix}/namespaces/{namespace}/tables/{table} | Drop a table from the catalog
 [**drop_view**](IcebergCatalogAPI.md#drop_view) | **DELETE** /v1/{prefix}/namespaces/{namespace}/views/{view} | Drop a view from the catalog
+[**get_policy**](IcebergCatalogAPI.md#get_policy) | **GET** /v1/{prefix}/namespaces/{namespace}/policies/{policyName} | Get a policy
 [**list_namespaces**](IcebergCatalogAPI.md#list_namespaces) | **GET** /v1/{prefix}/namespaces | List namespaces, optionally providing a parent namespace to list underneath
 [**list_tables**](IcebergCatalogAPI.md#list_tables) | **GET** /v1/{prefix}/namespaces/{namespace}/tables | List all table identifiers underneath a given namespace
 [**list_views**](IcebergCatalogAPI.md#list_views) | **GET** /v1/{prefix}/namespaces/{namespace}/views | List all view identifiers underneath a given namespace
+[**load_credentials**](IcebergCatalogAPI.md#load_credentials) | **GET** /v1/{prefix}/namespaces/{namespace}/tables/{table}/credentials | Load vended credentials for a table from the catalog
 [**load_namespace_metadata**](IcebergCatalogAPI.md#load_namespace_metadata) | **GET** /v1/{prefix}/namespaces/{namespace} | Load the metadata properties for a namespace
 [**load_table**](IcebergCatalogAPI.md#load_table) | **GET** /v1/{prefix}/namespaces/{namespace}/tables/{table} | Load a table from the catalog
 [**load_view**](IcebergCatalogAPI.md#load_view) | **GET** /v1/{prefix}/namespaces/{namespace}/views/{view} | Load a view from the catalog
@@ -44,7 +28,10 @@ Method | HTTP request | Description
 [**replace_view**](IcebergCatalogAPI.md#replace_view) | **POST** /v1/{prefix}/namespaces/{namespace}/views/{view} | Replace a view
 [**report_metrics**](IcebergCatalogAPI.md#report_metrics) | **POST** /v1/{prefix}/namespaces/{namespace}/tables/{table}/metrics | Send a metrics report to this endpoint to be processed by the backend
 [**send_notification**](IcebergCatalogAPI.md#send_notification) | **POST** /v1/{prefix}/namespaces/{namespace}/tables/{table}/notifications | Sends a notification to the table
+[**set_policy**](IcebergCatalogAPI.md#set_policy) | **PUT** /v1/{prefix}/namespaces/{namespace}/policies/{policyName}/mappings | Create a mapping between a policy and a resource entity
 [**table_exists**](IcebergCatalogAPI.md#table_exists) | **HEAD** /v1/{prefix}/namespaces/{namespace}/tables/{table} | Check if a table exists
+[**unset_policy**](IcebergCatalogAPI.md#unset_policy) | **POST** /v1/{prefix}/namespaces/{namespace}/policies/{policyName}/mappings | Remove a mapping between a policy and a resource entity
+[**update_policy**](IcebergCatalogAPI.md#update_policy) | **PUT** /v1/{prefix}/namespaces/{namespace}/policies/{policyName} | Update a policy
 [**update_properties**](IcebergCatalogAPI.md#update_properties) | **POST** /v1/{prefix}/namespaces/{namespace}/properties | Set or remove properties on a namespace
 [**update_table**](IcebergCatalogAPI.md#update_table) | **POST** /v1/{prefix}/namespaces/{namespace}/tables/{table} | Commit updates to a table
 [**view_exists**](IcebergCatalogAPI.md#view_exists) | **HEAD** /v1/{prefix}/namespaces/{namespace}/views/{view} | Check if a view exists
@@ -89,7 +76,7 @@ with polaris.catalog.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = polaris.catalog.IcebergCatalogAPI(api_client)
     prefix = 'prefix_example' # str | An optional prefix in the path
-    commit_transaction_request = polaris.catalog.CommitTransactionRequest() # CommitTransactionRequest | Commit updates to multiple tables in an atomic operation  A commit for a single table consists of a table identifier with requirements and updates. Requirements are assertions that will be validated before attempting to make and commit changes. For example, `assert-ref-snapshot-id` will check that a named ref's snapshot ID has a certain value.  Updates are changes to make to table metadata. For example, after asserting that the current main ref is at the expected snapshot, a commit may add a new child snapshot and set the ref to the new snapshot id.
+    commit_transaction_request = polaris.catalog.CommitTransactionRequest() # CommitTransactionRequest | Commit updates to multiple tables in an atomic operation  A commit for a single table consists of a table identifier with requirements and updates. Requirements are assertions that will be validated before attempting to make and commit changes. For example, `assert-ref-snapshot-id` will check that a named ref's snapshot ID has a certain value. Server implementations are required to fail with a 400 status code if any unknown updates or requirements are received. Updates are changes to make to table metadata. For example, after asserting that the current main ref is at the expected snapshot, a commit may add a new child snapshot and set the ref to the new snapshot id.
 
     try:
         # Commit updates to multiple tables in an atomic operation
@@ -106,7 +93,7 @@ with polaris.catalog.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **prefix** | **str**| An optional prefix in the path | 
- **commit_transaction_request** | [**CommitTransactionRequest**](CommitTransactionRequest.md)| Commit updates to multiple tables in an atomic operation  A commit for a single table consists of a table identifier with requirements and updates. Requirements are assertions that will be validated before attempting to make and commit changes. For example, &#x60;assert-ref-snapshot-id&#x60; will check that a named ref&#39;s snapshot ID has a certain value.  Updates are changes to make to table metadata. For example, after asserting that the current main ref is at the expected snapshot, a commit may add a new child snapshot and set the ref to the new snapshot id. | 
+ **commit_transaction_request** | [**CommitTransactionRequest**](CommitTransactionRequest.md)| Commit updates to multiple tables in an atomic operation  A commit for a single table consists of a table identifier with requirements and updates. Requirements are assertions that will be validated before attempting to make and commit changes. For example, &#x60;assert-ref-snapshot-id&#x60; will check that a named ref&#39;s snapshot ID has a certain value. Server implementations are required to fail with a 400 status code if any unknown updates or requirements are received. Updates are changes to make to table metadata. For example, after asserting that the current main ref is at the expected snapshot, a commit may add a new child snapshot and set the ref to the new snapshot id. | 
 
 ### Return type
 
@@ -226,6 +213,98 @@ Name | Type | Description  | Notes
 **403** | Forbidden. Authenticated user does not have the necessary permissions. |  -  |
 **406** | Not Acceptable / Unsupported Operation. The server does not support this operation. |  -  |
 **409** | Conflict - The namespace already exists |  -  |
+**419** | Credentials have timed out. If possible, the client should refresh credentials and retry. |  -  |
+**503** | The service is not ready to handle the request. The client should wait and retry.  The service may additionally send a Retry-After header to indicate when to retry. |  -  |
+**5XX** | A server-side problem that might not be addressable from the client side. Used for server 5xx errors without more specific documentation in individual routes. |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **create_policy**
+> LoadPolicyResult create_policy(prefix, namespace, create_policy_request)
+
+Create a policy in the given namespace
+
+Creates a policy within the specified namespace.  A policy defines a set of rules governing actions on specified resources under predefined conditions. In Apache Polaris, policies are created, stored, and later referenced by external engines to enforce access controls on associated resources.  User provides the following inputs when creating a policy - `name`(REQUIRED): The name of the policy. - `type` (REQUIRED): The type of the policy.   - **Predefined Policies:** policies have a `system.*` prefix in their type, such as `system.data_compaction` - `description` (OPTIONAL): Provides details about the policy's purpose and functionality - `content` (OPTIONAL): Defines the rules that control actions and access conditions on resources. The format can be JSON, SQL, or any other format.  The policy content is validated against the policy's corresponding validator upon creation. 
+
+### Example
+
+* OAuth Authentication (OAuth2):
+* Bearer Authentication (BearerAuth):
+
+```python
+import polaris.catalog
+from polaris.catalog.models.create_policy_request import CreatePolicyRequest
+from polaris.catalog.models.load_policy_result import LoadPolicyResult
+from polaris.catalog.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to https://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = polaris.catalog.Configuration(
+    host = "https://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+configuration.access_token = os.environ["ACCESS_TOKEN"]
+
+# Configure Bearer authorization: BearerAuth
+configuration = polaris.catalog.Configuration(
+    access_token = os.environ["BEARER_TOKEN"]
+)
+
+# Enter a context with an instance of the API client
+with polaris.catalog.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = polaris.catalog.IcebergCatalogAPI(api_client)
+    prefix = 'prefix_example' # str | An optional prefix in the path
+    namespace = 'accounting' # str | A namespace identifier as a single string. Multipart namespace parts should be separated by the unit separator (`0x1F`) byte.
+    create_policy_request = polaris.catalog.CreatePolicyRequest() # CreatePolicyRequest | 
+
+    try:
+        # Create a policy in the given namespace
+        api_response = api_instance.create_policy(prefix, namespace, create_policy_request)
+        print("The response of IcebergCatalogAPI->create_policy:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling IcebergCatalogAPI->create_policy: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **prefix** | **str**| An optional prefix in the path | 
+ **namespace** | **str**| A namespace identifier as a single string. Multipart namespace parts should be separated by the unit separator (&#x60;0x1F&#x60;) byte. | 
+ **create_policy_request** | [**CreatePolicyRequest**](CreatePolicyRequest.md)|  | 
+
+### Return type
+
+[**LoadPolicyResult**](LoadPolicyResult.md)
+
+### Authorization
+
+[OAuth2](../README.md#OAuth2), [BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | Policy object result after creating a policy |  -  |
+**400** | Indicates a bad request error. It could be caused by an unexpected request body format or other forms of request validation failure, such as invalid json. Usually serves application/json content, although in some cases simple text/plain content might be returned by the server&#39;s middleware. |  -  |
+**401** | Unauthorized. Authentication is required and has failed or has not yet been provided. |  -  |
+**403** | Forbidden. Authenticated user does not have the necessary permissions. |  -  |
 **419** | Credentials have timed out. If possible, the client should refresh credentials and retry. |  -  |
 **503** | The service is not ready to handle the request. The client should wait and retry.  The service may additionally send a Retry-After header to indicate when to retry. |  -  |
 **5XX** | A server-side problem that might not be addressable from the client side. Used for server 5xx errors without more specific documentation in individual routes. |  -  |
@@ -416,6 +495,95 @@ Name | Type | Description  | Notes
 **403** | Forbidden. Authenticated user does not have the necessary permissions. |  -  |
 **404** | Not Found - The namespace specified does not exist |  -  |
 **409** | Conflict - The view already exists |  -  |
+**419** | Credentials have timed out. If possible, the client should refresh credentials and retry. |  -  |
+**503** | The service is not ready to handle the request. The client should wait and retry.  The service may additionally send a Retry-After header to indicate when to retry. |  -  |
+**5XX** | A server-side problem that might not be addressable from the client side. Used for server 5xx errors without more specific documentation in individual routes. |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **delete_policy**
+> delete_policy(prefix, namespace, policy_name)
+
+Delete a policy from the catalog
+
+Remove a policy from the catalog
+
+### Example
+
+* OAuth Authentication (OAuth2):
+* Bearer Authentication (BearerAuth):
+
+```python
+import polaris.catalog
+from polaris.catalog.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to https://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = polaris.catalog.Configuration(
+    host = "https://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+configuration.access_token = os.environ["ACCESS_TOKEN"]
+
+# Configure Bearer authorization: BearerAuth
+configuration = polaris.catalog.Configuration(
+    access_token = os.environ["BEARER_TOKEN"]
+)
+
+# Enter a context with an instance of the API client
+with polaris.catalog.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = polaris.catalog.IcebergCatalogAPI(api_client)
+    prefix = 'prefix_example' # str | An optional prefix in the path
+    namespace = 'accounting' # str | A namespace identifier as a single string. Multipart namespace parts should be separated by the unit separator (`0x1F`) byte.
+    policy_name = 'policy_name_example' # str | 
+
+    try:
+        # Delete a policy from the catalog
+        api_instance.delete_policy(prefix, namespace, policy_name)
+    except Exception as e:
+        print("Exception when calling IcebergCatalogAPI->delete_policy: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **prefix** | **str**| An optional prefix in the path | 
+ **namespace** | **str**| A namespace identifier as a single string. Multipart namespace parts should be separated by the unit separator (&#x60;0x1F&#x60;) byte. | 
+ **policy_name** | **str**|  | 
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[OAuth2](../README.md#OAuth2), [BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**204** | Success, no content |  -  |
+**400** | Indicates a bad request error. It could be caused by an unexpected request body format or other forms of request validation failure, such as invalid json. Usually serves application/json content, although in some cases simple text/plain content might be returned by the server&#39;s middleware. |  -  |
+**401** | Unauthorized. Authentication is required and has failed or has not yet been provided. |  -  |
+**403** | Forbidden. Authenticated user does not have the necessary permissions. |  -  |
+**404** | Not Found - NoSuchPolicyException, policy to get does not exist |  -  |
 **419** | Credentials have timed out. If possible, the client should refresh credentials and retry. |  -  |
 **503** | The service is not ready to handle the request. The client should wait and retry.  The service may additionally send a Retry-After header to indicate when to retry. |  -  |
 **5XX** | A server-side problem that might not be addressable from the client side. Used for server 5xx errors without more specific documentation in individual routes. |  -  |
@@ -681,6 +849,98 @@ void (empty response body)
 **401** | Unauthorized. Authentication is required and has failed or has not yet been provided. |  -  |
 **403** | Forbidden. Authenticated user does not have the necessary permissions. |  -  |
 **404** | Not Found - NoSuchViewException, view to drop does not exist |  -  |
+**419** | Credentials have timed out. If possible, the client should refresh credentials and retry. |  -  |
+**503** | The service is not ready to handle the request. The client should wait and retry.  The service may additionally send a Retry-After header to indicate when to retry. |  -  |
+**5XX** | A server-side problem that might not be addressable from the client side. Used for server 5xx errors without more specific documentation in individual routes. |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **get_policy**
+> LoadPolicyResult get_policy(prefix, namespace, policy_name)
+
+Get a policy
+
+Get a policy from the catalog  The response contains the policy's metadata and content. For more details, refer to the definition of the `Policy` model. 
+
+### Example
+
+* OAuth Authentication (OAuth2):
+* Bearer Authentication (BearerAuth):
+
+```python
+import polaris.catalog
+from polaris.catalog.models.load_policy_result import LoadPolicyResult
+from polaris.catalog.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to https://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = polaris.catalog.Configuration(
+    host = "https://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+configuration.access_token = os.environ["ACCESS_TOKEN"]
+
+# Configure Bearer authorization: BearerAuth
+configuration = polaris.catalog.Configuration(
+    access_token = os.environ["BEARER_TOKEN"]
+)
+
+# Enter a context with an instance of the API client
+with polaris.catalog.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = polaris.catalog.IcebergCatalogAPI(api_client)
+    prefix = 'prefix_example' # str | An optional prefix in the path
+    namespace = 'accounting' # str | A namespace identifier as a single string. Multipart namespace parts should be separated by the unit separator (`0x1F`) byte.
+    policy_name = 'policy_name_example' # str | 
+
+    try:
+        # Get a policy
+        api_response = api_instance.get_policy(prefix, namespace, policy_name)
+        print("The response of IcebergCatalogAPI->get_policy:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling IcebergCatalogAPI->get_policy: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **prefix** | **str**| An optional prefix in the path | 
+ **namespace** | **str**| A namespace identifier as a single string. Multipart namespace parts should be separated by the unit separator (&#x60;0x1F&#x60;) byte. | 
+ **policy_name** | **str**|  | 
+
+### Return type
+
+[**LoadPolicyResult**](LoadPolicyResult.md)
+
+### Authorization
+
+[OAuth2](../README.md#OAuth2), [BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | Policy object result when getting a policy |  -  |
+**400** | Indicates a bad request error. It could be caused by an unexpected request body format or other forms of request validation failure, such as invalid json. Usually serves application/json content, although in some cases simple text/plain content might be returned by the server&#39;s middleware. |  -  |
+**401** | Unauthorized. Authentication is required and has failed or has not yet been provided. |  -  |
+**403** | Forbidden. Authenticated user does not have the necessary permissions. |  -  |
+**404** | Not Found - NoSuchPolicyException, policy to get does not exist |  -  |
 **419** | Credentials have timed out. If possible, the client should refresh credentials and retry. |  -  |
 **503** | The service is not ready to handle the request. The client should wait and retry.  The service may additionally send a Retry-After header to indicate when to retry. |  -  |
 **5XX** | A server-side problem that might not be addressable from the client side. Used for server 5xx errors without more specific documentation in individual routes. |  -  |
@@ -963,6 +1223,98 @@ Name | Type | Description  | Notes
 **401** | Unauthorized. Authentication is required and has failed or has not yet been provided. |  -  |
 **403** | Forbidden. Authenticated user does not have the necessary permissions. |  -  |
 **404** | Not Found - The namespace specified does not exist |  -  |
+**419** | Credentials have timed out. If possible, the client should refresh credentials and retry. |  -  |
+**503** | The service is not ready to handle the request. The client should wait and retry.  The service may additionally send a Retry-After header to indicate when to retry. |  -  |
+**5XX** | A server-side problem that might not be addressable from the client side. Used for server 5xx errors without more specific documentation in individual routes. |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **load_credentials**
+> LoadCredentialsResponse load_credentials(prefix, namespace, table)
+
+Load vended credentials for a table from the catalog
+
+Load vended credentials for a table from the catalog.
+
+### Example
+
+* OAuth Authentication (OAuth2):
+* Bearer Authentication (BearerAuth):
+
+```python
+import polaris.catalog
+from polaris.catalog.models.load_credentials_response import LoadCredentialsResponse
+from polaris.catalog.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to https://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = polaris.catalog.Configuration(
+    host = "https://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+configuration.access_token = os.environ["ACCESS_TOKEN"]
+
+# Configure Bearer authorization: BearerAuth
+configuration = polaris.catalog.Configuration(
+    access_token = os.environ["BEARER_TOKEN"]
+)
+
+# Enter a context with an instance of the API client
+with polaris.catalog.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = polaris.catalog.IcebergCatalogAPI(api_client)
+    prefix = 'prefix_example' # str | An optional prefix in the path
+    namespace = 'accounting' # str | A namespace identifier as a single string. Multipart namespace parts should be separated by the unit separator (`0x1F`) byte.
+    table = 'sales' # str | A table name
+
+    try:
+        # Load vended credentials for a table from the catalog
+        api_response = api_instance.load_credentials(prefix, namespace, table)
+        print("The response of IcebergCatalogAPI->load_credentials:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling IcebergCatalogAPI->load_credentials: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **prefix** | **str**| An optional prefix in the path | 
+ **namespace** | **str**| A namespace identifier as a single string. Multipart namespace parts should be separated by the unit separator (&#x60;0x1F&#x60;) byte. | 
+ **table** | **str**| A table name | 
+
+### Return type
+
+[**LoadCredentialsResponse**](LoadCredentialsResponse.md)
+
+### Authorization
+
+[OAuth2](../README.md#OAuth2), [BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | Table credentials result when loading credentials for a table |  -  |
+**400** | Indicates a bad request error. It could be caused by an unexpected request body format or other forms of request validation failure, such as invalid json. Usually serves application/json content, although in some cases simple text/plain content might be returned by the server&#39;s middleware. |  -  |
+**401** | Unauthorized. Authentication is required and has failed or has not yet been provided. |  -  |
+**403** | Forbidden. Authenticated user does not have the necessary permissions. |  -  |
+**404** | Not Found - NoSuchTableException, table to load credentials for does not exist |  -  |
 **419** | Credentials have timed out. If possible, the client should refresh credentials and retry. |  -  |
 **503** | The service is not ready to handle the request. The client should wait and retry.  The service may additionally send a Retry-After header to indicate when to retry. |  -  |
 **5XX** | A server-side problem that might not be addressable from the client side. Used for server 5xx errors without more specific documentation in individual routes. |  -  |
@@ -1838,7 +2190,7 @@ with polaris.catalog.ApiClient(configuration) as api_client:
     prefix = 'prefix_example' # str | An optional prefix in the path
     namespace = 'accounting' # str | A namespace identifier as a single string. Multipart namespace parts should be separated by the unit separator (`0x1F`) byte.
     table = 'sales' # str | A table name
-    notification_request = polaris.catalog.NotificationRequest() # NotificationRequest | The request containing the notification to be sent
+    notification_request = polaris.catalog.NotificationRequest() # NotificationRequest | The request containing the notification to be sent. For each table, Polaris will reject any notification where the timestamp in the request body is older than or equal to the most recent time Polaris has already processed for the table. The responsibility of ensuring the correct order of timestamps for a sequence of notifications lies with the caller of the API. This includes managing potential clock skew or inconsistencies when notifications are sent from multiple sources. A VALIDATE request behaves like a dry-run of a CREATE or UPDATE request up to but not including loading the contents of a metadata file; this includes validations of permissions, the specified metadata path being within ALLOWED_LOCATIONS, having an EXTERNAL catalog, etc. The intended use case for a VALIDATE notification is to allow a remote catalog to pre-validate the general settings of a receiving catalog against an intended new table location before possibly creating a table intended for sending notifications in the remote catalog at all. For a VALIDATE request, the specified metadata-location can either be a prospective full metadata file path, or a relevant parent directory of the intended table to validate against ALLOWED_LOCATIONS.
 
     try:
         # Sends a notification to the table
@@ -1857,7 +2209,7 @@ Name | Type | Description  | Notes
  **prefix** | **str**| An optional prefix in the path | 
  **namespace** | **str**| A namespace identifier as a single string. Multipart namespace parts should be separated by the unit separator (&#x60;0x1F&#x60;) byte. | 
  **table** | **str**| A table name | 
- **notification_request** | [**NotificationRequest**](NotificationRequest.md)| The request containing the notification to be sent | 
+ **notification_request** | [**NotificationRequest**](NotificationRequest.md)| The request containing the notification to be sent. For each table, Polaris will reject any notification where the timestamp in the request body is older than or equal to the most recent time Polaris has already processed for the table. The responsibility of ensuring the correct order of timestamps for a sequence of notifications lies with the caller of the API. This includes managing potential clock skew or inconsistencies when notifications are sent from multiple sources. A VALIDATE request behaves like a dry-run of a CREATE or UPDATE request up to but not including loading the contents of a metadata file; this includes validations of permissions, the specified metadata path being within ALLOWED_LOCATIONS, having an EXTERNAL catalog, etc. The intended use case for a VALIDATE notification is to allow a remote catalog to pre-validate the general settings of a receiving catalog against an intended new table location before possibly creating a table intended for sending notifications in the remote catalog at all. For a VALIDATE request, the specified metadata-location can either be a prospective full metadata file path, or a relevant parent directory of the intended table to validate against ALLOWED_LOCATIONS. | 
 
 ### Return type
 
@@ -1881,6 +2233,99 @@ void (empty response body)
 **401** | Unauthorized. Authentication is required and has failed or has not yet been provided. |  -  |
 **403** | Forbidden. Authenticated user does not have the necessary permissions. |  -  |
 **404** | Not Found - NoSuchTableException, table to load does not exist |  -  |
+**409** | Conflict - The timestamp of the received notification is older than or equal to the most recent timestamp Polaris has already processed for the specified table. |  -  |
+**419** | Credentials have timed out. If possible, the client should refresh credentials and retry. |  -  |
+**503** | The service is not ready to handle the request. The client should wait and retry.  The service may additionally send a Retry-After header to indicate when to retry. |  -  |
+**5XX** | A server-side problem that might not be addressable from the client side. Used for server 5xx errors without more specific documentation in individual routes. |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **set_policy**
+> set_policy(prefix, namespace, policy_name, set_policy_request)
+
+Create a mapping between a policy and a resource entity
+
+Create a mapping between a policy and a resource entity  Policy can be set at different levels: 1. **Table-like level:** Policies specific to individual tables, views, or other table-like entities. 2. **Namespace level:** Policies applies to a namespace. 3. **Catalog level:** Policies that applies to a catalog  Additional parameters can be provided in `parameters` when creating a mapping to define specific behavior or constraints. 
+
+### Example
+
+* OAuth Authentication (OAuth2):
+* Bearer Authentication (BearerAuth):
+
+```python
+import polaris.catalog
+from polaris.catalog.models.set_policy_request import SetPolicyRequest
+from polaris.catalog.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to https://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = polaris.catalog.Configuration(
+    host = "https://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+configuration.access_token = os.environ["ACCESS_TOKEN"]
+
+# Configure Bearer authorization: BearerAuth
+configuration = polaris.catalog.Configuration(
+    access_token = os.environ["BEARER_TOKEN"]
+)
+
+# Enter a context with an instance of the API client
+with polaris.catalog.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = polaris.catalog.IcebergCatalogAPI(api_client)
+    prefix = 'prefix_example' # str | An optional prefix in the path
+    namespace = 'accounting' # str | A namespace identifier as a single string. Multipart namespace parts should be separated by the unit separator (`0x1F`) byte.
+    policy_name = 'policy_name_example' # str | 
+    set_policy_request = polaris.catalog.SetPolicyRequest() # SetPolicyRequest | 
+
+    try:
+        # Create a mapping between a policy and a resource entity
+        api_instance.set_policy(prefix, namespace, policy_name, set_policy_request)
+    except Exception as e:
+        print("Exception when calling IcebergCatalogAPI->set_policy: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **prefix** | **str**| An optional prefix in the path | 
+ **namespace** | **str**| A namespace identifier as a single string. Multipart namespace parts should be separated by the unit separator (&#x60;0x1F&#x60;) byte. | 
+ **policy_name** | **str**|  | 
+ **set_policy_request** | [**SetPolicyRequest**](SetPolicyRequest.md)|  | 
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[OAuth2](../README.md#OAuth2), [BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**204** | Success, no content |  -  |
+**400** | Indicates a bad request error. It could be caused by an unexpected request body format or other forms of request validation failure, such as invalid json. Usually serves application/json content, although in some cases simple text/plain content might be returned by the server&#39;s middleware. |  -  |
+**401** | Unauthorized. Authentication is required and has failed or has not yet been provided. |  -  |
+**403** | Forbidden. Authenticated user does not have the necessary permissions. |  -  |
+**404** | Not Found - NoSuchPolicyException, NoSuchEntityException |  -  |
 **419** | Credentials have timed out. If possible, the client should refresh credentials and retry. |  -  |
 **503** | The service is not ready to handle the request. The client should wait and retry.  The service may additionally send a Retry-After header to indicate when to retry. |  -  |
 **5XX** | A server-side problem that might not be addressable from the client side. Used for server 5xx errors without more specific documentation in individual routes. |  -  |
@@ -1970,6 +2415,193 @@ void (empty response body)
 **401** | Unauthorized. Authentication is required and has failed or has not yet been provided. |  -  |
 **403** | Forbidden. Authenticated user does not have the necessary permissions. |  -  |
 **404** | Not Found - NoSuchTableException, Table not found |  -  |
+**419** | Credentials have timed out. If possible, the client should refresh credentials and retry. |  -  |
+**503** | The service is not ready to handle the request. The client should wait and retry.  The service may additionally send a Retry-After header to indicate when to retry. |  -  |
+**5XX** | A server-side problem that might not be addressable from the client side. Used for server 5xx errors without more specific documentation in individual routes. |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **unset_policy**
+> unset_policy(prefix, namespace, policy_name, unset_policy_request)
+
+Remove a mapping between a policy and a resource entity
+
+Remove a mapping between a policy and a resource entity  A resource entity can be a catalog, namespace, or any table-like entity 
+
+### Example
+
+* OAuth Authentication (OAuth2):
+* Bearer Authentication (BearerAuth):
+
+```python
+import polaris.catalog
+from polaris.catalog.models.unset_policy_request import UnsetPolicyRequest
+from polaris.catalog.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to https://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = polaris.catalog.Configuration(
+    host = "https://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+configuration.access_token = os.environ["ACCESS_TOKEN"]
+
+# Configure Bearer authorization: BearerAuth
+configuration = polaris.catalog.Configuration(
+    access_token = os.environ["BEARER_TOKEN"]
+)
+
+# Enter a context with an instance of the API client
+with polaris.catalog.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = polaris.catalog.IcebergCatalogAPI(api_client)
+    prefix = 'prefix_example' # str | An optional prefix in the path
+    namespace = 'accounting' # str | A namespace identifier as a single string. Multipart namespace parts should be separated by the unit separator (`0x1F`) byte.
+    policy_name = 'policy_name_example' # str | 
+    unset_policy_request = polaris.catalog.UnsetPolicyRequest() # UnsetPolicyRequest | 
+
+    try:
+        # Remove a mapping between a policy and a resource entity
+        api_instance.unset_policy(prefix, namespace, policy_name, unset_policy_request)
+    except Exception as e:
+        print("Exception when calling IcebergCatalogAPI->unset_policy: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **prefix** | **str**| An optional prefix in the path | 
+ **namespace** | **str**| A namespace identifier as a single string. Multipart namespace parts should be separated by the unit separator (&#x60;0x1F&#x60;) byte. | 
+ **policy_name** | **str**|  | 
+ **unset_policy_request** | [**UnsetPolicyRequest**](UnsetPolicyRequest.md)|  | 
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[OAuth2](../README.md#OAuth2), [BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**204** | Success, no content |  -  |
+**400** | Indicates a bad request error. It could be caused by an unexpected request body format or other forms of request validation failure, such as invalid json. Usually serves application/json content, although in some cases simple text/plain content might be returned by the server&#39;s middleware. |  -  |
+**401** | Unauthorized. Authentication is required and has failed or has not yet been provided. |  -  |
+**403** | Forbidden. Authenticated user does not have the necessary permissions. |  -  |
+**404** | Not Found - NoSuchPolicyException, NoSuchEntityException, NoSuchMappingException |  -  |
+**419** | Credentials have timed out. If possible, the client should refresh credentials and retry. |  -  |
+**503** | The service is not ready to handle the request. The client should wait and retry.  The service may additionally send a Retry-After header to indicate when to retry. |  -  |
+**5XX** | A server-side problem that might not be addressable from the client side. Used for server 5xx errors without more specific documentation in individual routes. |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **update_policy**
+> LoadPolicyResult update_policy(prefix, namespace, policy_name, update_policy_request)
+
+Update a policy
+
+Update a policy  A policy's description and content can be updated. The new content is validated against the policy's corresponding validator. Upon a successful update, the policy's version is incremented by 1. 
+
+### Example
+
+* OAuth Authentication (OAuth2):
+* Bearer Authentication (BearerAuth):
+
+```python
+import polaris.catalog
+from polaris.catalog.models.load_policy_result import LoadPolicyResult
+from polaris.catalog.models.update_policy_request import UpdatePolicyRequest
+from polaris.catalog.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to https://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = polaris.catalog.Configuration(
+    host = "https://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+configuration.access_token = os.environ["ACCESS_TOKEN"]
+
+# Configure Bearer authorization: BearerAuth
+configuration = polaris.catalog.Configuration(
+    access_token = os.environ["BEARER_TOKEN"]
+)
+
+# Enter a context with an instance of the API client
+with polaris.catalog.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = polaris.catalog.IcebergCatalogAPI(api_client)
+    prefix = 'prefix_example' # str | An optional prefix in the path
+    namespace = 'accounting' # str | A namespace identifier as a single string. Multipart namespace parts should be separated by the unit separator (`0x1F`) byte.
+    policy_name = 'policy_name_example' # str | 
+    update_policy_request = polaris.catalog.UpdatePolicyRequest() # UpdatePolicyRequest | 
+
+    try:
+        # Update a policy
+        api_response = api_instance.update_policy(prefix, namespace, policy_name, update_policy_request)
+        print("The response of IcebergCatalogAPI->update_policy:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling IcebergCatalogAPI->update_policy: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **prefix** | **str**| An optional prefix in the path | 
+ **namespace** | **str**| A namespace identifier as a single string. Multipart namespace parts should be separated by the unit separator (&#x60;0x1F&#x60;) byte. | 
+ **policy_name** | **str**|  | 
+ **update_policy_request** | [**UpdatePolicyRequest**](UpdatePolicyRequest.md)|  | 
+
+### Return type
+
+[**LoadPolicyResult**](LoadPolicyResult.md)
+
+### Authorization
+
+[OAuth2](../README.md#OAuth2), [BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | Response used when a policy is successfully updated The updated policy JSON is returned in the policy field |  -  |
+**400** | Indicates a bad request error. It could be caused by an unexpected request body format or other forms of request validation failure, such as invalid json. Usually serves application/json content, although in some cases simple text/plain content might be returned by the server&#39;s middleware. |  -  |
+**401** | Unauthorized. Authentication is required and has failed or has not yet been provided. |  -  |
+**403** | Forbidden. Authenticated user does not have the necessary permissions. |  -  |
+**404** | Not Found - NoSuchPolicyException, policy to get does not exist |  -  |
 **419** | Credentials have timed out. If possible, the client should refresh credentials and retry. |  -  |
 **503** | The service is not ready to handle the request. The client should wait and retry.  The service may additionally send a Retry-After header to indicate when to retry. |  -  |
 **5XX** | A server-side problem that might not be addressable from the client side. Used for server 5xx errors without more specific documentation in individual routes. |  -  |
@@ -2076,7 +2708,7 @@ Name | Type | Description  | Notes
 
 Commit updates to a table
 
-Commit updates to a table.  Commits have two parts, requirements and updates. Requirements are assertions that will be validated before attempting to make and commit changes. For example, `assert-ref-snapshot-id` will check that a named ref's snapshot ID has a certain value.  Updates are changes to make to table metadata. For example, after asserting that the current main ref is at the expected snapshot, a commit may add a new child snapshot and set the ref to the new snapshot id.  Create table transactions that are started by createTable with `stage-create` set to true are committed using this route. Transactions should include all changes to the table, including table initialization, like AddSchemaUpdate and SetCurrentSchemaUpdate. The `assert-create` requirement is used to ensure that the table was not created concurrently.
+Commit updates to a table.  Commits have two parts, requirements and updates. Requirements are assertions that will be validated before attempting to make and commit changes. For example, `assert-ref-snapshot-id` will check that a named ref's snapshot ID has a certain value. Server implementations are required to fail with a 400 status code if any unknown updates or requirements are received.  Updates are changes to make to table metadata. For example, after asserting that the current main ref is at the expected snapshot, a commit may add a new child snapshot and set the ref to the new snapshot id.  Create table transactions that are started by createTable with `stage-create` set to true are committed using this route. Transactions should include all changes to the table, including table initialization, like AddSchemaUpdate and SetCurrentSchemaUpdate. The `assert-create` requirement is used to ensure that the table was not created concurrently.
 
 ### Example
 

@@ -1552,6 +1552,7 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
                 .setOwnerEntity(
                     NamespaceIdentifier.builder()
                         .setCatalog(catalogName)
+                        .setType(EntityIdentifier.TypeEnum.NAMESPACE)
                         .setNamespace(Arrays.asList(namespace.levels()))
                         .build()) // TODO: we may need to manually build the type
                 .setPolicyType(policyEntity.getPolicyType())

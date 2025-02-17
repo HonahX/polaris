@@ -702,13 +702,13 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
                 CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.TABLE_CREATE))
         .isTrue();
     Assertions.assertThat(
-                    adminService.grantPrivilegeOnCatalogToRole(
-                            CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.TABLE_READ_DATA))
-            .isTrue();
+            adminService.grantPrivilegeOnCatalogToRole(
+                CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.TABLE_READ_DATA))
+        .isTrue();
     Assertions.assertThat(
-                    adminService.grantPrivilegeOnCatalogToRole(
-                            CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.TABLE_READ_PROPERTIES))
-            .isTrue();
+            adminService.grantPrivilegeOnCatalogToRole(
+                CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.TABLE_READ_PROPERTIES))
+        .isTrue();
     Assertions.assertThat(
             adminService.grantPrivilegeOnCatalogToRole(
                 CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.POLICY_CREATE))

@@ -38,6 +38,7 @@ docs/EntityIdentifier.md
 docs/ErrorModel.md
 docs/Expression.md
 docs/FalseExpression.md
+docs/GetApplicablePoliciesResponse.md
 docs/GetNamespaceResponse.md
 docs/IcebergCatalogAPI.md
 docs/IcebergConfigurationAPI.md
@@ -171,6 +172,7 @@ polaris/catalog/models/entity_identifier.py
 polaris/catalog/models/error_model.py
 polaris/catalog/models/expression.py
 polaris/catalog/models/false_expression.py
+polaris/catalog/models/get_applicable_policies_response.py
 polaris/catalog/models/get_namespace_response.py
 polaris/catalog/models/iceberg_error_response.py
 polaris/catalog/models/iceberg_error_response1.py
@@ -262,20 +264,5 @@ setup.cfg
 setup.py
 test-requirements.txt
 test/__init__.py
-test/test_catalog_identifier.py
-test/test_create_policy_request.py
-test/test_entity_identifier.py
-test/test_false_expression.py
-test/test_iceberg_error_response1.py
-test/test_load_credentials_response.py
-test/test_load_policy_result.py
-test/test_namespace_identifier.py
-test/test_policy.py
-test/test_remove_partition_specs_update.py
-test/test_set_policy_request.py
-test/test_storage_credential.py
-test/test_table_like_identifier.py
-test/test_true_expression.py
-test/test_unset_policy_request.py
-test/test_update_policy_request.py
+test/test_get_applicable_policies_response.py
 tox.ini

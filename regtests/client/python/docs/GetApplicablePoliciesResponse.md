@@ -1,0 +1,30 @@
+# GetApplicablePoliciesResponse
+
+
+## Properties
+
+Name | Type | Description | Notes
+------------ | ------------- | ------------- | -------------
+**next_page_token** | **str** | An opaque token that allows clients to make use of pagination for list APIs (e.g. ListTables). Clients may initiate the first paginated request by sending an empty query parameter &#x60;pageToken&#x60; to the server. Servers that support pagination should identify the &#x60;pageToken&#x60; parameter and return a &#x60;next-page-token&#x60; in the response if there are more results available.  After the initial request, the value of &#x60;next-page-token&#x60; from each response must be used as the &#x60;pageToken&#x60; parameter value for the next request. The server must return &#x60;null&#x60; value for the &#x60;next-page-token&#x60; in the last response. Servers that support pagination must return all results in a single response with the value of &#x60;next-page-token&#x60; set to &#x60;null&#x60; if the query parameter &#x60;pageToken&#x60; is not set in the request. Servers that do not support pagination should ignore the &#x60;pageToken&#x60; parameter and return all results in a single response. The &#x60;next-page-token&#x60; must be omitted from the response. Clients must interpret either &#x60;null&#x60; or missing response value of &#x60;next-page-token&#x60; as the end of the listing results. | [optional] 
+**policies** | [**List[Policy]**](Policy.md) |  | 
+
+## Example
+
+```python
+from polaris.catalog.models.get_applicable_policies_response import GetApplicablePoliciesResponse
+
+# TODO update the JSON string below
+json = "{}"
+# create an instance of GetApplicablePoliciesResponse from a JSON string
+get_applicable_policies_response_instance = GetApplicablePoliciesResponse.from_json(json)
+# print the JSON string representation of the object
+print(GetApplicablePoliciesResponse.to_json())
+
+# convert the object into a dict
+get_applicable_policies_response_dict = get_applicable_policies_response_instance.to_dict()
+# create an instance of GetApplicablePoliciesResponse from a dict
+get_applicable_policies_response_from_dict = GetApplicablePoliciesResponse.from_dict(get_applicable_policies_response_dict)
+```
+[[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
+
+

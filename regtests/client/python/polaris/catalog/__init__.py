@@ -86,6 +86,7 @@ from polaris.catalog.models.entity_identifier import EntityIdentifier
 from polaris.catalog.models.error_model import ErrorModel
 from polaris.catalog.models.expression import Expression
 from polaris.catalog.models.false_expression import FalseExpression
+from polaris.catalog.models.get_applicable_policies_response import GetApplicablePoliciesResponse
 from polaris.catalog.models.get_namespace_response import GetNamespaceResponse
 from polaris.catalog.models.iceberg_error_response import IcebergErrorResponse
 from polaris.catalog.models.iceberg_error_response1 import IcebergErrorResponse1

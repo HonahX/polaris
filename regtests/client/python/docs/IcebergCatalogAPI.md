@@ -13,6 +13,7 @@ Method | HTTP request | Description
 [**drop_namespace**](IcebergCatalogAPI.md#drop_namespace) | **DELETE** /v1/{prefix}/namespaces/{namespace} | Drop a namespace from the catalog. Namespace must be empty.
 [**drop_table**](IcebergCatalogAPI.md#drop_table) | **DELETE** /v1/{prefix}/namespaces/{namespace}/tables/{table} | Drop a table from the catalog
 [**drop_view**](IcebergCatalogAPI.md#drop_view) | **DELETE** /v1/{prefix}/namespaces/{namespace}/views/{view} | Drop a view from the catalog
+[**get_applicable_policies_on_table**](IcebergCatalogAPI.md#get_applicable_policies_on_table) | **GET** /v1/{prefix}/namespaces/{namespace}/tables/{table}/policies | Get Applicable policies for a table
 [**get_policy**](IcebergCatalogAPI.md#get_policy) | **GET** /v1/{prefix}/namespaces/{namespace}/policies/{policyName} | Get a policy
 [**list_namespaces**](IcebergCatalogAPI.md#list_namespaces) | **GET** /v1/{prefix}/namespaces | List namespaces, optionally providing a parent namespace to list underneath
 [**list_tables**](IcebergCatalogAPI.md#list_tables) | **GET** /v1/{prefix}/namespaces/{namespace}/tables | List all table identifiers underneath a given namespace
@@ -849,6 +850,98 @@ void (empty response body)
 **401** | Unauthorized. Authentication is required and has failed or has not yet been provided. |  -  |
 **403** | Forbidden. Authenticated user does not have the necessary permissions. |  -  |
 **404** | Not Found - NoSuchViewException, view to drop does not exist |  -  |
+**419** | Credentials have timed out. If possible, the client should refresh credentials and retry. |  -  |
+**503** | The service is not ready to handle the request. The client should wait and retry.  The service may additionally send a Retry-After header to indicate when to retry. |  -  |
+**5XX** | A server-side problem that might not be addressable from the client side. Used for server 5xx errors without more specific documentation in individual routes. |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **get_applicable_policies_on_table**
+> GetApplicablePoliciesResponse get_applicable_policies_on_table(prefix, namespace, table)
+
+Get Applicable policies for a table
+
+Get Applicable policies for a table  Optionally filter by policy type This API will also return all policies inherit from table's namespaces/catalogs 
+
+### Example
+
+* OAuth Authentication (OAuth2):
+* Bearer Authentication (BearerAuth):
+
+```python
+import polaris.catalog
+from polaris.catalog.models.get_applicable_policies_response import GetApplicablePoliciesResponse
+from polaris.catalog.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to https://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = polaris.catalog.Configuration(
+    host = "https://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+configuration.access_token = os.environ["ACCESS_TOKEN"]
+
+# Configure Bearer authorization: BearerAuth
+configuration = polaris.catalog.Configuration(
+    access_token = os.environ["BEARER_TOKEN"]
+)
+
+# Enter a context with an instance of the API client
+with polaris.catalog.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = polaris.catalog.IcebergCatalogAPI(api_client)
+    prefix = 'prefix_example' # str | An optional prefix in the path
+    namespace = 'accounting' # str | A namespace identifier as a single string. Multipart namespace parts should be separated by the unit separator (`0x1F`) byte.
+    table = 'sales' # str | A table name
+
+    try:
+        # Get Applicable policies for a table
+        api_response = api_instance.get_applicable_policies_on_table(prefix, namespace, table)
+        print("The response of IcebergCatalogAPI->get_applicable_policies_on_table:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling IcebergCatalogAPI->get_applicable_policies_on_table: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **prefix** | **str**| An optional prefix in the path | 
+ **namespace** | **str**| A namespace identifier as a single string. Multipart namespace parts should be separated by the unit separator (&#x60;0x1F&#x60;) byte. | 
+ **table** | **str**| A table name | 
+
+### Return type
+
+[**GetApplicablePoliciesResponse**](GetApplicablePoliciesResponse.md)
+
+### Authorization
+
+[OAuth2](../README.md#OAuth2), [BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | A list of policies applicable to the table |  -  |
+**400** | Indicates a bad request error. It could be caused by an unexpected request body format or other forms of request validation failure, such as invalid json. Usually serves application/json content, although in some cases simple text/plain content might be returned by the server&#39;s middleware. |  -  |
+**401** | Unauthorized. Authentication is required and has failed or has not yet been provided. |  -  |
+**403** | Forbidden. Authenticated user does not have the necessary permissions. |  -  |
+**404** | Not Found - NoSuchTableException, table to load does not exist |  -  |
 **419** | Credentials have timed out. If possible, the client should refresh credentials and retry. |  -  |
 **503** | The service is not ready to handle the request. The client should wait and retry.  The service may additionally send a Retry-After header to indicate when to retry. |  -  |
 **5XX** | A server-side problem that might not be addressable from the client side. Used for server 5xx errors without more specific documentation in individual routes. |  -  |

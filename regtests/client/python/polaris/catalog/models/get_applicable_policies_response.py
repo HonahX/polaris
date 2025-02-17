@@ -35,31 +35,19 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr, field_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictStr
 from typing import Any, ClassVar, Dict, List, Optional
-from typing_extensions import Annotated
+from polaris.catalog.models.policy import Policy
 from typing import Optional, Set
 from typing_extensions import Self
 
-class Policy(BaseModel):
+class GetApplicablePoliciesResponse(BaseModel):
     """
-    A policy in Apache Polaris defines a set of rules for governing access, data usage, and operational consistency across various catalog resources.  Policies are stored within Polaris and can be applied to catalogs, namespaces, tables, views, and other table-like entities. For example, they can be used for fine-grained control over who can perform specific actions on certain resources.  The policy object includes - **policy-type:** The type of the policy, which determines the expected format and semantics of the policy content. - **name:**  A human-readable name for the policy, which must be unique within a given namespace. - **description:** Detailed description of the purpose and functionalities of the policy. - **content:** Policy content, which can be validated against predefined schemas of a policy type. - **version:** Indicates the current version of the policy. Versions increased monotonically, the default value is 0 - **created_at:** A timestamp (in milliseconds) indicating when the policy was created. - **updated_at:** A timestamp (in milliseconds) indicating the last update time of the policy.  Policies stored in Polaris serve as the persistent definition for access control and governance rules. 
+    GetApplicablePoliciesResponse
     """ # noqa: E501
-    policy_type: StrictStr = Field(alias="policy-type")
-    name: Annotated[str, Field(strict=True)] = Field(description="A policy name. A valid policy name should only consist of uppercase and lowercase letters (A-Z, a-z), digits (0-9), hyphens (-), underscores (_).")
-    description: Optional[StrictStr] = None
-    content: Optional[StrictStr] = None
-    version: StrictInt
-    created_at_ms: Optional[StrictInt] = Field(default=None, alias="created-at-ms")
-    updated_at_ms: Optional[StrictInt] = Field(default=None, alias="updated-at-ms")
-    __properties: ClassVar[List[str]] = ["policy-type", "name", "description", "content", "version", "created-at-ms", "updated-at-ms"]
-
-    @field_validator('name')
-    def name_validate_regular_expression(cls, value):
-        """Validates the regular expression"""
-        if not re.match(r"^[A-Za-z0-9\-_]+$", value):
-            raise ValueError(r"must validate the regular expression /^[A-Za-z0-9\-_]+$/")
-        return value
+    next_page_token: Optional[StrictStr] = Field(default=None, description="An opaque token that allows clients to make use of pagination for list APIs (e.g. ListTables). Clients may initiate the first paginated request by sending an empty query parameter `pageToken` to the server. Servers that support pagination should identify the `pageToken` parameter and return a `next-page-token` in the response if there are more results available.  After the initial request, the value of `next-page-token` from each response must be used as the `pageToken` parameter value for the next request. The server must return `null` value for the `next-page-token` in the last response. Servers that support pagination must return all results in a single response with the value of `next-page-token` set to `null` if the query parameter `pageToken` is not set in the request. Servers that do not support pagination should ignore the `pageToken` parameter and return all results in a single response. The `next-page-token` must be omitted from the response. Clients must interpret either `null` or missing response value of `next-page-token` as the end of the listing results.", alias="next-page-token")
+    policies: List[Policy]
+    __properties: ClassVar[List[str]] = ["next-page-token", "policies"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -79,7 +67,7 @@ class Policy(BaseModel):
 
     @classmethod
     def from_json(cls, json_str: str) -> Optional[Self]:
-        """Create an instance of Policy from a JSON string"""
+        """Create an instance of GetApplicablePoliciesResponse from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 
     def to_dict(self) -> Dict[str, Any]:
@@ -100,11 +88,23 @@ class Policy(BaseModel):
             exclude=excluded_fields,
             exclude_none=True,
         )
+        # override the default output from pydantic by calling `to_dict()` of each item in policies (list)
+        _items = []
+        if self.policies:
+            for _item_policies in self.policies:
+                if _item_policies:
+                    _items.append(_item_policies.to_dict())
+            _dict['policies'] = _items
+        # set to None if next_page_token (nullable) is None
+        # and model_fields_set contains the field
+        if self.next_page_token is None and "next_page_token" in self.model_fields_set:
+            _dict['next-page-token'] = None
+
         return _dict
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
-        """Create an instance of Policy from a dict"""
+        """Create an instance of GetApplicablePoliciesResponse from a dict"""
         if obj is None:
             return None
 
@@ -112,13 +112,8 @@ class Policy(BaseModel):
             return cls.model_validate(obj)
 
         _obj = cls.model_validate({
-            "policy-type": obj.get("policy-type"),
-            "name": obj.get("name"),
-            "description": obj.get("description"),
-            "content": obj.get("content"),
-            "version": obj.get("version"),
-            "created-at-ms": obj.get("created-at-ms"),
-            "updated-at-ms": obj.get("updated-at-ms")
+            "next-page-token": obj.get("next-page-token"),
+            "policies": [Policy.from_dict(_item) for _item in obj["policies"]] if obj.get("policies") is not None else None
         })
         return _obj
 

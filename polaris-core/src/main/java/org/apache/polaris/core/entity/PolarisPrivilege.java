@@ -111,12 +111,10 @@ public enum PolarisPrivilege {
   POLICY_DETACH(76, PolarisEntityType.POLICY),
   CATALOG_ATTACH_POLICY(77, PolarisEntityType.CATALOG),
   NAMESPACE_ATTACH_POLICY(78, PolarisEntityType.NAMESPACE),
-  TABLE_ATTACH_POLICY(79, PolarisEntityType.TABLE_LIKE, PolarisEntitySubType.TABLE),
-  VIEW_ATTACH_POLICY(80, PolarisEntityType.TABLE_LIKE, PolarisEntitySubType.VIEW),
-  CATALOG_DETACH_POLICY(81, PolarisEntityType.CATALOG),
-  NAMESPACE_DETACH_POLICY(82, PolarisEntityType.NAMESPACE),
-  TABLE_DETACH_POLICY(83, PolarisEntityType.TABLE_LIKE, PolarisEntitySubType.TABLE),
-  VIEW_DETACH_POLICY(84, PolarisEntityType.TABLE_LIKE, PolarisEntitySubType.VIEW),
+  TABLE_LIKE_ATTACH_POLICY(79, PolarisEntityType.TABLE_LIKE),
+  CATALOG_DETACH_POLICY(80, PolarisEntityType.CATALOG),
+  NAMESPACE_DETACH_POLICY(81, PolarisEntityType.NAMESPACE),
+  TABLE_LIKE_DETACH_POLICY(82, PolarisEntityType.TABLE_LIKE),
   ;
 
   /**

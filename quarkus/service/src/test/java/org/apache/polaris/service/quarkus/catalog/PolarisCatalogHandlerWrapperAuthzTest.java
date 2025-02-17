@@ -23,10 +23,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import jakarta.ws.rs.core.SecurityContext;
 import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.CatalogUtil;
@@ -590,90 +587,168 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
   @Test
   public void testCreatePolicyAllSufficientPrivileges() {
     Assertions.assertThat(
-                    adminService.grantPrivilegeOnCatalogToRole(
-                            CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.TABLE_DROP))
-            .isTrue();
+            adminService.grantPrivilegeOnCatalogToRole(
+                CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.TABLE_DROP))
+        .isTrue();
     Assertions.assertThat(
-                    adminService.grantPrivilegeOnCatalogToRole(
-                            CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.TABLE_WRITE_DATA))
-            .isTrue();
+            adminService.grantPrivilegeOnCatalogToRole(
+                CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.TABLE_WRITE_DATA))
+        .isTrue();
     Assertions.assertThat(
-                    adminService.grantPrivilegeOnCatalogToRole(
-                            CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.POLICY_CREATE))
-            .isTrue();
+            adminService.grantPrivilegeOnCatalogToRole(
+                CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.POLICY_CREATE))
+        .isTrue();
 
     final TableIdentifier newtable = TableIdentifier.of(NS2, "newtable");
     final CreateTableRequest createRequest =
-            CreateTableRequest.builder().withName("newtable").withSchema(SCHEMA).build();
-
+        CreateTableRequest.builder().withName("newtable").withSchema(SCHEMA).build();
 
     // Use PRINCIPAL_ROLE1 for privilege-testing, PRINCIPAL_ROLE2 for cleanup.
     doTestSufficientPrivileges(
-            List.of(
-                   PolarisPrivilege.POLICY_CREATE),
-            () -> {
-              CreatePolicyRequest createPolicyRequest = CreatePolicyRequest.builder().setName("policy_test")
-                      .setType("example_type").setContent("exmaple_content").setDescription("description_test").build();
-              LoadPolicyResult result = newWrapper(Set.of(PRINCIPAL_ROLE1)).createPolicy(NS2, createPolicyRequest);
-              Assertions.assertThat(result.getPolicy().getName()).isEqualTo("policy_test");
-              Assertions.assertThat(result.getPolicy().getPolicyType()).isEqualTo("example_type");
-              Assertions.assertThat(result.getPolicy().getContent()).isEqualTo("exmaple_content");
-              Assertions.assertThat(result.getPolicy().getDescription()).isEqualTo("description_test");
-            },
-            () -> {
-//              newWrapper(Set.of(PRINCIPAL_ROLE2)).dropTableWithPurge(newtable);
-            });
+        List.of(PolarisPrivilege.POLICY_CREATE),
+        () -> {
+          CreatePolicyRequest createPolicyRequest =
+              CreatePolicyRequest.builder()
+                  .setName("policy_test")
+                  .setType("example_type")
+                  .setContent("exmaple_content")
+                  .setDescription("description_test")
+                  .build();
+          LoadPolicyResult result =
+              newWrapper(Set.of(PRINCIPAL_ROLE1)).createPolicy(NS2, createPolicyRequest);
+          Assertions.assertThat(result.getPolicy().getName()).isEqualTo("policy_test");
+          Assertions.assertThat(result.getPolicy().getPolicyType()).isEqualTo("example_type");
+          Assertions.assertThat(result.getPolicy().getContent()).isEqualTo("exmaple_content");
+          Assertions.assertThat(result.getPolicy().getDescription()).isEqualTo("description_test");
+        },
+        () -> {
+          //              newWrapper(Set.of(PRINCIPAL_ROLE2)).dropTableWithPurge(newtable);
+        });
 
     doTestSufficientPrivileges(
-            List.of(PolarisPrivilege.POLICY_READ),
-            () -> {
-              LoadPolicyResult result = newWrapper(Set.of(PRINCIPAL_ROLE1)).getPolicy(NS2, "policy_test");
-              Assertions.assertThat(result.getPolicy().getName()).isEqualTo("policy_test");
-              Assertions.assertThat(result.getPolicy().getPolicyType()).isEqualTo("example_type");
-              Assertions.assertThat(result.getPolicy().getContent()).isEqualTo("exmaple_content");
-              Assertions.assertThat(result.getPolicy().getDescription()).isEqualTo("description_test");
-            },
-            () -> {
-      // test
-            });
+        List.of(PolarisPrivilege.POLICY_READ),
+        () -> {
+          LoadPolicyResult result =
+              newWrapper(Set.of(PRINCIPAL_ROLE1)).getPolicy(NS2, "policy_test");
+          Assertions.assertThat(result.getPolicy().getName()).isEqualTo("policy_test");
+          Assertions.assertThat(result.getPolicy().getPolicyType()).isEqualTo("example_type");
+          Assertions.assertThat(result.getPolicy().getContent()).isEqualTo("exmaple_content");
+          Assertions.assertThat(result.getPolicy().getDescription()).isEqualTo("description_test");
+        },
+        () -> {
+          // test
+        });
 
     doTestSufficientPrivileges(
-            List.of(PolarisPrivilege.POLICY_WRITE),
-            () -> {
-            UpdatePolicyRequest updatePolicyRequest = UpdatePolicyRequest.builder().setContent("updated_content").setDescription("updated_description").build();
-              LoadPolicyResult result=  newWrapper(Set.of(PRINCIPAL_ROLE1)).updatePolicy(NS2, "policy_test", updatePolicyRequest);
-              Assertions.assertThat(result.getPolicy().getName()).isEqualTo("policy_test");
-              Assertions.assertThat(result.getPolicy().getPolicyType()).isEqualTo("example_type");
-              Assertions.assertThat(result.getPolicy().getContent()).isEqualTo("updated_content");
-              Assertions.assertThat(result.getPolicy().getDescription()).isEqualTo("updated_description");
-
-            },
-            () -> {}
-    );
-
-    doTestSufficientPrivileges(
-            List.of(PolarisPrivilege.POLICY_READ),
-            () -> {
-              LoadPolicyResult result = newWrapper(Set.of(PRINCIPAL_ROLE1)).getPolicy(NS2, "policy_test");
-              Assertions.assertThat(result.getPolicy().getName()).isEqualTo("policy_test");
-              Assertions.assertThat(result.getPolicy().getPolicyType()).isEqualTo("example_type");
-              Assertions.assertThat(result.getPolicy().getContent()).isEqualTo("updated_content");
-              Assertions.assertThat(result.getPolicy().getDescription()).isEqualTo("updated_description");
-            },
-            () -> {
-              // test
-            });
+        List.of(PolarisPrivilege.POLICY_WRITE),
+        () -> {
+          UpdatePolicyRequest updatePolicyRequest =
+              UpdatePolicyRequest.builder()
+                  .setContent("updated_content")
+                  .setDescription("updated_description")
+                  .build();
+          LoadPolicyResult result =
+              newWrapper(Set.of(PRINCIPAL_ROLE1))
+                  .updatePolicy(NS2, "policy_test", updatePolicyRequest);
+          Assertions.assertThat(result.getPolicy().getName()).isEqualTo("policy_test");
+          Assertions.assertThat(result.getPolicy().getPolicyType()).isEqualTo("example_type");
+          Assertions.assertThat(result.getPolicy().getContent()).isEqualTo("updated_content");
+          Assertions.assertThat(result.getPolicy().getDescription())
+              .isEqualTo("updated_description");
+        },
+        () -> {});
 
     doTestSufficientPrivileges(
-            List.of(PolarisPrivilege.POLICY_DROP),
-            () -> {
-              newWrapper(Set.of(PRINCIPAL_ROLE1)).deletePolicy(NS2, "policy_test");
-            },
-            () -> {
-              CreatePolicyRequest createPolicyRequest = CreatePolicyRequest.builder().setName("policy_test")
-                      .setType("example_type").setContent("exmaple_content").setDescription("description_test").build();
-              newWrapper(Set.of(PRINCIPAL_ROLE2)).createPolicy(NS2, createPolicyRequest);
-            });
+        List.of(PolarisPrivilege.POLICY_READ),
+        () -> {
+          LoadPolicyResult result =
+              newWrapper(Set.of(PRINCIPAL_ROLE1)).getPolicy(NS2, "policy_test");
+          Assertions.assertThat(result.getPolicy().getName()).isEqualTo("policy_test");
+          Assertions.assertThat(result.getPolicy().getPolicyType()).isEqualTo("example_type");
+          Assertions.assertThat(result.getPolicy().getContent()).isEqualTo("updated_content");
+          Assertions.assertThat(result.getPolicy().getDescription())
+              .isEqualTo("updated_description");
+        },
+        () -> {
+          // test
+        });
+
+    doTestSufficientPrivileges(
+        List.of(PolarisPrivilege.POLICY_DROP),
+        () -> {
+          newWrapper(Set.of(PRINCIPAL_ROLE1)).deletePolicy(NS2, "policy_test");
+        },
+        () -> {
+          CreatePolicyRequest createPolicyRequest =
+              CreatePolicyRequest.builder()
+                  .setName("policy_test")
+                  .setType("example_type")
+                  .setContent("exmaple_content")
+                  .setDescription("description_test")
+                  .build();
+          newWrapper(Set.of(PRINCIPAL_ROLE2)).createPolicy(NS2, createPolicyRequest);
+        });
+  }
+
+  @Test
+  public void testPolicyMappingAllSufficientPrivileges() {
+    Assertions.assertThat(
+            adminService.grantPrivilegeOnCatalogToRole(
+                CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.TABLE_DROP))
+        .isTrue();
+    Assertions.assertThat(
+            adminService.grantPrivilegeOnCatalogToRole(
+                CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.TABLE_WRITE_DATA))
+        .isTrue();
+    Assertions.assertThat(
+            adminService.grantPrivilegeOnCatalogToRole(
+                CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.TABLE_CREATE))
+        .isTrue();
+    Assertions.assertThat(
+            adminService.grantPrivilegeOnCatalogToRole(
+                CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.POLICY_CREATE))
+        .isTrue();
+    Assertions.assertThat(
+            adminService.grantPrivilegeOnCatalogToRole(
+                CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.POLICY_READ))
+        .isTrue();
+    Assertions.assertThat(
+            adminService.grantPrivilegeOnCatalogToRole(
+                CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.POLICY_ATTACH))
+        .isTrue();
+    Assertions.assertThat(
+            adminService.grantPrivilegeOnCatalogToRole(
+                CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.TABLE_LIKE_ATTACH_POLICY))
+        .isTrue();
+
+    final TableIdentifier newtable = TableIdentifier.of(NS1, "newtable");
+    final CreateTableRequest createRequest =
+        CreateTableRequest.builder().withName("newtable").withSchema(SCHEMA).build();
+
+    final CreatePolicyRequest createPolicyRequest =
+        CreatePolicyRequest.builder()
+            .setName("policy_test")
+            .setType("example_type")
+            .setContent("exmaple_content")
+            .setDescription("description_test")
+            .build();
+    newWrapper(Set.of(PRINCIPAL_ROLE2)).createPolicy(NS2, createPolicyRequest);
+    newWrapper(Set.of(PRINCIPAL_ROLE2)).getPolicy(NS2, "policy_test");
+    newWrapper(Set.of(PRINCIPAL_ROLE2)).createTableDirect(NS1, createRequest);
+    newWrapper(Set.of(PRINCIPAL_ROLE2)).loadTable(newtable, "");
+
+    final SetPolicyRequest setPolicyRequest =
+        SetPolicyRequest.builder()
+            .setEntity(
+                TableLikeIdentifier.builder()
+                    .setCatalog(CATALOG_NAME)
+                    .setNamespace(Arrays.asList(NS1.levels()))
+                    .setName("newtable")
+                    .setType(EntityIdentifier.TypeEnum.TABLE_LIKE)
+                    .build())
+            .build();
+
+    newWrapper(Set.of(PRINCIPAL_ROLE2)).setPolicy(NS2, "policy_test", setPolicyRequest);
   }
 
   @Test

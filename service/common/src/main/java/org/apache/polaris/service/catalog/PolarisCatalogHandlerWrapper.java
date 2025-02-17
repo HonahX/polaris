@@ -48,13 +48,7 @@ import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.SupportsNamespaces;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.catalog.ViewCatalog;
-import org.apache.iceberg.exceptions.AlreadyExistsException;
-import org.apache.iceberg.exceptions.BadRequestException;
-import org.apache.iceberg.exceptions.CommitFailedException;
-import org.apache.iceberg.exceptions.ForbiddenException;
-import org.apache.iceberg.exceptions.NoSuchNamespaceException;
-import org.apache.iceberg.exceptions.NoSuchTableException;
-import org.apache.iceberg.exceptions.NoSuchViewException;
+import org.apache.iceberg.exceptions.*;
 import org.apache.iceberg.rest.CatalogHandlers;
 import org.apache.iceberg.rest.requests.CommitTransactionRequest;
 import org.apache.iceberg.rest.requests.CreateNamespaceRequest;
@@ -1146,6 +1140,7 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     CatalogHandlers.renameView(viewCatalog, request);
   }
 
+  // TODO: need to handle already exist case
   public LoadPolicyResult createPolicy(Namespace namespace, CreatePolicyRequest request) {
     // PolarisAuthorizableOperation op = PolarisAuthorizableOperation.
     PolarisAuthorizableOperation op = PolarisAuthorizableOperation.CREATE_POLICY;
@@ -1261,6 +1256,128 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
       // TODO: a better error message for policy
       throw new NoSuchTableException("Policy does not exist: %s", policyName);
     }
+  }
+
+  public void setPolicy(Namespace namespace, String policyName, SetPolicyRequest request) {
+    switch (request.getEntity()) {
+      case CatalogIdentifier catalogIdentifier:
+        {
+          break;
+        }
+
+      case NamespaceIdentifier namespaceIdentifier:
+        {
+          break;
+        }
+
+      case TableLikeIdentifier tableLikeIdentifier:
+        {
+          setPolicyOnTableLike(namespace, policyName, tableLikeIdentifier, request.getParameters());
+          break;
+        }
+
+      default:
+        LOGGER.atWarn().log("Don't know how to set policy: {}", request.getEntity());
+    }
+  }
+
+  private void setPolicyOnTableLike(
+      Namespace namespace,
+      String policyName,
+      TableLikeIdentifier tableLikeIdentifier,
+      Map<String, String> parameters) {
+    PolarisAuthorizableOperation op = PolarisAuthorizableOperation.ATTACH_POLICY_TO_TABLE_LIKE;
+    authorizeSetPolicyOnTableLikeOrThrow(op, namespace, policyName, tableLikeIdentifier);
+
+    TableIdentifier policyIdentifier = TableIdentifier.of(namespace, policyName);
+
+    List<String> rawNamespace = tableLikeIdentifier.getNamespace();
+    TableIdentifier targetIdentifier =
+        TableIdentifier.of(
+            Namespace.of(rawNamespace.toArray(new String[0])), tableLikeIdentifier.getName());
+
+    PolarisResolvedPathWrapper resolvedPolicyPathWrapper =
+        resolutionManifest.getResolvedPath(policyIdentifier);
+    if (resolvedPolicyPathWrapper == null) {
+      throw new NotFoundException("Policy does not exist: %s", policyIdentifier);
+    }
+
+    PolarisResolvedPathWrapper resolvedTargetPathWrapper =
+        resolutionManifest.getResolvedPath(targetIdentifier);
+    if (resolvedTargetPathWrapper == null) {
+      throw new NotFoundException("Target path does not exist: %s", targetIdentifier);
+    }
+    List<PolarisEntity> policyCatalogPath = resolvedPolicyPathWrapper.getRawParentPath();
+    PolarisEntity policyEntity = resolvedPolicyPathWrapper.getRawLeafEntity();
+
+    List<PolarisEntity> targetCatalogPath = resolvedTargetPathWrapper.getRawParentPath();
+    PolarisEntity targetEntity = resolvedTargetPathWrapper.getRawLeafEntity();
+    PolarisMetaStoreManager.AttachmentResult result =
+        getMetaStoreManager()
+            .attachPolicyToEntity(
+                session,
+                targetEntity,
+                PolarisEntity.toCoreList(targetCatalogPath),
+                PolicyEntity.of(policyEntity),
+                PolarisEntity.toCoreList(policyCatalogPath),
+                parameters);
+
+    if (!result.isSuccess()) {
+      throw new IllegalStateException("Failed to attach policy to entity");
+    }
+  }
+
+  private void authorizeSetPolicyOnTableLikeOrThrow(
+      PolarisAuthorizableOperation op,
+      Namespace namespace,
+      String policyName,
+      TableLikeIdentifier tableLikeIdentifier) {
+    // TODO: currently for only one catalog, but tableLike can exist in a different catalog
+    resolutionManifest =
+        entityManager.prepareResolutionManifest(session, securityContext, catalogName);
+    TableIdentifier policyIdentifier = TableIdentifier.of(namespace, policyName);
+    resolutionManifest.addPath(
+        new ResolverPath(
+            PolarisCatalogHelpers.tableIdentifierToList(policyIdentifier),
+            PolarisEntityType.POLICY),
+        policyIdentifier);
+    List<String> rawNamespace = tableLikeIdentifier.getNamespace();
+    TableIdentifier targetIdentifier =
+        TableIdentifier.of(
+            Namespace.of(rawNamespace.toArray(new String[0])), tableLikeIdentifier.getName());
+    resolutionManifest.addPath(
+        new ResolverPath(
+            PolarisCatalogHelpers.tableIdentifierToList(targetIdentifier),
+            PolarisEntityType.TABLE_LIKE),
+        targetIdentifier);
+    ResolverStatus status = resolutionManifest.resolveAll();
+    if (status.getStatus() == ResolverStatus.StatusEnum.ENTITY_COULD_NOT_BE_RESOLVED) {
+      throw new NotFoundException("Catalog not found: %s", catalogName);
+    } else if (status.getStatus() == ResolverStatus.StatusEnum.PATH_COULD_NOT_BE_FULLY_RESOLVED) {
+      if (status.getFailedToResolvePath().getLastEntityType() == PolarisEntityType.TABLE_LIKE) {
+        throw new NoSuchTableException("Table does not exist");
+      } else {
+        throw new NotFoundException("Policy not found: %s.%s", catalogName, policyName);
+      }
+    }
+    PolarisResolvedPathWrapper policyWrapper =
+        resolutionManifest.getResolvedPath(policyIdentifier, true);
+    if (policyWrapper == null) {
+      throw new NotFoundException("Policy does not exist: %s", policyName);
+    }
+    PolarisResolvedPathWrapper tableLikeWrapper =
+        resolutionManifest.getResolvedPath(targetIdentifier, true);
+    if (tableLikeWrapper == null) {
+      throw new NotFoundException("Target path does not exist: %s", targetIdentifier);
+    }
+
+    authorizer.authorizeOrThrow(
+        realmContext,
+        authenticatedPrincipal,
+        resolutionManifest.getAllActivatedCatalogRoleAndPrincipalRoles(),
+        op,
+        policyWrapper,
+        tableLikeWrapper);
   }
 
   private void authorizeCreatePolicyUnderNamespaceOperationOrThrow(

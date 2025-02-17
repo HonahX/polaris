@@ -81,6 +81,7 @@ import org.apache.polaris.core.persistence.*;
 import org.apache.polaris.core.persistence.resolver.PolarisResolutionManifest;
 import org.apache.polaris.core.persistence.resolver.ResolverPath;
 import org.apache.polaris.core.persistence.resolver.ResolverStatus;
+import org.apache.polaris.core.policy.PolarisPolicyMappingManager;
 import org.apache.polaris.core.storage.PolarisStorageActions;
 import org.apache.polaris.service.context.CallContextCatalogFactory;
 import org.apache.polaris.service.types.*;
@@ -1256,6 +1257,21 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
       // TODO: a better error message for policy
       throw new NoSuchTableException("Policy does not exist: %s", policyName);
     }
+  }
+
+  public List<PolicyEntity> getApplicablePolicies(TableIdentifier tableIdentifier) {
+    PolarisAuthorizableOperation op = PolarisAuthorizableOperation.LOAD_TABLE;
+    authorizeBasicTableLikeOperationOrThrow(op, PolarisEntitySubType.TABLE, tableIdentifier);
+
+    PolarisResolvedPathWrapper resolvedEntities =
+            resolutionManifest.getPassthroughResolvedPath(tableIdentifier, PolarisEntitySubType.TABLE);
+    if (resolvedEntities == null) {
+      throw new NotFoundException("Table not found: %s", tableIdentifier);
+    }
+
+    PolarisEntity tableEntity = resolvedEntities.getRawLeafEntity();
+    PolarisMetaStoreManager.LoadPolicyMappingsResult result = getMetaStoreManager().loadPoliciesOnEntity(session, tableEntity, PolarisEntity.toCoreList(resolvedEntities.getRawParentPath()));
+    return result.getPolicyEntities();
   }
 
   public void setPolicy(Namespace namespace, String policyName, SetPolicyRequest request) {

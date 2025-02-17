@@ -52,10 +52,7 @@ import org.apache.polaris.core.admin.model.PrincipalWithCredentialsCredentials;
 import org.apache.polaris.core.admin.model.StorageConfigInfo;
 import org.apache.polaris.core.auth.AuthenticatedPolarisPrincipal;
 import org.apache.polaris.core.context.RealmContext;
-import org.apache.polaris.core.entity.CatalogEntity;
-import org.apache.polaris.core.entity.CatalogRoleEntity;
-import org.apache.polaris.core.entity.PolarisPrivilege;
-import org.apache.polaris.core.entity.PrincipalEntity;
+import org.apache.polaris.core.entity.*;
 import org.apache.polaris.core.persistence.PolarisMetaStoreManager;
 import org.apache.polaris.core.persistence.resolver.PolarisResolutionManifest;
 import org.apache.polaris.service.catalog.PolarisCatalogHandlerWrapper;
@@ -705,6 +702,14 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
                 CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.TABLE_CREATE))
         .isTrue();
     Assertions.assertThat(
+                    adminService.grantPrivilegeOnCatalogToRole(
+                            CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.TABLE_READ_DATA))
+            .isTrue();
+    Assertions.assertThat(
+                    adminService.grantPrivilegeOnCatalogToRole(
+                            CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.TABLE_READ_PROPERTIES))
+            .isTrue();
+    Assertions.assertThat(
             adminService.grantPrivilegeOnCatalogToRole(
                 CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.POLICY_CREATE))
         .isTrue();
@@ -749,6 +754,8 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
             .build();
 
     newWrapper(Set.of(PRINCIPAL_ROLE2)).setPolicy(NS2, "policy_test", setPolicyRequest);
+    List<PolicyEntity> result = newWrapper(Set.of(PRINCIPAL_ROLE2)).getApplicablePolicies(newtable);
+    Assertions.assertThat(result).hasSize(1);
   }
 
   @Test

@@ -597,6 +597,10 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
                     adminService.grantPrivilegeOnCatalogToRole(
                             CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.TABLE_WRITE_DATA))
             .isTrue();
+    Assertions.assertThat(
+                    adminService.grantPrivilegeOnCatalogToRole(
+                            CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.POLICY_CREATE))
+            .isTrue();
 
     final TableIdentifier newtable = TableIdentifier.of(NS2, "newtable");
     final CreateTableRequest createRequest =
@@ -658,6 +662,17 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
             },
             () -> {
               // test
+            });
+
+    doTestSufficientPrivileges(
+            List.of(PolarisPrivilege.POLICY_DROP),
+            () -> {
+              newWrapper(Set.of(PRINCIPAL_ROLE1)).deletePolicy(NS2, "policy_test");
+            },
+            () -> {
+              CreatePolicyRequest createPolicyRequest = CreatePolicyRequest.builder().setName("policy_test")
+                      .setType("example_type").setContent("exmaple_content").setDescription("description_test").build();
+              newWrapper(Set.of(PRINCIPAL_ROLE2)).createPolicy(NS2, createPolicyRequest);
             });
   }
 

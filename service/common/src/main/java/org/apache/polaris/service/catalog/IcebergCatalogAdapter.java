@@ -697,7 +697,14 @@ public class IcebergCatalogAdapter
       String policy,
       RealmContext realmContext,
       SecurityContext securityContext) {
-    throw new UnsupportedOperationException();
+    Namespace ns = decodeNamespace(namespace);
+    return withCatalog(
+        securityContext,
+        prefix,
+        catalog -> {
+          catalog.deletePolicy(ns, policy);
+          return Response.status(Response.Status.NO_CONTENT).build();
+        });
   }
 
   @Override

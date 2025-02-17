@@ -20,6 +20,7 @@ package org.apache.polaris.service.catalog;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
+import jakarta.annotation.Nonnull;
 import jakarta.ws.rs.core.SecurityContext;
 import java.io.Closeable;
 import java.io.IOException;
@@ -82,11 +83,7 @@ import org.apache.polaris.core.entity.*;
 import org.apache.polaris.core.entity.CatalogEntity;
 import org.apache.polaris.core.entity.PolarisEntitySubType;
 import org.apache.polaris.core.entity.PolarisEntityType;
-import org.apache.polaris.core.persistence.PolarisEntityManager;
-import org.apache.polaris.core.persistence.PolarisMetaStoreManager;
-import org.apache.polaris.core.persistence.PolarisMetaStoreSession;
-import org.apache.polaris.core.persistence.PolarisResolvedPathWrapper;
-import org.apache.polaris.core.persistence.TransactionWorkspaceMetaStoreManager;
+import org.apache.polaris.core.persistence.*;
 import org.apache.polaris.core.persistence.resolver.PolarisResolutionManifest;
 import org.apache.polaris.core.persistence.resolver.ResolverPath;
 import org.apache.polaris.core.persistence.resolver.ResolverStatus;
@@ -1254,6 +1251,18 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     return constructPolicyResult(namespace, newPolicyEntity);
   }
 
+  public void deletePolicy(Namespace namespace, String policyName) {
+    PolarisAuthorizableOperation op = PolarisAuthorizableOperation.DROP_POLICY;
+    authorizeBasicPolicyOperationOrThrow(op, namespace, policyName);
+
+    PolarisMetaStoreManager.DropEntityResult dropEntityResult =
+        dropPolicy(TableIdentifier.of(namespace, policyName));
+    if (!dropEntityResult.isSuccess()) {
+      // TODO: a better error message for policy
+      throw new NoSuchTableException("Policy does not exist: %s", policyName);
+    }
+  }
+
   private void authorizeCreatePolicyUnderNamespaceOperationOrThrow(
       PolarisAuthorizableOperation op, Namespace namespace, String policyName) {
     resolutionManifest =
@@ -1374,6 +1383,25 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     }
 
     return returnedEntity;
+  }
+
+  private @Nonnull PolarisMetaStoreManager.DropEntityResult dropPolicy(
+      TableIdentifier policyIdentifier) {
+    PolarisResolvedPathWrapper resolvedEntities =
+        resolutionManifest.getResolvedPath(policyIdentifier);
+    if (resolvedEntities == null) {
+      // TODO Error?
+      return new PolarisMetaStoreManager.DropEntityResult(
+          BaseResult.ReturnStatus.ENTITY_NOT_FOUND, null);
+    }
+
+    List<PolarisEntity> catalogPath = resolvedEntities.getRawParentPath();
+    PolarisEntity leafEntity = resolvedEntities.getRawLeafEntity();
+
+    // TODO: temporarily make cleanup set to false, need further thinking
+    return getMetaStoreManager()
+        .dropEntityIfExists(
+            session, PolarisEntity.toCoreList(catalogPath), leafEntity, Map.of(), false);
   }
 
   private PolarisMetaStoreManager getMetaStoreManager() {

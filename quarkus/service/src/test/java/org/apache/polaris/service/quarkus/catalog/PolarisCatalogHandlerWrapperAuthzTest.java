@@ -619,6 +619,19 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
             () -> {
 //              newWrapper(Set.of(PRINCIPAL_ROLE2)).dropTableWithPurge(newtable);
             });
+
+    doTestSufficientPrivileges(
+            List.of(PolarisPrivilege.POLICY_READ),
+            () -> {
+              LoadPolicyResult result = newWrapper(Set.of(PRINCIPAL_ROLE1)).getPolicy(NS2, "policy_test");
+              Assertions.assertThat(result.getPolicy().getName()).isEqualTo("policy_test");
+              Assertions.assertThat(result.getPolicy().getPolicyType()).isEqualTo("example_type");
+              Assertions.assertThat(result.getPolicy().getContent()).isEqualTo("exmaple_content");
+              Assertions.assertThat(result.getPolicy().getDescription()).isEqualTo("description_test");
+            },
+            () -> {
+      // test
+            });
   }
 
   @Test

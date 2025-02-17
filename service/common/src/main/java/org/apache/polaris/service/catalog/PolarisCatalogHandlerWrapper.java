@@ -91,10 +91,8 @@ import org.apache.polaris.core.persistence.resolver.PolarisResolutionManifest;
 import org.apache.polaris.core.persistence.resolver.ResolverPath;
 import org.apache.polaris.core.persistence.resolver.ResolverStatus;
 import org.apache.polaris.core.storage.PolarisStorageActions;
-import org.apache.polaris.service.catalog.io.FileIOFactory;
-import org.apache.polaris.service.task.TaskExecutor;
-import org.apache.polaris.service.types.*;
 import org.apache.polaris.service.context.CallContextCatalogFactory;
+import org.apache.polaris.service.types.*;
 import org.apache.polaris.service.types.NotificationRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -1167,6 +1165,10 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
       throw new UnsupportedOperationException();
     }
 
+    CatalogEntity catalogEntity =
+        CatalogEntity.of(resolutionManifest.getResolvedReferenceCatalogEntity().getRawLeafEntity());
+
+    // TODO: seems no need
     List<PolarisEntity> resolvedNamespace =
         resolvedPolicyEntities == null
             ? resolutionManifest.getResolvedPath(identifier.namespace()).getRawFullPath()
@@ -1179,6 +1181,7 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     if (null == entity) {
       entity =
           new PolicyEntity.Builder(namespace, request.getName(), request.getType())
+              .setCatalogId(catalogEntity.getId())
               .setDescription(request.getDescription())
               .setContent(request.getContent())
               .setId(getMetaStoreManager().generateNewEntityId(session).getId())
@@ -1190,23 +1193,32 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
 
     PolicyEntity policyEntity = PolicyEntity.of(createPolicy(namespace, request.getName(), entity));
 
-    return LoadPolicyResult.builder()
-        .setPolicy(
-            Policy.builder()
-                .setOwnerEntity(NamespaceIdentifier.builder().setCatalog(catalogName).setNamespace(Arrays.asList(namespace.levels())).build()) // TODO: we may need to manually build the type
-                .setPolicyType(policyEntity.getPolicyType())
-                .setName(policyEntity.getName())
-                .setDescription(policyEntity.getDescription())
-                .setContent(policyEntity.getContent())
-                .setVersion(Integer.valueOf(policyEntity.getPolicyVersion()))
-                .setCreatedAtMs(policyEntity.getCreateTimestamp())
-                .setUpdatedAtMs(policyEntity.getLastUpdateTimestamp())
-                .build())
-        .build();
+    return constructPolicyResult(namespace, policyEntity);
+  }
+
+  public LoadPolicyResult getPolicy(Namespace namespace, String policyName) {
+    PolarisAuthorizableOperation op = PolarisAuthorizableOperation.GET_POLICY;
+    authorizeBasicPolicyOperationOrThrow(op, namespace, policyName);
+    // TODO: add a passthrough method to verify the type of the entity
+    PolarisResolvedPathWrapper resolvedEntities =
+        resolutionManifest.getPassthroughResolvedPath(TableIdentifier.of(namespace, policyName));
+    PolicyEntity policy = null;
+
+    if (resolvedEntities != null) {
+      if (resolvedEntities.getRawLeafEntity().getType() == PolarisEntityType.POLICY) {
+        policy = PolicyEntity.of(resolvedEntities.getRawLeafEntity());
+      }
+    }
+
+    if (policy == null) {
+      // TODO: change to NoSuchPolicyException
+      throw new NoSuchTableException("Policy does not exist: %s", policyName);
+    }
+    return constructPolicyResult(namespace, policy);
   }
 
   private void authorizeCreatePolicyUnderNamespaceOperationOrThrow(
-          PolarisAuthorizableOperation op, Namespace namespace, String policyName) {
+      PolarisAuthorizableOperation op, Namespace namespace, String policyName) {
     resolutionManifest =
         entityManager.prepareResolutionManifest(session, securityContext, catalogName);
     resolutionManifest.addPath(
@@ -1228,13 +1240,41 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
 
     // TODO: authorize
     authorizer.authorizeOrThrow(
-            realmContext,
-            authenticatedPrincipal,
-            resolutionManifest.getAllActivatedCatalogRoleAndPrincipalRoles(),
-            op,
-            target,
-            null /* secondary */);
-    initializeCatalog();
+        realmContext,
+        authenticatedPrincipal,
+        resolutionManifest.getAllActivatedCatalogRoleAndPrincipalRoles(),
+        op,
+        target,
+        null /* secondary */);
+    // TODO: unnecessary
+    // initializeCatalog();
+  }
+
+  private void authorizeBasicPolicyOperationOrThrow(
+      PolarisAuthorizableOperation op, Namespace namespace, String policyName) {
+    resolutionManifest =
+        entityManager.prepareResolutionManifest(session, securityContext, catalogName);
+    TableIdentifier policyIdentifier = TableIdentifier.of(namespace, policyName);
+    resolutionManifest.addPassthroughPath(
+        new ResolverPath(
+            PolarisCatalogHelpers.tableIdentifierToList(policyIdentifier),
+            PolarisEntityType.POLICY,
+            true /* optional */),
+        policyIdentifier);
+    resolutionManifest.resolveAll();
+    PolarisResolvedPathWrapper target = resolutionManifest.getResolvedPath(policyIdentifier, true);
+    if (target == null) {
+      // TODO: change to NoSuchPolicyException
+      throw new NoSuchTableException("Policy does not exist: %s", policyName);
+    }
+
+    authorizer.authorizeOrThrow(
+        realmContext,
+        authenticatedPrincipal,
+        resolutionManifest.getAllActivatedCatalogRoleAndPrincipalRoles(),
+        op,
+        target,
+        null);
   }
 
   private PolarisEntity createPolicy(Namespace namespace, String policyName, PolarisEntity entity) {
@@ -1273,5 +1313,25 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
 
   private PolarisMetaStoreManager getMetaStoreManager() {
     return metaStoreManager;
+  }
+
+  private LoadPolicyResult constructPolicyResult(Namespace namespace, PolicyEntity policyEntity) {
+    return LoadPolicyResult.builder()
+        .setPolicy(
+            Policy.builder()
+                .setOwnerEntity(
+                    NamespaceIdentifier.builder()
+                        .setCatalog(catalogName)
+                        .setNamespace(Arrays.asList(namespace.levels()))
+                        .build()) // TODO: we may need to manually build the type
+                .setPolicyType(policyEntity.getPolicyType())
+                .setName(policyEntity.getName())
+                .setDescription(policyEntity.getDescription())
+                .setContent(policyEntity.getContent())
+                .setVersion(Integer.valueOf(policyEntity.getPolicyVersion()))
+                .setCreatedAtMs(policyEntity.getCreateTimestamp())
+                .setUpdatedAtMs(policyEntity.getLastUpdateTimestamp())
+                .build())
+        .build();
   }
 }

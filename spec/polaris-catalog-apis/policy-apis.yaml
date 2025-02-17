@@ -283,6 +283,48 @@ paths:
         5XX:
           $ref: '../rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
 
+  /v1/{prefix}/namespaces/{namespace}/tables/{table}/policies:
+    parameters:
+      - $ref: '../rest-catalog-open-api.yaml#/components/parameters/prefix'
+      - $ref: '../rest-catalog-open-api.yaml#/components/parameters/namespace'
+      - $ref: '../rest-catalog-open-api.yaml#/components/parameters/table'
+
+    get:
+      tags:
+        - Catalog API
+      summary: Get Applicable policies for a table
+      operationId: getApplicablePoliciesOnTable
+      description: |
+        Get Applicable policies for a table
+        
+        Optionally filter by policy type
+        This API will also return all policies inherit from table's namespaces/catalogs
+      responses:
+        200:
+          $ref: '#/components/responses/GetApplicablePoliciesResponse'
+        400:
+          $ref: '../rest-catalog-open-api.yaml#/components/responses/BadRequestErrorResponse'
+        401:
+          $ref: '../rest-catalog-open-api.yaml#/components/responses/UnauthorizedResponse'
+        403:
+          $ref: '../rest-catalog-open-api.yaml#/components/responses/ForbiddenResponse'
+        404:
+          description:
+            Not Found - NoSuchTableException, table to load does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '../rest-catalog-open-api.yaml#/components/schemas/IcebergErrorResponse'
+              examples:
+                TableToLoadDoesNotExist:
+                  $ref: '../rest-catalog-open-api.yaml#/components/examples/NoSuchTableError'
+        419:
+          $ref: '../rest-catalog-open-api.yaml#/components/responses/AuthenticationTimeoutResponse'
+        503:
+          $ref: '../rest-catalog-open-api.yaml#/components/responses/ServiceUnavailableResponse'
+        5XX:
+          $ref: '../rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
+
 
 components:
   parameters:
@@ -450,6 +492,19 @@ components:
       required:
         - type
 
+    GetApplicablePoliciesResponse:
+      type: object
+      required:
+        - policies
+      properties:
+        next-page-token:
+          $ref: '../rest-catalog-open-api.yaml#/components/schemas/PageToken'
+        policies:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/Policy'
+
   responses:
     CreatePolicyResponse:
       description: Policy object result after creating a policy
@@ -474,6 +529,14 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/LoadPolicyResult'
+
+    GetApplicablePoliciesResponse:
+      description: A list of policies applicable to the table
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GetApplicablePoliciesResponse'
+
 
 
   examples:

@@ -1258,7 +1258,7 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     }
   }
 
-  public List<Policy> getApplicablePolicies(TableIdentifier tableIdentifier) {
+  public GetApplicablePoliciesResponse getApplicablePolicies(TableIdentifier tableIdentifier) {
     PolarisAuthorizableOperation op = PolarisAuthorizableOperation.LOAD_TABLE;
     authorizeBasicTableLikeOperationOrThrow(op, PolarisEntitySubType.TABLE, tableIdentifier);
 
@@ -1275,9 +1275,12 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
                 session,
                 tableEntity,
                 PolarisEntity.toCoreList(resolvedEntities.getRawParentPath()));
-    return result.getPolicyEntities().stream()
-        .map(PolarisCatalogHandlerWrapper::constructPolicy)
-        .toList();
+    return GetApplicablePoliciesResponse.builder()
+        .setPolicies(
+            result.getPolicyEntities().stream()
+                .map(PolarisCatalogHandlerWrapper::constructPolicy)
+                .collect(Collectors.toSet()))
+        .build();
   }
 
   public void setPolicy(Namespace namespace, String policyName, SetPolicyRequest request) {

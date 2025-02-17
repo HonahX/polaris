@@ -754,8 +754,8 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
             .build();
 
     newWrapper(Set.of(PRINCIPAL_ROLE2)).setPolicy(NS2, "policy_test", setPolicyRequest);
-    List<Policy> result = newWrapper(Set.of(PRINCIPAL_ROLE2)).getApplicablePolicies(newtable);
-    Assertions.assertThat(result).hasSize(1);
+    GetApplicablePoliciesResponse result = newWrapper(Set.of(PRINCIPAL_ROLE2)).getApplicablePolicies(newtable);
+    Assertions.assertThat(result.getPolicies()).hasSize(1);
   }
 
   @Test

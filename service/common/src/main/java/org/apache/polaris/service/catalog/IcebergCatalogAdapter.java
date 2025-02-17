@@ -715,7 +715,14 @@ public class IcebergCatalogAdapter
       SetPolicyRequest setPolicyRequest,
       RealmContext realmContext,
       SecurityContext securityContext) {
-    throw new UnsupportedOperationException();
+    Namespace ns = decodeNamespace(namespace);
+    return withCatalog(
+        securityContext,
+        prefix,
+        catalog -> {
+          catalog.setPolicy(ns, policy, setPolicyRequest);
+          return Response.status(Response.Status.NO_CONTENT).build();
+        });
   }
 
   @Override
@@ -727,5 +734,20 @@ public class IcebergCatalogAdapter
       RealmContext realmContext,
       SecurityContext securityContext) {
     throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public Response getApplicablePoliciesOnTable(
+      String prefix,
+      String namespace,
+      String table,
+      RealmContext realmContext,
+      SecurityContext securityContext) {
+    Namespace ns = decodeNamespace(namespace);
+    TableIdentifier tableIdentifier = TableIdentifier.of(ns, RESTUtil.decodeString(table));
+    return withCatalog(
+        securityContext,
+        prefix,
+        catalog -> Response.ok(catalog.getApplicablePolicies(tableIdentifier)).build());
   }
 }

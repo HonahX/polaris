@@ -1,0 +1,90 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+package org.apache.polaris.core.policy;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+import com.google.common.collect.ImmutableMap;
+import jakarta.annotation.Nullable;
+
+public enum PolicyType {
+  DATA_COMPACTION(0, PolicyCategory.BACKGROUND, "system.data-compaction", true);
+
+  private final int code;
+  private final PolicyCategory policyCategory;
+  private final String name;
+  private final boolean isInheritable;
+  private static final PolicyType[] REVERSE_CODE_MAPPING_ARRAY;
+  private static final ImmutableMap<String, PolicyType> REVERSE_NAME_MAPPING_ARRAY;
+
+  static {
+    int maxId = 0;
+    for (PolicyType policyType : PolicyType.values()) {
+      if (maxId < policyType.code) {
+        maxId = policyType.code;
+      }
+    }
+
+    REVERSE_CODE_MAPPING_ARRAY = new PolicyType[maxId + 1];
+    ImmutableMap.Builder<String, PolicyType> builder = ImmutableMap.builder();
+    // populate both
+    for (PolicyType policyType : PolicyType.values()) {
+      REVERSE_CODE_MAPPING_ARRAY[policyType.code] = policyType;
+      builder.put(policyType.name, policyType);
+    }
+    REVERSE_NAME_MAPPING_ARRAY = builder.build();
+  }
+
+  PolicyType(int code, PolicyCategory policyCategory, String name, boolean isInheritable) {
+    this.code = code;
+    this.policyCategory = policyCategory;
+    this.name = name;
+    this.isInheritable = isInheritable;
+  }
+
+  @JsonValue
+  public int getCode() {
+    return code;
+  }
+
+  public PolicyCategory getPolicyCategory() {
+    return policyCategory;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public boolean isInheritable() {
+    return isInheritable;
+  }
+
+  @JsonCreator
+  public static @Nullable PolicyType fromCode(int code) {
+    if (code >= REVERSE_CODE_MAPPING_ARRAY.length) {
+      return null;
+    }
+
+    return REVERSE_CODE_MAPPING_ARRAY[code];
+  }
+
+  public static @Nullable PolicyType fromName(String name) {
+    return REVERSE_NAME_MAPPING_ARRAY.get(name);
+  }
+}

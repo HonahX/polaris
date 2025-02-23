@@ -24,10 +24,9 @@ import com.google.common.collect.ImmutableMap;
 import jakarta.annotation.Nullable;
 
 public enum PolicyType {
-  DATA_COMPACTION(0, PolicyCategory.BACKGROUND, "system.data-compaction", true);
+  DATA_COMPACTION(0, "system.data-compaction", true);
 
   private final int code;
-  private final PolicyCategory policyCategory;
   private final String name;
   private final boolean isInheritable;
   private static final PolicyType[] REVERSE_CODE_MAPPING_ARRAY;
@@ -51,9 +50,8 @@ public enum PolicyType {
     REVERSE_NAME_MAPPING_ARRAY = builder.build();
   }
 
-  PolicyType(int code, PolicyCategory policyCategory, String name, boolean isInheritable) {
+  PolicyType(int code, String name, boolean isInheritable) {
     this.code = code;
-    this.policyCategory = policyCategory;
     this.name = name;
     this.isInheritable = isInheritable;
   }
@@ -61,10 +59,6 @@ public enum PolicyType {
   @JsonValue
   public int getCode() {
     return code;
-  }
-
-  public PolicyCategory getPolicyCategory() {
-    return policyCategory;
   }
 
   public String getName() {

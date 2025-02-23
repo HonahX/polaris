@@ -81,6 +81,7 @@ import org.apache.polaris.core.persistence.*;
 import org.apache.polaris.core.persistence.resolver.PolarisResolutionManifest;
 import org.apache.polaris.core.persistence.resolver.ResolverPath;
 import org.apache.polaris.core.persistence.resolver.ResolverStatus;
+import org.apache.polaris.core.policy.PolicyType;
 import org.apache.polaris.core.storage.PolarisStorageActions;
 import org.apache.polaris.service.context.CallContextCatalogFactory;
 import org.apache.polaris.service.types.*;
@@ -1171,16 +1172,23 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
             resolvedPolicyEntities == null ? null : resolvedPolicyEntities.getRawLeafEntity());
 
     if (null == entity) {
+      // TODO: validate content
+      PolicyType policyType = PolicyType.fromName(request.getType());
+      if (policyType == null) {
+        // TODO: custom policy type not yet suported
+        throw new BadRequestException("Unknown policy type: %s", request.getType());
+      }
       entity =
-          new PolicyEntity.Builder(namespace, request.getName(), request.getType())
+          new PolicyEntity.Builder(namespace, request.getName())
               .setCatalogId(catalogEntity.getId())
               .setDescription(request.getDescription())
+              .setPolicyType(policyType)
               .setContent(request.getContent())
               .setId(getMetaStoreManager().generateNewEntityId(session).getId())
               .build();
     } else {
       // TODO this should be the track to throw AlreadyExist
-      throw new UnsupportedOperationException();
+      throw new AlreadyExistsException("Policy already exists %s", identifier);
     }
 
     PolicyEntity policyEntity = PolicyEntity.of(createPolicy(namespace, request.getName(), entity));
@@ -1556,7 +1564,7 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
 
   private static Policy constructPolicy(PolicyEntity policyEntity) {
     return Policy.builder()
-        .setPolicyType(policyEntity.getPolicyType())
+        .setPolicyType(policyEntity.getPolicyTypeName())
         .setName(policyEntity.getName())
         .setDescription(policyEntity.getDescription())
         .setContent(policyEntity.getContent())

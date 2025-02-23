@@ -2196,7 +2196,7 @@ public class PolarisMetaStoreManagerImpl implements PolarisMetaStoreManager {
     }
 
     PolarisPolicyMappingRecord existingRecordOfSameType =
-        session.lookupPolicyMappingRecordByType(target.getId(), policy.getPolicyType());
+        session.lookupPolicyMappingRecordByType(target.getId(), policy.getPolicyTypeName());
     if (existingRecordOfSameType != null
         && existingRecordOfSameType.getPolicyId() != policy.getId()) {
       // TODO: the status should be policyOfSameType is already granted. Or we can consider to
@@ -2220,7 +2220,7 @@ public class PolarisMetaStoreManagerImpl implements PolarisMetaStoreManager {
     PolarisPolicyMappingRecord mappingRecord =
         new PolarisPolicyMappingRecord(
             target.getId(),
-            policy.getPolicyType(),
+            policy.getPolicyTypeName(),
             policy.getId(),
             policy.getCatalogId(),
             parameters);
@@ -2259,7 +2259,7 @@ public class PolarisMetaStoreManagerImpl implements PolarisMetaStoreManager {
     }
 
     PolarisPolicyMappingRecord mappingRecord =
-        session.lookupPolicyMappingRecord(target.getId(), policy.getPolicyType(), policy.getId());
+        session.lookupPolicyMappingRecord(target.getId(), policy.getPolicyTypeName(), policy.getId());
     if (mappingRecord == null) {
       return new AttachmentResult(BaseResult.ReturnStatus.POLICY_MAPPING_NOT_FOUND, null);
     }

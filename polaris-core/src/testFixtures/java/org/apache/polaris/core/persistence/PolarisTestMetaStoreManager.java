@@ -2093,7 +2093,7 @@ public class PolarisTestMetaStoreManager {
     Assertions.assertThat(record).isNotNull();
     Assertions.assertThat(record.size()).isEqualTo(1);
     Assertions.assertThat(record.get(0).getName()).isEqualTo("P1");
-    Assertions.assertThat(record.get(0).getPolicyType()).isEqualTo("testType");
+    Assertions.assertThat(record.get(0).getPolicyTypeName()).isEqualTo("testType");
     PolarisPolicyMappingManager.LoadPolicyMappingsResult onTypeSearch =
         polarisMetaStoreManager.loadPoliciesOnEntityByType(
             polarisMetaStoreSession, N1_N2_T1, List.of(catalog, N1, N1_N2), "testType");
@@ -2101,7 +2101,7 @@ public class PolarisTestMetaStoreManager {
     Assertions.assertThat(recordOnTypeSearch).isNotNull();
     Assertions.assertThat(recordOnTypeSearch.size()).isEqualTo(1);
     Assertions.assertThat(recordOnTypeSearch.get(0).getName()).isEqualTo("P1");
-    Assertions.assertThat(recordOnTypeSearch.get(0).getPolicyType()).isEqualTo("testType");
+    Assertions.assertThat(recordOnTypeSearch.get(0).getPolicyTypeName()).isEqualTo("testType");
   }
 
   PolarisBaseEntity createPolicy(

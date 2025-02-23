@@ -55,6 +55,7 @@ import org.apache.polaris.core.context.RealmContext;
 import org.apache.polaris.core.entity.*;
 import org.apache.polaris.core.persistence.PolarisMetaStoreManager;
 import org.apache.polaris.core.persistence.resolver.PolarisResolutionManifest;
+import org.apache.polaris.core.policy.PolicyType;
 import org.apache.polaris.service.catalog.PolarisCatalogHandlerWrapper;
 import org.apache.polaris.service.catalog.io.DefaultFileIOFactory;
 import org.apache.polaris.service.context.CallContextCatalogFactory;
@@ -599,7 +600,7 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
     final TableIdentifier newtable = TableIdentifier.of(NS2, "newtable");
     final CreateTableRequest createRequest =
         CreateTableRequest.builder().withName("newtable").withSchema(SCHEMA).build();
-
+    String testPolicyType = PolicyType.DATA_COMPACTION.getName();
     // Use PRINCIPAL_ROLE1 for privilege-testing, PRINCIPAL_ROLE2 for cleanup.
     doTestSufficientPrivileges(
         List.of(PolarisPrivilege.POLICY_CREATE),
@@ -607,14 +608,14 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
           CreatePolicyRequest createPolicyRequest =
               CreatePolicyRequest.builder()
                   .setName("policy_test")
-                  .setType("example_type")
+                  .setType(testPolicyType)
                   .setContent("exmaple_content")
                   .setDescription("description_test")
                   .build();
           LoadPolicyResult result =
               newWrapper(Set.of(PRINCIPAL_ROLE1)).createPolicy(NS2, createPolicyRequest);
           Assertions.assertThat(result.getPolicy().getName()).isEqualTo("policy_test");
-          Assertions.assertThat(result.getPolicy().getPolicyType()).isEqualTo("example_type");
+          Assertions.assertThat(result.getPolicy().getPolicyType()).isEqualTo(PolicyType.DATA_COMPACTION.getName());
           Assertions.assertThat(result.getPolicy().getContent()).isEqualTo("exmaple_content");
           Assertions.assertThat(result.getPolicy().getDescription()).isEqualTo("description_test");
         },
@@ -628,7 +629,7 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
           LoadPolicyResult result =
               newWrapper(Set.of(PRINCIPAL_ROLE1)).getPolicy(NS2, "policy_test");
           Assertions.assertThat(result.getPolicy().getName()).isEqualTo("policy_test");
-          Assertions.assertThat(result.getPolicy().getPolicyType()).isEqualTo("example_type");
+          Assertions.assertThat(result.getPolicy().getPolicyType()).isEqualTo(PolicyType.DATA_COMPACTION.getName());
           Assertions.assertThat(result.getPolicy().getContent()).isEqualTo("exmaple_content");
           Assertions.assertThat(result.getPolicy().getDescription()).isEqualTo("description_test");
         },
@@ -648,7 +649,7 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
               newWrapper(Set.of(PRINCIPAL_ROLE1))
                   .updatePolicy(NS2, "policy_test", updatePolicyRequest);
           Assertions.assertThat(result.getPolicy().getName()).isEqualTo("policy_test");
-          Assertions.assertThat(result.getPolicy().getPolicyType()).isEqualTo("example_type");
+          Assertions.assertThat(result.getPolicy().getPolicyType()).isEqualTo(PolicyType.DATA_COMPACTION.getName());
           Assertions.assertThat(result.getPolicy().getContent()).isEqualTo("updated_content");
           Assertions.assertThat(result.getPolicy().getDescription())
               .isEqualTo("updated_description");
@@ -661,7 +662,7 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
           LoadPolicyResult result =
               newWrapper(Set.of(PRINCIPAL_ROLE1)).getPolicy(NS2, "policy_test");
           Assertions.assertThat(result.getPolicy().getName()).isEqualTo("policy_test");
-          Assertions.assertThat(result.getPolicy().getPolicyType()).isEqualTo("example_type");
+          Assertions.assertThat(result.getPolicy().getPolicyType()).isEqualTo(PolicyType.DATA_COMPACTION.getName());
           Assertions.assertThat(result.getPolicy().getContent()).isEqualTo("updated_content");
           Assertions.assertThat(result.getPolicy().getDescription())
               .isEqualTo("updated_description");
@@ -679,7 +680,7 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
           CreatePolicyRequest createPolicyRequest =
               CreatePolicyRequest.builder()
                   .setName("policy_test")
-                  .setType("example_type")
+                  .setType(PolicyType.DATA_COMPACTION.getName())
                   .setContent("exmaple_content")
                   .setDescription("description_test")
                   .build();
@@ -733,7 +734,7 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
     final CreatePolicyRequest createPolicyRequest =
         CreatePolicyRequest.builder()
             .setName("policy_test")
-            .setType("example_type")
+            .setType(PolicyType.DATA_COMPACTION.getName())
             .setContent("exmaple_content")
             .setDescription("description_test")
             .build();

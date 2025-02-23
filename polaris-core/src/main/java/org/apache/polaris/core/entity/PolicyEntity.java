@@ -20,10 +20,11 @@ package org.apache.polaris.core.entity;
 
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.rest.RESTUtil;
+import org.apache.polaris.core.policy.PolicyType;
 
 public class PolicyEntity extends PolarisEntity {
 
-  public static final String POLICY_TYPE_KEY = "policy-type";
+  public static final String POLICY_TYPE_KEY = "policy-type-code";
   public static final String POLICY_DESCRIPTION_KEY = "policy-description";
   public static final String POLICY_VERSION_KEY = "policy-version";
   public static final String POLICY_CONTENT_KEY = "policy-content";
@@ -40,8 +41,20 @@ public class PolicyEntity extends PolarisEntity {
     return null;
   }
 
-  public String getPolicyType() {
-    return getPropertiesAsMap().get(POLICY_TYPE_KEY);
+  public String getPolicyTypeName() {
+    String policyTypeCode = getPropertiesAsMap().get(POLICY_TYPE_KEY);
+    if (policyTypeCode != null) {
+      return PolicyType.fromCode(Integer.parseInt(policyTypeCode)).getName();
+    }
+    return null;
+  }
+
+  public int getPolicyTypeCode() {
+    String policyTypeCode = getPropertiesAsMap().get(POLICY_TYPE_KEY);
+    if (policyTypeCode != null) {
+      return Integer.parseInt(policyTypeCode);
+    }
+    throw new IllegalStateException("Invalid policy entity");
   }
 
   public String getDescription() {
@@ -57,12 +70,11 @@ public class PolicyEntity extends PolarisEntity {
   }
 
   public static class Builder extends PolarisEntity.BaseBuilder<PolicyEntity, Builder> {
-    public Builder(Namespace namespace, String policyName, String policyType) {
+    public Builder(Namespace namespace, String policyName) {
       super();
       setType(PolarisEntityType.POLICY);
       setParentNamespace(namespace);
       setName(policyName);
-      setPolicyType(policyType);
       // TODO: check whether version starts from 0
       setPolicyVersion(0);
     }
@@ -84,11 +96,27 @@ public class PolicyEntity extends PolarisEntity {
       return this;
     }
 
-    public Builder setPolicyType(String policyType) {
+    // TODO: need to deprecate
+    // TODO: I do not think validation should happen here.
+    public Builder setPolicyTypeName(String policyTypeName) {
       // TODO: Do we need to validate the type here?
-      properties.put(POLICY_TYPE_KEY, policyType);
+      PolicyType policyType = PolicyType.fromName(policyTypeName);
+      if (policyType == null) {
+        throw new IllegalArgumentException("Invalid policy type " + policyTypeName);
+      }
+    return setPolicyTypeCode(policyType.getCode());
+    }
+
+    private Builder setPolicyTypeCode(int policyTypeCode) {
+      properties.put(POLICY_TYPE_KEY, Integer.toString(policyTypeCode));
       return this;
     }
+
+    public Builder setPolicyType(PolicyType policyType) {
+      properties.put(POLICY_TYPE_KEY, Integer.toString(policyType.getCode()));
+      return this;
+    }
+
 
     public Builder setDescription(String description) {
       properties.put(POLICY_DESCRIPTION_KEY, description);

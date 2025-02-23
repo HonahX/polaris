@@ -18,6 +18,7 @@
  */
 package org.apache.polaris.core.entity;
 
+import com.google.common.base.Preconditions;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.rest.RESTUtil;
 import org.apache.polaris.core.policy.PolicyType;
@@ -85,6 +86,11 @@ public class PolicyEntity extends PolarisEntity {
 
     @Override
     public PolicyEntity build() {
+      Preconditions.checkArgument(
+              properties.get(POLICY_TYPE_KEY) != null,
+              "Policy type must be specified"
+      );
+
       return new PolicyEntity(buildBase());
     }
 

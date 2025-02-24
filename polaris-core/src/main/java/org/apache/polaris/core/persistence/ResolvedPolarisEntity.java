@@ -20,8 +20,6 @@ package org.apache.polaris.core.persistence;
 
 import com.google.common.collect.ImmutableList;
 import jakarta.annotation.Nonnull;
-
-import java.util.ArrayList;
 import java.util.List;
 import org.apache.polaris.core.entity.PolarisEntity;
 import org.apache.polaris.core.entity.PolarisGrantRecord;
@@ -44,11 +42,10 @@ public class ResolvedPolarisEntity {
   private final List<PolarisPolicyMappingRecord> policyMappingRecords;
 
   public ResolvedPolarisEntity(
-          PolarisEntity entity,
-          List<PolarisGrantRecord> grantRecordsAsGrantee,
-          List<PolarisGrantRecord> grantRecordsAsSecurable,
-          List<PolarisPolicyMappingRecord> policyMappingRecords
-  ) {
+      PolarisEntity entity,
+      List<PolarisGrantRecord> grantRecordsAsGrantee,
+      List<PolarisGrantRecord> grantRecordsAsSecurable,
+      List<PolarisPolicyMappingRecord> policyMappingRecords) {
     this.entity = entity;
     // TODO: Precondition checks that grantee or securable ids in grant records match entity as
     // expected.
@@ -86,7 +83,9 @@ public class ResolvedPolarisEntity {
   }
 
   /** The policy mapping records associated with this entity being target of policy attachment */
-  public List<PolarisPolicyMappingRecord> getPolicyMappingRecords() {return policyMappingRecords;}
+  public List<PolarisPolicyMappingRecord> getPolicyMappingRecords() {
+    return policyMappingRecords;
+  }
 
   @Override
   public String toString() {

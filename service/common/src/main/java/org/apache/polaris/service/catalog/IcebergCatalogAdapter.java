@@ -171,6 +171,23 @@ public class IcebergCatalogAdapter
     }
   }
 
+  private Response withPolicyHandler(
+      SecurityContext securityContext,
+      String prefix,
+      Function<PolicyCatalogHandlerWrapper, Response> action) {
+    String catalogName = prefixParser.prefixToCatalogName(realmContext, prefix);
+    try (PolicyCatalogHandlerWrapper wrapper =
+        newPolicyHandlerWrapper(securityContext, catalogName)) {
+      return action.apply(wrapper);
+    } catch (RuntimeException e) {
+      LOGGER.debug("RuntimeException while operating on catalog. Propagating to caller.", e);
+      throw e;
+    } catch (Exception e) {
+      LOGGER.error("Error while operating on catalog", e);
+      throw new RuntimeException(e);
+    }
+  }
+
   private PolarisCatalogHandlerWrapper newHandlerWrapper(
       SecurityContext securityContext, String catalogName) {
     AuthenticatedPolarisPrincipal authenticatedPrincipal =
@@ -188,6 +205,26 @@ public class IcebergCatalogAdapter
         metaStoreManager,
         securityContext,
         catalogFactory,
+        catalogName,
+        polarisAuthorizer);
+  }
+
+  private PolicyCatalogHandlerWrapper newPolicyHandlerWrapper(
+      SecurityContext securityContext, String catalogName) {
+    AuthenticatedPolarisPrincipal authenticatedPrincipal =
+        (AuthenticatedPolarisPrincipal) securityContext.getUserPrincipal();
+    if (authenticatedPrincipal == null) {
+      throw new NotAuthorizedException("Failed to find authenticatedPrincipal in SecurityContext");
+    }
+
+    return new PolicyCatalogHandlerWrapper(
+        realmContext,
+        session,
+        configurationStore,
+        diagnostics,
+        entityManager,
+        metaStoreManager,
+        securityContext,
         catalogName,
         polarisAuthorizer);
   }
@@ -657,7 +694,7 @@ public class IcebergCatalogAdapter
       RealmContext realmContext,
       SecurityContext securityContext) {
     Namespace ns = decodeNamespace(namespace);
-    return withCatalog(
+    return withPolicyHandler(
         securityContext,
         prefix,
         catalog -> Response.ok(catalog.createPolicy(ns, createPolicyRequest)).build());
@@ -671,7 +708,7 @@ public class IcebergCatalogAdapter
       RealmContext realmContext,
       SecurityContext securityContext) {
     Namespace ns = decodeNamespace(namespace);
-    return withCatalog(
+    return withPolicyHandler(
         securityContext, prefix, catalog -> Response.ok(catalog.getPolicy(ns, policy)).build());
   }
 
@@ -684,7 +721,7 @@ public class IcebergCatalogAdapter
       RealmContext realmContext,
       SecurityContext securityContext) {
     Namespace ns = decodeNamespace(namespace);
-    return withCatalog(
+    return withPolicyHandler(
         securityContext,
         prefix,
         catalog -> Response.ok(catalog.updatePolicy(ns, policy, updatePolicyRequest)).build());
@@ -698,7 +735,7 @@ public class IcebergCatalogAdapter
       RealmContext realmContext,
       SecurityContext securityContext) {
     Namespace ns = decodeNamespace(namespace);
-    return withCatalog(
+    return withPolicyHandler(
         securityContext,
         prefix,
         catalog -> {
@@ -716,7 +753,7 @@ public class IcebergCatalogAdapter
       RealmContext realmContext,
       SecurityContext securityContext) {
     Namespace ns = decodeNamespace(namespace);
-    return withCatalog(
+    return withPolicyHandler(
         securityContext,
         prefix,
         catalog -> {
@@ -745,7 +782,7 @@ public class IcebergCatalogAdapter
       SecurityContext securityContext) {
     Namespace ns = decodeNamespace(namespace);
     TableIdentifier tableIdentifier = TableIdentifier.of(ns, RESTUtil.decodeString(table));
-    return withCatalog(
+    return withPolicyHandler(
         securityContext,
         prefix,
         catalog -> Response.ok(catalog.getApplicablePolicies(tableIdentifier)).build());

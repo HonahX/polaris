@@ -2305,15 +2305,12 @@ public class PolarisMetaStoreManagerImpl implements PolarisMetaStoreManager {
 
   @Override
   public LoadPolicyMappingsResult loadPoliciesOnEntity(
-      @NotNull PolarisMetaStoreSession session,
-      @NotNull PolarisEntityCore target) {
-    return session.runInReadTransaction(
-        () -> this.doLoadPoliciesOnEntity(session, target));
+      @NotNull PolarisMetaStoreSession session, @NotNull PolarisEntityCore target) {
+    return session.runInReadTransaction(() -> this.doLoadPoliciesOnEntity(session, target));
   }
 
   private LoadPolicyMappingsResult doLoadPoliciesOnEntity(
-      @NotNull PolarisMetaStoreSession session,
-      @NotNull PolarisEntityCore target) {
+      @NotNull PolarisMetaStoreSession session, @NotNull PolarisEntityCore target) {
     // TODO: make sure this can check if the target entity exists
     int entityVersion = session.lookupEntityVersion(target.getCatalogId(), target.getId());
     if (entityVersion == 0) {
@@ -2361,20 +2358,21 @@ public class PolarisMetaStoreManagerImpl implements PolarisMetaStoreManager {
     }
 
     final List<PolarisPolicyMappingRecord> policyMappingRecords =
-            session.lookupPolicyMappingRecordByTargetAndType(target.getCatalogId(), target.getId(), policyType.getCode());
+        session.lookupPolicyMappingRecordByTargetAndType(
+            target.getCatalogId(), target.getId(), policyType.getCode());
     List<PolarisEntityId> policyEntityIds =
-            policyMappingRecords.stream()
-                    .map(
-                            policyMappingRecord ->
-                                    new PolarisEntityId(
-                                            policyMappingRecord.getPolicyCatalogId(),
-                                            policyMappingRecord.getPolicyId()))
-                    .distinct()
-                    .collect(Collectors.toList());
+        policyMappingRecords.stream()
+            .map(
+                policyMappingRecord ->
+                    new PolarisEntityId(
+                        policyMappingRecord.getPolicyCatalogId(),
+                        policyMappingRecord.getPolicyId()))
+            .distinct()
+            .collect(Collectors.toList());
     List<PolicyEntity> policyEntities =
-            session.lookupEntities(policyEntityIds).stream()
-                    .map(PolicyEntity::of)
-                    .collect(Collectors.toList());
+        session.lookupEntities(policyEntityIds).stream()
+            .map(PolicyEntity::of)
+            .collect(Collectors.toList());
     return new LoadPolicyMappingsResult(policyMappingRecords, policyEntities);
   }
 

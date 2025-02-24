@@ -26,7 +26,6 @@ import jakarta.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
 import org.apache.polaris.core.entity.*;
 import org.apache.polaris.core.persistence.BaseResult;
 import org.apache.polaris.core.persistence.PolarisMetaStoreSession;
@@ -54,8 +53,7 @@ public interface PolarisPolicyMappingManager {
 
   // TODO: do we need enforce inheritance here? Answer: no, it should happen on service side
   LoadPolicyMappingsResult loadPoliciesOnEntity(
-      @Nonnull PolarisMetaStoreSession session,
-      @Nonnull PolarisEntityCore target);
+      @Nonnull PolarisMetaStoreSession session, @Nonnull PolarisEntityCore target);
 
   LoadPolicyMappingsResult loadPoliciesOnEntityByType(
       @Nonnull PolarisMetaStoreSession session,
@@ -134,7 +132,10 @@ public interface PolarisPolicyMappingManager {
 
     @JsonIgnore
     public Map<Long, PolicyEntity> getPolicyEntitiesAsMap() {
-      return policyEntities == null ? null : policyEntities.stream().collect(Collectors.toMap(PolicyEntity::getId, entity -> entity));
+      return policyEntities == null
+          ? null
+          : policyEntities.stream()
+              .collect(Collectors.toMap(PolicyEntity::getId, entity -> entity));
     }
   }
 }

@@ -57,6 +57,7 @@ import org.apache.polaris.core.persistence.PolarisMetaStoreManager;
 import org.apache.polaris.core.persistence.resolver.PolarisResolutionManifest;
 import org.apache.polaris.core.policy.PolicyType;
 import org.apache.polaris.service.catalog.PolarisCatalogHandlerWrapper;
+import org.apache.polaris.service.catalog.PolicyCatalogHandlerWrapper;
 import org.apache.polaris.service.catalog.io.DefaultFileIOFactory;
 import org.apache.polaris.service.context.CallContextCatalogFactory;
 import org.apache.polaris.service.context.PolarisCallContextCatalogFactory;
@@ -103,6 +104,26 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
         metaStoreManager,
         securityContext(authenticatedPrincipal, activatedPrincipalRoles),
         factory,
+        catalogName,
+        polarisAuthorizer);
+  }
+
+  private PolicyCatalogHandlerWrapper newPolicyWrapper(Set<String> activatedPrincipalRoles) {
+    return newPolicyWrapper(activatedPrincipalRoles, CATALOG_NAME);
+  }
+
+  private PolicyCatalogHandlerWrapper newPolicyWrapper(
+      Set<String> activatedPrincipalRoles, String catalogName) {
+    final AuthenticatedPolarisPrincipal authenticatedPrincipal =
+        new AuthenticatedPolarisPrincipal(principalEntity, activatedPrincipalRoles);
+    return new PolicyCatalogHandlerWrapper(
+        realmContext,
+        metaStoreSession,
+        configurationStore,
+        diagServices,
+        entityManager,
+        metaStoreManager,
+        securityContext(authenticatedPrincipal, activatedPrincipalRoles),
         catalogName,
         polarisAuthorizer);
   }
@@ -613,7 +634,7 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
                   .setDescription("description_test")
                   .build();
           LoadPolicyResult result =
-              newWrapper(Set.of(PRINCIPAL_ROLE1)).createPolicy(NS2, createPolicyRequest);
+              newPolicyWrapper(Set.of(PRINCIPAL_ROLE1)).createPolicy(NS2, createPolicyRequest);
           Assertions.assertThat(result.getPolicy().getName()).isEqualTo("policy_test");
           Assertions.assertThat(result.getPolicy().getPolicyType())
               .isEqualTo(PolicyType.DATA_COMPACTION.getName());
@@ -628,7 +649,7 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
         List.of(PolarisPrivilege.POLICY_READ),
         () -> {
           LoadPolicyResult result =
-              newWrapper(Set.of(PRINCIPAL_ROLE1)).getPolicy(NS2, "policy_test");
+              newPolicyWrapper(Set.of(PRINCIPAL_ROLE1)).getPolicy(NS2, "policy_test");
           Assertions.assertThat(result.getPolicy().getName()).isEqualTo("policy_test");
           Assertions.assertThat(result.getPolicy().getPolicyType())
               .isEqualTo(PolicyType.DATA_COMPACTION.getName());
@@ -648,7 +669,7 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
                   .setDescription("updated_description")
                   .build();
           LoadPolicyResult result =
-              newWrapper(Set.of(PRINCIPAL_ROLE1))
+              newPolicyWrapper(Set.of(PRINCIPAL_ROLE1))
                   .updatePolicy(NS2, "policy_test", updatePolicyRequest);
           Assertions.assertThat(result.getPolicy().getName()).isEqualTo("policy_test");
           Assertions.assertThat(result.getPolicy().getPolicyType())
@@ -663,7 +684,7 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
         List.of(PolarisPrivilege.POLICY_READ),
         () -> {
           LoadPolicyResult result =
-              newWrapper(Set.of(PRINCIPAL_ROLE1)).getPolicy(NS2, "policy_test");
+              newPolicyWrapper(Set.of(PRINCIPAL_ROLE1)).getPolicy(NS2, "policy_test");
           Assertions.assertThat(result.getPolicy().getName()).isEqualTo("policy_test");
           Assertions.assertThat(result.getPolicy().getPolicyType())
               .isEqualTo(PolicyType.DATA_COMPACTION.getName());
@@ -678,7 +699,7 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
     doTestSufficientPrivileges(
         List.of(PolarisPrivilege.POLICY_DROP),
         () -> {
-          newWrapper(Set.of(PRINCIPAL_ROLE1)).deletePolicy(NS2, "policy_test");
+          newPolicyWrapper(Set.of(PRINCIPAL_ROLE1)).deletePolicy(NS2, "policy_test");
         },
         () -> {
           CreatePolicyRequest createPolicyRequest =
@@ -688,7 +709,7 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
                   .setContent("exmaple_content")
                   .setDescription("description_test")
                   .build();
-          newWrapper(Set.of(PRINCIPAL_ROLE2)).createPolicy(NS2, createPolicyRequest);
+          newPolicyWrapper(Set.of(PRINCIPAL_ROLE2)).createPolicy(NS2, createPolicyRequest);
         });
   }
 
@@ -731,9 +752,9 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
                 CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.TABLE_LIKE_ATTACH_POLICY))
         .isTrue();
     Assertions.assertThat(
-                    adminService.grantPrivilegeOnCatalogToRole(
-                            CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.NAMESPACE_ATTACH_POLICY))
-            .isTrue();
+            adminService.grantPrivilegeOnCatalogToRole(
+                CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.NAMESPACE_ATTACH_POLICY))
+        .isTrue();
 
     final TableIdentifier newtable = TableIdentifier.of(NS1, "newtable");
     final CreateTableRequest createRequest =
@@ -746,8 +767,8 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
             .setContent("exmaple_content")
             .setDescription("description_test")
             .build();
-    newWrapper(Set.of(PRINCIPAL_ROLE2)).createPolicy(NS2, createPolicyRequest);
-    newWrapper(Set.of(PRINCIPAL_ROLE2)).getPolicy(NS2, "policy_test");
+    newPolicyWrapper(Set.of(PRINCIPAL_ROLE2)).createPolicy(NS2, createPolicyRequest);
+    newPolicyWrapper(Set.of(PRINCIPAL_ROLE2)).getPolicy(NS2, "policy_test");
     newWrapper(Set.of(PRINCIPAL_ROLE2)).createTableDirect(NS1, createRequest);
     newWrapper(Set.of(PRINCIPAL_ROLE2)).loadTable(newtable, "");
 
@@ -763,18 +784,19 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
             .build();
 
     final SetPolicyRequest setPolicyOnNamespaceRequest =
-            SetPolicyRequest.builder()
-                    .setEntity(
+        SetPolicyRequest.builder()
+            .setEntity(
+                NamespaceIdentifier.builder()
+                    .setCatalog(CATALOG_NAME)
+                    .setNamespace(Arrays.asList(NS1.levels()))
+                    .setType(EntityIdentifier.TypeEnum.NAMESPACE)
+                    .build())
+            .build();
 
-                           NamespaceIdentifier.builder().setCatalog(CATALOG_NAME)
-                                   .setNamespace(Arrays.asList(NS1.levels()))
-                                   .setType(EntityIdentifier.TypeEnum.NAMESPACE)
-                                   .build())
-                    .build();
-
-    newWrapper(Set.of(PRINCIPAL_ROLE2)).setPolicy(NS2, "policy_test", setPolicyOnNamespaceRequest);
+    newPolicyWrapper(Set.of(PRINCIPAL_ROLE2))
+        .setPolicy(NS2, "policy_test", setPolicyOnNamespaceRequest);
     GetApplicablePoliciesResponse result =
-        newWrapper(Set.of(PRINCIPAL_ROLE2)).getApplicablePolicies(newtable);
+        newPolicyWrapper(Set.of(PRINCIPAL_ROLE2)).getApplicablePolicies(newtable);
     Assertions.assertThat(result.getPolicies()).hasSize(1);
   }
 

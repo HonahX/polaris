@@ -363,8 +363,7 @@ public class TransactionWorkspaceMetaStoreManager implements PolarisMetaStoreMan
 
   @Override
   public LoadPolicyMappingsResult loadPoliciesOnEntity(
-      @NotNull PolarisMetaStoreSession session,
-      @NotNull PolarisEntityCore target) {
+      @NotNull PolarisMetaStoreSession session, @NotNull PolarisEntityCore target) {
     diagnostics.fail("illegal_method_in_transaction_workspace", "loadPoliciesOnEntity");
     return null;
   }

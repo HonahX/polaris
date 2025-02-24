@@ -87,9 +87,7 @@ public class PolicyEntity extends PolarisEntity {
     @Override
     public PolicyEntity build() {
       Preconditions.checkArgument(
-              properties.get(POLICY_TYPE_KEY) != null,
-              "Policy type must be specified"
-      );
+          properties.get(POLICY_TYPE_KEY) != null, "Policy type must be specified");
 
       return new PolicyEntity(buildBase());
     }
@@ -110,7 +108,7 @@ public class PolicyEntity extends PolarisEntity {
       if (policyType == null) {
         throw new IllegalArgumentException("Invalid policy type " + policyTypeName);
       }
-    return setPolicyTypeCode(policyType.getCode());
+      return setPolicyTypeCode(policyType.getCode());
     }
 
     private Builder setPolicyTypeCode(int policyTypeCode) {
@@ -122,7 +120,6 @@ public class PolicyEntity extends PolarisEntity {
       properties.put(POLICY_TYPE_KEY, Integer.toString(policyType.getCode()));
       return this;
     }
-
 
     public Builder setDescription(String description) {
       properties.put(POLICY_DESCRIPTION_KEY, description);

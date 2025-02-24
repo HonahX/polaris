@@ -615,7 +615,8 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
           LoadPolicyResult result =
               newWrapper(Set.of(PRINCIPAL_ROLE1)).createPolicy(NS2, createPolicyRequest);
           Assertions.assertThat(result.getPolicy().getName()).isEqualTo("policy_test");
-          Assertions.assertThat(result.getPolicy().getPolicyType()).isEqualTo(PolicyType.DATA_COMPACTION.getName());
+          Assertions.assertThat(result.getPolicy().getPolicyType())
+              .isEqualTo(PolicyType.DATA_COMPACTION.getName());
           Assertions.assertThat(result.getPolicy().getContent()).isEqualTo("exmaple_content");
           Assertions.assertThat(result.getPolicy().getDescription()).isEqualTo("description_test");
         },
@@ -629,7 +630,8 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
           LoadPolicyResult result =
               newWrapper(Set.of(PRINCIPAL_ROLE1)).getPolicy(NS2, "policy_test");
           Assertions.assertThat(result.getPolicy().getName()).isEqualTo("policy_test");
-          Assertions.assertThat(result.getPolicy().getPolicyType()).isEqualTo(PolicyType.DATA_COMPACTION.getName());
+          Assertions.assertThat(result.getPolicy().getPolicyType())
+              .isEqualTo(PolicyType.DATA_COMPACTION.getName());
           Assertions.assertThat(result.getPolicy().getContent()).isEqualTo("exmaple_content");
           Assertions.assertThat(result.getPolicy().getDescription()).isEqualTo("description_test");
         },
@@ -649,7 +651,8 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
               newWrapper(Set.of(PRINCIPAL_ROLE1))
                   .updatePolicy(NS2, "policy_test", updatePolicyRequest);
           Assertions.assertThat(result.getPolicy().getName()).isEqualTo("policy_test");
-          Assertions.assertThat(result.getPolicy().getPolicyType()).isEqualTo(PolicyType.DATA_COMPACTION.getName());
+          Assertions.assertThat(result.getPolicy().getPolicyType())
+              .isEqualTo(PolicyType.DATA_COMPACTION.getName());
           Assertions.assertThat(result.getPolicy().getContent()).isEqualTo("updated_content");
           Assertions.assertThat(result.getPolicy().getDescription())
               .isEqualTo("updated_description");
@@ -662,7 +665,8 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
           LoadPolicyResult result =
               newWrapper(Set.of(PRINCIPAL_ROLE1)).getPolicy(NS2, "policy_test");
           Assertions.assertThat(result.getPolicy().getName()).isEqualTo("policy_test");
-          Assertions.assertThat(result.getPolicy().getPolicyType()).isEqualTo(PolicyType.DATA_COMPACTION.getName());
+          Assertions.assertThat(result.getPolicy().getPolicyType())
+              .isEqualTo(PolicyType.DATA_COMPACTION.getName());
           Assertions.assertThat(result.getPolicy().getContent()).isEqualTo("updated_content");
           Assertions.assertThat(result.getPolicy().getDescription())
               .isEqualTo("updated_description");
@@ -726,6 +730,10 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
             adminService.grantPrivilegeOnCatalogToRole(
                 CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.TABLE_LIKE_ATTACH_POLICY))
         .isTrue();
+    Assertions.assertThat(
+                    adminService.grantPrivilegeOnCatalogToRole(
+                            CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.NAMESPACE_ATTACH_POLICY))
+            .isTrue();
 
     final TableIdentifier newtable = TableIdentifier.of(NS1, "newtable");
     final CreateTableRequest createRequest =
@@ -754,8 +762,19 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
                     .build())
             .build();
 
-    newWrapper(Set.of(PRINCIPAL_ROLE2)).setPolicy(NS2, "policy_test", setPolicyRequest);
-    GetApplicablePoliciesResponse result = newWrapper(Set.of(PRINCIPAL_ROLE2)).getApplicablePolicies(newtable);
+    final SetPolicyRequest setPolicyOnNamespaceRequest =
+            SetPolicyRequest.builder()
+                    .setEntity(
+
+                           NamespaceIdentifier.builder().setCatalog(CATALOG_NAME)
+                                   .setNamespace(Arrays.asList(NS1.levels()))
+                                   .setType(EntityIdentifier.TypeEnum.NAMESPACE)
+                                   .build())
+                    .build();
+
+    newWrapper(Set.of(PRINCIPAL_ROLE2)).setPolicy(NS2, "policy_test", setPolicyOnNamespaceRequest);
+    GetApplicablePoliciesResponse result =
+        newWrapper(Set.of(PRINCIPAL_ROLE2)).getApplicablePolicies(newtable);
     Assertions.assertThat(result.getPolicies()).hasSize(1);
   }
 

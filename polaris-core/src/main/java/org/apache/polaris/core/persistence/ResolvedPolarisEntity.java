@@ -20,9 +20,12 @@ package org.apache.polaris.core.persistence;
 
 import com.google.common.collect.ImmutableList;
 import jakarta.annotation.Nonnull;
+
+import java.util.ArrayList;
 import java.util.List;
 import org.apache.polaris.core.entity.PolarisEntity;
 import org.apache.polaris.core.entity.PolarisGrantRecord;
+import org.apache.polaris.core.entity.PolarisPolicyMappingRecord;
 import org.apache.polaris.core.persistence.cache.EntityCacheEntry;
 
 public class ResolvedPolarisEntity {
@@ -37,21 +40,35 @@ public class ResolvedPolarisEntity {
   // these are the grants like TABLE_READ_PROPERTIES, NAMESPACE_LIST, etc.
   private final List<PolarisGrantRecord> grantRecordsAsSecurable;
 
+  // only non-empty if this entity can be a target of policy attachment
+  private final List<PolarisPolicyMappingRecord> policyMappingRecords;
+
   public ResolvedPolarisEntity(
-      PolarisEntity entity,
-      List<PolarisGrantRecord> grantRecordsAsGrantee,
-      List<PolarisGrantRecord> grantRecordsAsSecurable) {
+          PolarisEntity entity,
+          List<PolarisGrantRecord> grantRecordsAsGrantee,
+          List<PolarisGrantRecord> grantRecordsAsSecurable,
+          List<PolarisPolicyMappingRecord> policyMappingRecords
+  ) {
     this.entity = entity;
     // TODO: Precondition checks that grantee or securable ids in grant records match entity as
     // expected.
     this.grantRecordsAsGrantee = grantRecordsAsGrantee;
     this.grantRecordsAsSecurable = grantRecordsAsSecurable;
+    this.policyMappingRecords = policyMappingRecords;
+  }
+
+  public ResolvedPolarisEntity(
+      PolarisEntity entity,
+      List<PolarisGrantRecord> grantRecordsAsGrantee,
+      List<PolarisGrantRecord> grantRecordsAsSecurable) {
+    this(entity, grantRecordsAsGrantee, grantRecordsAsSecurable, ImmutableList.of());
   }
 
   public ResolvedPolarisEntity(@Nonnull EntityCacheEntry cacheEntry) {
     this.entity = PolarisEntity.of(cacheEntry.getEntity());
     this.grantRecordsAsGrantee = ImmutableList.copyOf(cacheEntry.getGrantRecordsAsGrantee());
     this.grantRecordsAsSecurable = ImmutableList.copyOf(cacheEntry.getGrantRecordsAsSecurable());
+    this.policyMappingRecords = ImmutableList.of();
   }
 
   public PolarisEntity getEntity() {
@@ -67,6 +84,9 @@ public class ResolvedPolarisEntity {
   public List<PolarisGrantRecord> getGrantRecordsAsSecurable() {
     return grantRecordsAsSecurable;
   }
+
+  /** The policy mapping records associated with this entity being target of policy attachment */
+  public List<PolarisPolicyMappingRecord> getPolicyMappingRecords() {return policyMappingRecords;}
 
   @Override
   public String toString() {

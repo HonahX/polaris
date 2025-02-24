@@ -299,9 +299,11 @@ public class PolarisTreeMapStore {
         new Slice<>(
             policyMappingRecord ->
                 String.format(
-                    "%d::%s::%d",
+                    "%d::%d::%d::%d::%d",
+                    policyMappingRecord.getTargetCatalogId(),
                     policyMappingRecord.getTargetId(),
-                    policyMappingRecord.getPolicyType(),
+                    policyMappingRecord.getPolicyTypeCode(),
+                    policyMappingRecord.getPolicyCatalogId(),
                     policyMappingRecord.getPolicyId()),
             PolarisPolicyMappingRecord::new);
 
@@ -309,9 +311,10 @@ public class PolarisTreeMapStore {
         new Slice<>(
             policyMappingRecord ->
                 String.format(
-                    "%d::%s::%d",
+                    "%d::%d::%d::%d",
+                    policyMappingRecord.getPolicyCatalogId(),
                     policyMappingRecord.getPolicyId(),
-                    policyMappingRecord.getPolicyType(),
+                    policyMappingRecord.getTargetCatalogId(),
                     policyMappingRecord.getTargetId()),
             PolarisPolicyMappingRecord::new);
 

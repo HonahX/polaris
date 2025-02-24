@@ -19,11 +19,14 @@
 package org.apache.polaris.core.policy;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.apache.polaris.core.entity.*;
 import org.apache.polaris.core.persistence.BaseResult;
 import org.apache.polaris.core.persistence.PolarisMetaStoreSession;
@@ -49,17 +52,15 @@ public interface PolarisPolicyMappingManager {
       @Nonnull PolicyEntity policy,
       @Nonnull List<PolarisEntityCore> policyCatalogPath);
 
-  // TODO: do we need enforce inheritance here?
+  // TODO: do we need enforce inheritance here? Answer: no, it should happen on service side
   LoadPolicyMappingsResult loadPoliciesOnEntity(
       @Nonnull PolarisMetaStoreSession session,
-      @Nonnull PolarisEntityCore target,
-      @Nonnull List<PolarisEntityCore> catalogPath);
+      @Nonnull PolarisEntityCore target);
 
   LoadPolicyMappingsResult loadPoliciesOnEntityByType(
       @Nonnull PolarisMetaStoreSession session,
       @Nonnull PolarisEntityCore target,
-      @Nonnull List<PolarisEntityCore> catalogPath,
-      @Nonnull String policyType);
+      @Nonnull PolicyType policyType);
 
   class AttachmentResult extends BaseResult {
     // null if not success
@@ -129,6 +130,11 @@ public interface PolarisPolicyMappingManager {
 
     public List<PolicyEntity> getPolicyEntities() {
       return policyEntities;
+    }
+
+    @JsonIgnore
+    public Map<Long, PolicyEntity> getPolicyEntitiesAsMap() {
+      return policyEntities == null ? null : policyEntities.stream().collect(Collectors.toMap(PolicyEntity::getId, entity -> entity));
     }
   }
 }

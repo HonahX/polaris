@@ -408,23 +408,29 @@ public interface PolarisMetaStoreSession {
 
   @Nullable
   default PolarisPolicyMappingRecord lookupPolicyMappingRecord(
-      long targetId, String policyType, long policyId) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Nullable
-  default PolarisPolicyMappingRecord lookupPolicyMappingRecordByType(
-      long targetId, String policyType) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Nonnull
-  default List<PolarisPolicyMappingRecord> loadAllPoliciesOnTarget(long targetId) {
+      long targetCatalogId,
+      long targetId,
+      int policyTypeCode,
+      long policyCatalogId,
+      long policyId) {
     throw new UnsupportedOperationException();
   }
 
   @Nonnull
-  default List<PolarisPolicyMappingRecord> loadAllPoliciesOnPolicy(long policyId) {
+  default List<PolarisPolicyMappingRecord> lookupPolicyMappingRecordByTargetAndType(
+      long targetCatalogId, long targetId, int policyTypeCode) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Nonnull
+  default List<PolarisPolicyMappingRecord> loadAllPoliciesOnTarget(
+      long targetCatalogId, long targetId) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Nonnull
+  default List<PolarisPolicyMappingRecord> loadAllPoliciesOnPolicy(
+      long policyCatalogId, long policyId) {
     throw new UnsupportedOperationException();
   }
 

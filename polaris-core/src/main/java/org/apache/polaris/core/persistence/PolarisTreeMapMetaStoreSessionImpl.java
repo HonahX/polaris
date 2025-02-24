@@ -31,6 +31,7 @@ import org.apache.polaris.core.entity.*;
 import org.apache.polaris.core.storage.PolarisStorageConfigurationInfo;
 import org.apache.polaris.core.storage.PolarisStorageIntegration;
 import org.apache.polaris.core.storage.PolarisStorageIntegrationProvider;
+import org.jetbrains.annotations.NotNull;
 
 public class PolarisTreeMapMetaStoreSessionImpl implements PolarisMetaStoreSession {
 
@@ -516,42 +517,40 @@ public class PolarisTreeMapMetaStoreSessionImpl implements PolarisMetaStoreSessi
 
   @Override
   public @Nullable PolarisPolicyMappingRecord lookupPolicyMappingRecord(
-      long targetId, String policyType, long policyId) {
+      long targetCatalogId,
+      long targetId,
+      int policyTypeCode,
+      long policyCatalogId,
+      long policyId) {
     return this.store
         .getSlicePolicyMappingRecords()
-        .read(this.store.buildPrefixKeyComposite(targetId, policyType, policyId));
+        .read(
+            this.store.buildPrefixKeyComposite(
+                targetCatalogId, targetId, policyTypeCode, policyCatalogId, policyId));
   }
 
   @Override
-  public @Nullable PolarisPolicyMappingRecord lookupPolicyMappingRecordByType(
-      long targetId, String policyType) {
-    List<PolarisPolicyMappingRecord> recs =
-        this.store
-            .getSlicePolicyMappingRecords()
-            .readRange(this.store.buildPrefixKeyComposite(targetId, policyType));
-    if (recs.isEmpty()) {
-      return null;
-    } else if (recs.size() > 1) {
-      throw new IllegalStateException(
-          String.format(
-              "The multiple policies of the type %s has been grant to entity with id %d",
-              policyType, targetId));
-    }
-    return recs.get(0);
-  }
-
-  @Override
-  public @Nonnull List<PolarisPolicyMappingRecord> loadAllPoliciesOnTarget(long targetId) {
+  public @NotNull List<PolarisPolicyMappingRecord> lookupPolicyMappingRecordByTargetAndType(
+      long targetCatalogId, long targetId, int policyTypeCode) {
     return this.store
         .getSlicePolicyMappingRecords()
-        .readRange(this.store.buildPrefixKeyComposite(targetId));
+        .readRange(this.store.buildPrefixKeyComposite(targetCatalogId, targetId, policyTypeCode));
   }
 
   @Override
-  public @Nonnull List<PolarisPolicyMappingRecord> loadAllPoliciesOnPolicy(long policyId) {
+  public @Nonnull List<PolarisPolicyMappingRecord> loadAllPoliciesOnTarget(
+      long targetCatalogId, long targetId) {
+    return this.store
+        .getSlicePolicyMappingRecords()
+        .readRange(this.store.buildPrefixKeyComposite(targetCatalogId, targetId));
+  }
+
+  @Override
+  public @Nonnull List<PolarisPolicyMappingRecord> loadAllPoliciesOnPolicy(
+      long policyCatalogId, long policyId) {
     return this.store
         .getSlicePolicyMappingRecordsByPolicy()
-        .readRange(this.store.buildPrefixKeyComposite(policyId));
+        .readRange(this.store.buildPrefixKeyComposite(policyCatalogId, policyId));
   }
 
   /** {@inheritDoc} */

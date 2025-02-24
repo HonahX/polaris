@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import org.apache.polaris.core.PolarisDiagnostics;
 import org.apache.polaris.core.entity.*;
+import org.apache.polaris.core.policy.PolicyType;
 import org.apache.polaris.core.storage.PolarisStorageActions;
 import org.jetbrains.annotations.NotNull;
 
@@ -363,8 +364,7 @@ public class TransactionWorkspaceMetaStoreManager implements PolarisMetaStoreMan
   @Override
   public LoadPolicyMappingsResult loadPoliciesOnEntity(
       @NotNull PolarisMetaStoreSession session,
-      @NotNull PolarisEntityCore target,
-      @NotNull List<PolarisEntityCore> catalogPath) {
+      @NotNull PolarisEntityCore target) {
     diagnostics.fail("illegal_method_in_transaction_workspace", "loadPoliciesOnEntity");
     return null;
   }
@@ -373,8 +373,7 @@ public class TransactionWorkspaceMetaStoreManager implements PolarisMetaStoreMan
   public LoadPolicyMappingsResult loadPoliciesOnEntityByType(
       @NotNull PolarisMetaStoreSession session,
       @NotNull PolarisEntityCore target,
-      @NotNull List<PolarisEntityCore> catalogPath,
-      @NotNull String policyType) {
+      @NotNull PolicyType policyType) {
     diagnostics.fail("illegal_method_in_transaction_workspace", "loadPoliciesOnEntityByType");
     return null;
   }

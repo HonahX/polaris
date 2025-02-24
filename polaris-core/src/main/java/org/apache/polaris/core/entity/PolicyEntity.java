@@ -30,7 +30,7 @@ public class PolicyEntity extends PolarisEntity {
   public static final String POLICY_VERSION_KEY = "policy-version";
   public static final String POLICY_CONTENT_KEY = "policy-content";
 
-  public PolicyEntity(PolarisBaseEntity sourceEntity) {
+  PolicyEntity(PolarisBaseEntity sourceEntity) {
     super(sourceEntity);
   }
 
@@ -97,22 +97,6 @@ public class PolicyEntity extends PolarisEntity {
         internalProperties.put(
             NamespaceEntity.PARENT_NAMESPACE_KEY, RESTUtil.encodeNamespace(namespace));
       }
-      return this;
-    }
-
-    // TODO: need to deprecate
-    // TODO: I do not think validation should happen here.
-    public Builder setPolicyTypeName(String policyTypeName) {
-      // TODO: Do we need to validate the type here?
-      PolicyType policyType = PolicyType.fromName(policyTypeName);
-      if (policyType == null) {
-        throw new IllegalArgumentException("Invalid policy type " + policyTypeName);
-      }
-      return setPolicyTypeCode(policyType.getCode());
-    }
-
-    private Builder setPolicyTypeCode(int policyTypeCode) {
-      properties.put(POLICY_TYPE_KEY, Integer.toString(policyTypeCode));
       return this;
     }
 

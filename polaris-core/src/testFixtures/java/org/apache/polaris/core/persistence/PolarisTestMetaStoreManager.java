@@ -34,6 +34,7 @@ import org.apache.polaris.core.entity.*;
 import org.apache.polaris.core.persistence.cache.PolarisRemoteCache.CachedEntryResult;
 import org.apache.polaris.core.policy.PolarisPolicyMappingManager;
 import org.apache.polaris.core.policy.PolicyType;
+import org.apache.polaris.core.policy.PredefinedPolicyType;
 import org.assertj.core.api.Assertions;
 
 /** Test the Polaris persistence layer */
@@ -2077,7 +2078,7 @@ public class PolarisTestMetaStoreManager {
             "T1");
 
     PolarisBaseEntity N1_P1 =
-        this.createPolicy(List.of(catalog, N1), "P1", PolicyType.DATA_COMPACTION);
+        this.createPolicy(List.of(catalog, N1), "P1", PredefinedPolicyType.DATA_COMPACTION);
 
     this.ensureExistsByName(List.of(catalog, N1), PolarisEntityType.POLICY, "P1");
 
@@ -2095,16 +2096,16 @@ public class PolarisTestMetaStoreManager {
     Assertions.assertThat(record.size()).isEqualTo(1);
     Assertions.assertThat(record.get(0).getName()).isEqualTo("P1");
     Assertions.assertThat(record.get(0).getPolicyTypeCode())
-        .isEqualTo(PolicyType.DATA_COMPACTION.getCode());
+        .isEqualTo(PredefinedPolicyType.DATA_COMPACTION.getCode());
     PolarisPolicyMappingManager.LoadPolicyMappingsResult onTypeSearch =
         polarisMetaStoreManager.loadPoliciesOnEntityByType(
-            polarisMetaStoreSession, N1_N2_T1, PolicyType.DATA_COMPACTION);
+            polarisMetaStoreSession, N1_N2_T1, PredefinedPolicyType.DATA_COMPACTION);
     List<PolicyEntity> recordOnTypeSearch = onTypeSearch.getPolicyEntities();
     Assertions.assertThat(recordOnTypeSearch).isNotNull();
     Assertions.assertThat(recordOnTypeSearch.size()).isEqualTo(1);
     Assertions.assertThat(recordOnTypeSearch.get(0).getName()).isEqualTo("P1");
     Assertions.assertThat(recordOnTypeSearch.get(0).getPolicyTypeName())
-        .isEqualTo(PolicyType.DATA_COMPACTION.getName());
+        .isEqualTo(PredefinedPolicyType.DATA_COMPACTION.getName());
   }
 
   PolarisBaseEntity createPolicy(

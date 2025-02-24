@@ -20,65 +20,23 @@ package org.apache.polaris.core.policy;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.google.common.collect.ImmutableMap;
 import jakarta.annotation.Nullable;
 
-public enum PolicyType {
-  DATA_COMPACTION(0, "system.data-compaction", true);
-
-  private final int code;
-  private final String name;
-  private final boolean isInheritable;
-  private static final PolicyType[] REVERSE_CODE_MAPPING_ARRAY;
-  private static final ImmutableMap<String, PolicyType> REVERSE_NAME_MAPPING_ARRAY;
-
-  static {
-    int maxId = 0;
-    for (PolicyType policyType : PolicyType.values()) {
-      if (maxId < policyType.code) {
-        maxId = policyType.code;
-      }
-    }
-
-    REVERSE_CODE_MAPPING_ARRAY = new PolicyType[maxId + 1];
-    ImmutableMap.Builder<String, PolicyType> builder = ImmutableMap.builder();
-    // populate both
-    for (PolicyType policyType : PolicyType.values()) {
-      REVERSE_CODE_MAPPING_ARRAY[policyType.code] = policyType;
-      builder.put(policyType.name, policyType);
-    }
-    REVERSE_NAME_MAPPING_ARRAY = builder.build();
-  }
-
-  PolicyType(int code, String name, boolean isInheritable) {
-    this.code = code;
-    this.name = name;
-    this.isInheritable = isInheritable;
-  }
+public interface PolicyType {
 
   @JsonValue
-  public int getCode() {
-    return code;
-  }
+  int getCode();
 
-  public String getName() {
-    return name;
-  }
+  String getName();
 
-  public boolean isInheritable() {
-    return isInheritable;
-  }
+  boolean isInheritable();
 
   @JsonCreator
-  public static @Nullable PolicyType fromCode(int code) {
-    if (code >= REVERSE_CODE_MAPPING_ARRAY.length) {
-      return null;
-    }
-
-    return REVERSE_CODE_MAPPING_ARRAY[code];
+  static @Nullable PolicyType fromCode(int code) {
+    return PredefinedPolicyType.fromCode(code);
   }
 
-  public static @Nullable PolicyType fromName(String name) {
-    return REVERSE_NAME_MAPPING_ARRAY.get(name);
+  static @Nullable PolicyType fromName(String name) {
+    return PredefinedPolicyType.fromName(name);
   }
 }

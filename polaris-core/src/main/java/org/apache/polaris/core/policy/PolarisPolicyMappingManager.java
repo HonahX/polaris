@@ -26,9 +26,9 @@ import jakarta.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.apache.polaris.core.PolarisCallContext;
 import org.apache.polaris.core.entity.*;
 import org.apache.polaris.core.persistence.BaseResult;
-import org.apache.polaris.core.persistence.PolarisMetaStoreSession;
 
 public interface PolarisPolicyMappingManager {
 
@@ -37,7 +37,7 @@ public interface PolarisPolicyMappingManager {
    * has been granted to the entity
    */
   AttachmentResult attachPolicyToEntity(
-      @Nonnull PolarisMetaStoreSession session,
+      @Nonnull PolarisCallContext callCtx,
       @Nonnull PolarisEntityCore target,
       @Nonnull List<PolarisEntityCore> targetCatalogPath,
       @Nonnull PolicyEntity policy,
@@ -45,7 +45,7 @@ public interface PolarisPolicyMappingManager {
       Map<String, String> parameters);
 
   AttachmentResult detachPolicyFromEntity(
-      @Nonnull PolarisMetaStoreSession session,
+      @Nonnull PolarisCallContext callCtx,
       @Nonnull PolarisEntityCore target,
       @Nonnull List<PolarisEntityCore> catalogPath,
       @Nonnull PolicyEntity policy,
@@ -53,10 +53,10 @@ public interface PolarisPolicyMappingManager {
 
   // TODO: do we need enforce inheritance here? Answer: no, it should happen on service side
   LoadPolicyMappingsResult loadPoliciesOnEntity(
-      @Nonnull PolarisMetaStoreSession session, @Nonnull PolarisEntityCore target);
+      @Nonnull PolarisCallContext callCtx, @Nonnull PolarisEntityCore target);
 
   LoadPolicyMappingsResult loadPoliciesOnEntityByType(
-      @Nonnull PolarisMetaStoreSession session,
+      @Nonnull PolarisCallContext callCtx,
       @Nonnull PolarisEntityCore target,
       @Nonnull PolicyType policyType);
 

@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.iceberg.BaseMetadataTable;
 import org.apache.iceberg.BaseTable;
@@ -71,12 +72,14 @@ import org.apache.polaris.core.auth.AuthenticatedPolarisPrincipal;
 import org.apache.polaris.core.auth.PolarisAuthorizableOperation;
 import org.apache.polaris.core.auth.PolarisAuthorizer;
 import org.apache.polaris.core.catalog.PolarisCatalogHelpers;
-import org.apache.polaris.core.context.RealmContext;
-import org.apache.polaris.core.entity.*;
+import org.apache.polaris.core.context.CallContext;
 import org.apache.polaris.core.entity.CatalogEntity;
 import org.apache.polaris.core.entity.PolarisEntitySubType;
 import org.apache.polaris.core.entity.PolarisEntityType;
-import org.apache.polaris.core.persistence.*;
+import org.apache.polaris.core.persistence.PolarisEntityManager;
+import org.apache.polaris.core.persistence.PolarisMetaStoreManager;
+import org.apache.polaris.core.persistence.PolarisResolvedPathWrapper;
+import org.apache.polaris.core.persistence.TransactionWorkspaceMetaStoreManager;
 import org.apache.polaris.core.persistence.resolver.PolarisResolutionManifest;
 import org.apache.polaris.core.persistence.resolver.ResolverPath;
 import org.apache.polaris.core.persistence.resolver.ResolverStatus;
@@ -105,10 +108,7 @@ import org.slf4j.LoggerFactory;
 public class PolarisCatalogHandlerWrapper implements AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(PolarisCatalogHandlerWrapper.class);
 
-  private final RealmContext realmContext;
-  private final PolarisMetaStoreSession session;
-  private final PolarisConfigurationStore configurationStore;
-  private final PolarisDiagnostics diagnostics;
+  private final CallContext callContext;
   private final PolarisEntityManager entityManager;
   private final PolarisMetaStoreManager metaStoreManager;
   private final String catalogName;
@@ -127,26 +127,21 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
   private ViewCatalog viewCatalog = null;
 
   public PolarisCatalogHandlerWrapper(
-      RealmContext realmContext,
-      PolarisMetaStoreSession session,
-      PolarisConfigurationStore configurationStore,
-      PolarisDiagnostics diagnostics,
+      CallContext callContext,
       PolarisEntityManager entityManager,
       PolarisMetaStoreManager metaStoreManager,
       SecurityContext securityContext,
       CallContextCatalogFactory catalogFactory,
       String catalogName,
       PolarisAuthorizer authorizer) {
-    this.realmContext = realmContext;
-    this.session = session;
+    this.callContext = callContext;
     this.entityManager = entityManager;
     this.metaStoreManager = metaStoreManager;
-    this.diagnostics = diagnostics;
-    this.configurationStore = configurationStore;
     this.catalogName = catalogName;
-    diagnostics.checkNotNull(securityContext, "null_security_context");
-    diagnostics.checkNotNull(securityContext.getUserPrincipal(), "null_user_principal");
-    diagnostics.check(
+    PolarisDiagnostics diagServices = callContext.getPolarisCallContext().getDiagServices();
+    diagServices.checkNotNull(securityContext, "null_security_context");
+    diagServices.checkNotNull(securityContext.getUserPrincipal(), "null_user_principal");
+    diagServices.check(
         securityContext.getUserPrincipal() instanceof AuthenticatedPolarisPrincipal,
         "invalid_principal_type",
         "Principal must be an AuthenticatedPolarisPrincipal");
@@ -178,17 +173,10 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     return isCreate;
   }
 
-  @Override
-  public void close() throws IOException {
-    if (baseCatalog instanceof Closeable closeable) {
-      closeable.close();
-    }
-  }
-
   private void initializeCatalog() {
     this.baseCatalog =
         catalogFactory.createCallContextCatalog(
-            realmContext, authenticatedPrincipal, securityContext, resolutionManifest);
+            callContext, authenticatedPrincipal, securityContext, resolutionManifest);
     this.namespaceCatalog =
         (baseCatalog instanceof SupportsNamespaces) ? (SupportsNamespaces) baseCatalog : null;
     this.viewCatalog = (baseCatalog instanceof ViewCatalog) ? (ViewCatalog) baseCatalog : null;
@@ -205,7 +193,7 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
       List<Namespace> extraPassthroughNamespaces,
       List<TableIdentifier> extraPassthroughTableLikes) {
     resolutionManifest =
-        entityManager.prepareResolutionManifest(session, securityContext, catalogName);
+        entityManager.prepareResolutionManifest(callContext, securityContext, catalogName);
     resolutionManifest.addPath(
         new ResolverPath(Arrays.asList(namespace.levels()), PolarisEntityType.NAMESPACE),
         namespace);
@@ -234,7 +222,6 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
       throw new NoSuchNamespaceException("Namespace does not exist: %s", namespace);
     }
     authorizer.authorizeOrThrow(
-        realmContext,
         authenticatedPrincipal,
         resolutionManifest.getAllActivatedCatalogRoleAndPrincipalRoles(),
         op,
@@ -247,7 +234,7 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
   private void authorizeCreateNamespaceUnderNamespaceOperationOrThrow(
       PolarisAuthorizableOperation op, Namespace namespace) {
     resolutionManifest =
-        entityManager.prepareResolutionManifest(session, securityContext, catalogName);
+        entityManager.prepareResolutionManifest(callContext, securityContext, catalogName);
 
     Namespace parentNamespace = PolarisCatalogHelpers.getParentNamespace(namespace);
     resolutionManifest.addPath(
@@ -268,7 +255,6 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
       throw new NoSuchNamespaceException("Namespace does not exist: %s", parentNamespace);
     }
     authorizer.authorizeOrThrow(
-        realmContext,
         authenticatedPrincipal,
         resolutionManifest.getAllActivatedCatalogRoleAndPrincipalRoles(),
         op,
@@ -283,7 +269,7 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     Namespace namespace = identifier.namespace();
 
     resolutionManifest =
-        entityManager.prepareResolutionManifest(session, securityContext, catalogName);
+        entityManager.prepareResolutionManifest(callContext, securityContext, catalogName);
     resolutionManifest.addPath(
         new ResolverPath(Arrays.asList(namespace.levels()), PolarisEntityType.NAMESPACE),
         namespace);
@@ -306,7 +292,6 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
       throw new NoSuchNamespaceException("Namespace does not exist: %s", namespace);
     }
     authorizer.authorizeOrThrow(
-        realmContext,
         authenticatedPrincipal,
         resolutionManifest.getAllActivatedCatalogRoleAndPrincipalRoles(),
         op,
@@ -319,7 +304,7 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
   private void authorizeBasicTableLikeOperationOrThrow(
       PolarisAuthorizableOperation op, PolarisEntitySubType subType, TableIdentifier identifier) {
     resolutionManifest =
-        entityManager.prepareResolutionManifest(session, securityContext, catalogName);
+        entityManager.prepareResolutionManifest(callContext, securityContext, catalogName);
 
     // The underlying Catalog is also allowed to fetch "fresh" versions of the target entity.
     resolutionManifest.addPassthroughPath(
@@ -339,7 +324,6 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
       }
     }
     authorizer.authorizeOrThrow(
-        realmContext,
         authenticatedPrincipal,
         resolutionManifest.getAllActivatedCatalogRoleAndPrincipalRoles(),
         op,
@@ -354,7 +338,7 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
       final PolarisEntitySubType subType,
       List<TableIdentifier> ids) {
     resolutionManifest =
-        entityManager.prepareResolutionManifest(session, securityContext, catalogName);
+        entityManager.prepareResolutionManifest(callContext, securityContext, catalogName);
     ids.forEach(
         identifier ->
             resolutionManifest.addPassthroughPath(
@@ -393,7 +377,6 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
                                         "View does not exist: %s", identifier)))
             .toList();
     authorizer.authorizeOrThrow(
-        realmContext,
         authenticatedPrincipal,
         resolutionManifest.getAllActivatedCatalogRoleAndPrincipalRoles(),
         op,
@@ -409,7 +392,7 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
       TableIdentifier src,
       TableIdentifier dst) {
     resolutionManifest =
-        entityManager.prepareResolutionManifest(session, securityContext, catalogName);
+        entityManager.prepareResolutionManifest(callContext, securityContext, catalogName);
     // Add src, dstParent, and dst(optional)
     resolutionManifest.addPath(
         new ResolverPath(
@@ -454,7 +437,6 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     PolarisResolvedPathWrapper secondary =
         resolutionManifest.getResolvedPath(dst.namespace(), true);
     authorizer.authorizeOrThrow(
-        realmContext,
         authenticatedPrincipal,
         resolutionManifest.getAllActivatedCatalogRoleAndPrincipalRoles(),
         op,
@@ -468,7 +450,7 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     PolarisAuthorizableOperation op = PolarisAuthorizableOperation.LIST_NAMESPACES;
     authorizeBasicNamespaceOperationOrThrow(op, parent);
 
-    return CatalogHandlers.listNamespaces(namespaceCatalog, parent);
+    return doCatalogOperation(() -> CatalogHandlers.listNamespaces(namespaceCatalog, parent));
   }
 
   public CreateNamespaceResponse createNamespace(CreateNamespaceRequest request) {
@@ -491,17 +473,20 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
       // For CreateNamespace, we consider this a special case in that the creator is able to
       // retrieve the latest namespace metadata for the duration of the CreateNamespace
       // operation, even if the entityVersion and/or grantsVersion update in the interim.
-      namespaceCatalog.createNamespace(namespace, request.properties());
-      return CreateNamespaceResponse.builder()
-          .withNamespace(namespace)
-          .setProperties(
-              resolutionManifest
-                  .getPassthroughResolvedPath(namespace)
-                  .getRawLeafEntity()
-                  .getPropertiesAsMap())
-          .build();
+      return doCatalogOperation(
+          () -> {
+            namespaceCatalog.createNamespace(namespace, request.properties());
+            return CreateNamespaceResponse.builder()
+                .withNamespace(namespace)
+                .setProperties(
+                    resolutionManifest
+                        .getPassthroughResolvedPath(namespace)
+                        .getRawLeafEntity()
+                        .getPropertiesAsMap())
+                .build();
+          });
     } else {
-      return CatalogHandlers.createNamespace(namespaceCatalog, request);
+      return doCatalogOperation(() -> CatalogHandlers.createNamespace(namespaceCatalog, request));
     }
   }
 
@@ -510,11 +495,37 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
         catalog.getCatalogType());
   }
 
+  private void doCatalogOperation(Runnable handler) {
+    doCatalogOperation(
+        () -> {
+          handler.run();
+          return null;
+        });
+  }
+
+  /**
+   * Execute a catalog function and ensure we close the BaseCatalog afterward. This will typically
+   * ensure the underlying FileIO is closed
+   */
+  private <T> T doCatalogOperation(Supplier<T> handler) {
+    try {
+      return handler.get();
+    } finally {
+      if (baseCatalog instanceof Closeable closeable) {
+        try {
+          closeable.close();
+        } catch (IOException e) {
+          LOGGER.error("Error while closing BaseCatalog", e);
+        }
+      }
+    }
+  }
+
   public GetNamespaceResponse loadNamespaceMetadata(Namespace namespace) {
     PolarisAuthorizableOperation op = PolarisAuthorizableOperation.LOAD_NAMESPACE_METADATA;
     authorizeBasicNamespaceOperationOrThrow(op, namespace);
 
-    return CatalogHandlers.loadNamespace(namespaceCatalog, namespace);
+    return doCatalogOperation(() -> CatalogHandlers.loadNamespace(namespaceCatalog, namespace));
   }
 
   public void namespaceExists(Namespace namespace) {
@@ -529,14 +540,14 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     authorizeBasicNamespaceOperationOrThrow(op, namespace);
 
     // TODO: Just skip CatalogHandlers for this one maybe
-    CatalogHandlers.loadNamespace(namespaceCatalog, namespace);
+    doCatalogOperation(() -> CatalogHandlers.loadNamespace(namespaceCatalog, namespace));
   }
 
   public void dropNamespace(Namespace namespace) {
     PolarisAuthorizableOperation op = PolarisAuthorizableOperation.DROP_NAMESPACE;
     authorizeBasicNamespaceOperationOrThrow(op, namespace);
 
-    CatalogHandlers.dropNamespace(namespaceCatalog, namespace);
+    doCatalogOperation(() -> CatalogHandlers.dropNamespace(namespaceCatalog, namespace));
   }
 
   public UpdateNamespacePropertiesResponse updateNamespaceProperties(
@@ -544,14 +555,15 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     PolarisAuthorizableOperation op = PolarisAuthorizableOperation.UPDATE_NAMESPACE_PROPERTIES;
     authorizeBasicNamespaceOperationOrThrow(op, namespace);
 
-    return CatalogHandlers.updateNamespaceProperties(namespaceCatalog, namespace, request);
+    return doCatalogOperation(
+        () -> CatalogHandlers.updateNamespaceProperties(namespaceCatalog, namespace, request));
   }
 
   public ListTablesResponse listTables(Namespace namespace) {
     PolarisAuthorizableOperation op = PolarisAuthorizableOperation.LIST_TABLES;
     authorizeBasicNamespaceOperationOrThrow(op, namespace);
 
-    return CatalogHandlers.listTables(baseCatalog, namespace);
+    return doCatalogOperation(() -> CatalogHandlers.listTables(baseCatalog, namespace));
   }
 
   public LoadTableResponse createTableDirect(Namespace namespace, CreateTableRequest request) {
@@ -568,7 +580,7 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     if (isExternal(catalog)) {
       throw new BadRequestException("Cannot create table on external catalogs.");
     }
-    return CatalogHandlers.createTable(baseCatalog, namespace, request);
+    return doCatalogOperation(() -> CatalogHandlers.createTable(baseCatalog, namespace, request));
   }
 
   public LoadTableResponse createTableDirectWithWriteDelegation(
@@ -587,52 +599,55 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     if (isExternal(catalog)) {
       throw new BadRequestException("Cannot create table on external catalogs.");
     }
-    request.validate();
+    return doCatalogOperation(
+        () -> {
+          request.validate();
 
-    TableIdentifier tableIdentifier = TableIdentifier.of(namespace, request.name());
-    if (baseCatalog.tableExists(tableIdentifier)) {
-      throw new AlreadyExistsException("Table already exists: %s", tableIdentifier);
-    }
+          TableIdentifier tableIdentifier = TableIdentifier.of(namespace, request.name());
+          if (baseCatalog.tableExists(tableIdentifier)) {
+            throw new AlreadyExistsException("Table already exists: %s", tableIdentifier);
+          }
 
-    Map<String, String> properties = Maps.newHashMap();
-    properties.put("created-at", OffsetDateTime.now(ZoneOffset.UTC).toString());
-    properties.putAll(request.properties());
+          Map<String, String> properties = Maps.newHashMap();
+          properties.put("created-at", OffsetDateTime.now(ZoneOffset.UTC).toString());
+          properties.putAll(request.properties());
 
-    Table table =
-        baseCatalog
-            .buildTable(tableIdentifier, request.schema())
-            .withLocation(request.location())
-            .withPartitionSpec(request.spec())
-            .withSortOrder(request.writeOrder())
-            .withProperties(properties)
-            .create();
+          Table table =
+              baseCatalog
+                  .buildTable(tableIdentifier, request.schema())
+                  .withLocation(request.location())
+                  .withPartitionSpec(request.spec())
+                  .withSortOrder(request.writeOrder())
+                  .withProperties(properties)
+                  .create();
 
-    if (table instanceof BaseTable baseTable) {
-      TableMetadata tableMetadata = baseTable.operations().current();
-      LoadTableResponse.Builder responseBuilder =
-          LoadTableResponse.builder().withTableMetadata(tableMetadata);
-      if (baseCatalog instanceof SupportsCredentialDelegation credentialDelegation) {
-        LOGGER
-            .atDebug()
-            .addKeyValue("tableIdentifier", tableIdentifier)
-            .addKeyValue("tableLocation", tableMetadata.location())
-            .log("Fetching client credentials for table");
-        responseBuilder.addAllConfig(
-            credentialDelegation.getCredentialConfig(
-                tableIdentifier,
-                tableMetadata,
-                Set.of(
-                    PolarisStorageActions.READ,
-                    PolarisStorageActions.WRITE,
-                    PolarisStorageActions.LIST)));
-      }
-      return responseBuilder.build();
-    } else if (table instanceof BaseMetadataTable) {
-      // metadata tables are loaded on the client side, return NoSuchTableException for now
-      throw new NoSuchTableException("Table does not exist: %s", tableIdentifier.toString());
-    }
+          if (table instanceof BaseTable baseTable) {
+            TableMetadata tableMetadata = baseTable.operations().current();
+            LoadTableResponse.Builder responseBuilder =
+                LoadTableResponse.builder().withTableMetadata(tableMetadata);
+            if (baseCatalog instanceof SupportsCredentialDelegation credentialDelegation) {
+              LOGGER
+                  .atDebug()
+                  .addKeyValue("tableIdentifier", tableIdentifier)
+                  .addKeyValue("tableLocation", tableMetadata.location())
+                  .log("Fetching client credentials for table");
+              responseBuilder.addAllConfig(
+                  credentialDelegation.getCredentialConfig(
+                      tableIdentifier,
+                      tableMetadata,
+                      Set.of(
+                          PolarisStorageActions.READ,
+                          PolarisStorageActions.WRITE,
+                          PolarisStorageActions.LIST)));
+            }
+            return responseBuilder.build();
+          } else if (table instanceof BaseMetadataTable) {
+            // metadata tables are loaded on the client side, return NoSuchTableException for now
+            throw new NoSuchTableException("Table does not exist: %s", tableIdentifier.toString());
+          }
 
-    throw new IllegalStateException("Cannot wrap catalog that does not produce BaseTable");
+          throw new IllegalStateException("Cannot wrap catalog that does not produce BaseTable");
+        });
   }
 
   private TableMetadata stageTableCreateHelper(Namespace namespace, CreateTableRequest request) {
@@ -693,8 +708,11 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     if (isExternal(catalog)) {
       throw new BadRequestException("Cannot create table on external catalogs.");
     }
-    TableMetadata metadata = stageTableCreateHelper(namespace, request);
-    return LoadTableResponse.builder().withTableMetadata(metadata).build();
+    return doCatalogOperation(
+        () -> {
+          TableMetadata metadata = stageTableCreateHelper(namespace, request);
+          return LoadTableResponse.builder().withTableMetadata(metadata).build();
+        });
   }
 
   public LoadTableResponse createTableStagedWithWriteDelegation(
@@ -713,23 +731,26 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     if (isExternal(catalog)) {
       throw new BadRequestException("Cannot create table on external catalogs.");
     }
-    TableIdentifier ident = TableIdentifier.of(namespace, request.name());
-    TableMetadata metadata = stageTableCreateHelper(namespace, request);
+    return doCatalogOperation(
+        () -> {
+          TableIdentifier ident = TableIdentifier.of(namespace, request.name());
+          TableMetadata metadata = stageTableCreateHelper(namespace, request);
 
-    LoadTableResponse.Builder responseBuilder =
-        LoadTableResponse.builder().withTableMetadata(metadata);
+          LoadTableResponse.Builder responseBuilder =
+              LoadTableResponse.builder().withTableMetadata(metadata);
 
-    if (baseCatalog instanceof SupportsCredentialDelegation credentialDelegation) {
-      LOGGER
-          .atDebug()
-          .addKeyValue("tableIdentifier", ident)
-          .addKeyValue("tableLocation", metadata.location())
-          .log("Fetching client credentials for table");
-      responseBuilder.addAllConfig(
-          credentialDelegation.getCredentialConfig(
-              ident, metadata, Set.of(PolarisStorageActions.ALL)));
-    }
-    return responseBuilder.build();
+          if (baseCatalog instanceof SupportsCredentialDelegation credentialDelegation) {
+            LOGGER
+                .atDebug()
+                .addKeyValue("tableIdentifier", ident)
+                .addKeyValue("tableLocation", metadata.location())
+                .log("Fetching client credentials for table");
+            responseBuilder.addAllConfig(
+                credentialDelegation.getCredentialConfig(
+                    ident, metadata, Set.of(PolarisStorageActions.ALL)));
+          }
+          return responseBuilder.build();
+        });
   }
 
   public LoadTableResponse registerTable(Namespace namespace, RegisterTableRequest request) {
@@ -737,7 +758,7 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     authorizeCreateTableLikeUnderNamespaceOperationOrThrow(
         op, TableIdentifier.of(namespace, request.name()));
 
-    return CatalogHandlers.registerTable(baseCatalog, namespace, request);
+    return doCatalogOperation(() -> CatalogHandlers.registerTable(baseCatalog, namespace, request));
   }
 
   public boolean sendNotification(TableIdentifier identifier, NotificationRequest request) {
@@ -782,7 +803,7 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     PolarisAuthorizableOperation op = PolarisAuthorizableOperation.LOAD_TABLE;
     authorizeBasicTableLikeOperationOrThrow(op, PolarisEntitySubType.TABLE, tableIdentifier);
 
-    return CatalogHandlers.loadTable(baseCatalog, tableIdentifier);
+    return doCatalogOperation(() -> CatalogHandlers.loadTable(baseCatalog, tableIdentifier));
   }
 
   public LoadTableResponse loadTableWithAccessDelegation(
@@ -809,13 +830,18 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     }
 
     PolarisResolvedPathWrapper catalogPath = resolutionManifest.getResolvedReferenceCatalogEntity();
-    diagnostics.checkNotNull(catalogPath, "No catalog available for loadTable request");
+    callContext
+        .getPolarisCallContext()
+        .getDiagServices()
+        .checkNotNull(catalogPath, "No catalog available for loadTable request");
     CatalogEntity catalogEntity = CatalogEntity.of(catalogPath.getRawLeafEntity());
+    PolarisConfigurationStore configurationStore =
+        callContext.getPolarisCallContext().getConfigurationStore();
     if (catalogEntity
             .getCatalogType()
             .equals(org.apache.polaris.core.admin.model.Catalog.TypeEnum.EXTERNAL)
         && !configurationStore.getConfiguration(
-            realmContext,
+            callContext.getPolarisCallContext(),
             catalogEntity,
             PolarisConfiguration.ALLOW_EXTERNAL_CATALOG_CREDENTIAL_VENDING)) {
       throw new ForbiddenException(
@@ -826,29 +852,32 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
 
     // TODO: Find a way for the configuration or caller to better express whether to fail or omit
     // when data-access is specified but access delegation grants are not found.
-    Table table = baseCatalog.loadTable(tableIdentifier);
+    return doCatalogOperation(
+        () -> {
+          Table table = baseCatalog.loadTable(tableIdentifier);
 
-    if (table instanceof BaseTable baseTable) {
-      TableMetadata tableMetadata = baseTable.operations().current();
-      LoadTableResponse.Builder responseBuilder =
-          LoadTableResponse.builder().withTableMetadata(tableMetadata);
-      if (baseCatalog instanceof SupportsCredentialDelegation credentialDelegation) {
-        LOGGER
-            .atDebug()
-            .addKeyValue("tableIdentifier", tableIdentifier)
-            .addKeyValue("tableLocation", tableMetadata.location())
-            .log("Fetching client credentials for table");
-        responseBuilder.addAllConfig(
-            credentialDelegation.getCredentialConfig(
-                tableIdentifier, tableMetadata, actionsRequested));
-      }
-      return responseBuilder.build();
-    } else if (table instanceof BaseMetadataTable) {
-      // metadata tables are loaded on the client side, return NoSuchTableException for now
-      throw new NoSuchTableException("Table does not exist: %s", tableIdentifier.toString());
-    }
+          if (table instanceof BaseTable baseTable) {
+            TableMetadata tableMetadata = baseTable.operations().current();
+            LoadTableResponse.Builder responseBuilder =
+                LoadTableResponse.builder().withTableMetadata(tableMetadata);
+            if (baseCatalog instanceof SupportsCredentialDelegation credentialDelegation) {
+              LOGGER
+                  .atDebug()
+                  .addKeyValue("tableIdentifier", tableIdentifier)
+                  .addKeyValue("tableLocation", tableMetadata.location())
+                  .log("Fetching client credentials for table");
+              responseBuilder.addAllConfig(
+                  credentialDelegation.getCredentialConfig(
+                      tableIdentifier, tableMetadata, actionsRequested));
+            }
+            return responseBuilder.build();
+          } else if (table instanceof BaseMetadataTable) {
+            // metadata tables are loaded on the client side, return NoSuchTableException for now
+            throw new NoSuchTableException("Table does not exist: %s", tableIdentifier.toString());
+          }
 
-    throw new IllegalStateException("Cannot wrap catalog that does not produce BaseTable");
+          throw new IllegalStateException("Cannot wrap catalog that does not produce BaseTable");
+        });
   }
 
   private UpdateTableRequest applyUpdateFilters(UpdateTableRequest request) {
@@ -889,7 +918,9 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     if (isExternal(catalog)) {
       throw new BadRequestException("Cannot update table on external catalogs.");
     }
-    return CatalogHandlers.updateTable(baseCatalog, tableIdentifier, applyUpdateFilters(request));
+    return doCatalogOperation(
+        () ->
+            CatalogHandlers.updateTable(baseCatalog, tableIdentifier, applyUpdateFilters(request)));
   }
 
   public LoadTableResponse updateTableForStagedCreate(
@@ -906,14 +937,16 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     if (isExternal(catalog)) {
       throw new BadRequestException("Cannot update table on external catalogs.");
     }
-    return CatalogHandlers.updateTable(baseCatalog, tableIdentifier, applyUpdateFilters(request));
+    return doCatalogOperation(
+        () ->
+            CatalogHandlers.updateTable(baseCatalog, tableIdentifier, applyUpdateFilters(request)));
   }
 
   public void dropTableWithoutPurge(TableIdentifier tableIdentifier) {
     PolarisAuthorizableOperation op = PolarisAuthorizableOperation.DROP_TABLE_WITHOUT_PURGE;
     authorizeBasicTableLikeOperationOrThrow(op, PolarisEntitySubType.TABLE, tableIdentifier);
 
-    CatalogHandlers.dropTable(baseCatalog, tableIdentifier);
+    doCatalogOperation(() -> CatalogHandlers.dropTable(baseCatalog, tableIdentifier));
   }
 
   public void dropTableWithPurge(TableIdentifier tableIdentifier) {
@@ -929,7 +962,7 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     if (isExternal(catalog)) {
       throw new BadRequestException("Cannot drop table on external catalogs.");
     }
-    CatalogHandlers.purgeTable(baseCatalog, tableIdentifier);
+    doCatalogOperation(() -> CatalogHandlers.purgeTable(baseCatalog, tableIdentifier));
   }
 
   public void tableExists(TableIdentifier tableIdentifier) {
@@ -937,7 +970,7 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     authorizeBasicTableLikeOperationOrThrow(op, PolarisEntitySubType.TABLE, tableIdentifier);
 
     // TODO: Just skip CatalogHandlers for this one maybe
-    CatalogHandlers.loadTable(baseCatalog, tableIdentifier);
+    doCatalogOperation(() -> CatalogHandlers.loadTable(baseCatalog, tableIdentifier));
   }
 
   public void renameTable(RenameTableRequest request) {
@@ -954,7 +987,7 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     if (isExternal(catalog)) {
       throw new BadRequestException("Cannot rename table on external catalogs.");
     }
-    CatalogHandlers.renameTable(baseCatalog, request);
+    doCatalogOperation(() -> CatalogHandlers.renameTable(baseCatalog, request));
   }
 
   public void commitTransaction(CommitTransactionRequest commitTransactionRequest) {
@@ -989,7 +1022,7 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     // only go into an in-memory collection that we can commit as a single atomic unit after all
     // validations.
     TransactionWorkspaceMetaStoreManager transactionMetaStoreManager =
-        new TransactionWorkspaceMetaStoreManager(metaStoreManager, diagnostics);
+        new TransactionWorkspaceMetaStoreManager(metaStoreManager);
     ((BasePolarisCatalog) baseCatalog).setMetaStoreManager(transactionMetaStoreManager);
 
     commitTransactionRequest.tableChanges().stream()
@@ -1025,9 +1058,12 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
                           if (!currentMetadata
                                   .location()
                                   .equals(((MetadataUpdate.SetLocation) singleUpdate).location())
-                              && !configurationStore.getConfiguration(
-                                  realmContext,
-                                  PolarisConfiguration.ALLOW_NAMESPACE_LOCATION_OVERLAP)) {
+                              && !callContext
+                                  .getPolarisCallContext()
+                                  .getConfigurationStore()
+                                  .getConfiguration(
+                                      callContext.getPolarisCallContext(),
+                                      PolarisConfiguration.ALLOW_NAMESPACE_LOCATION_OVERLAP)) {
                             throw new BadRequestException(
                                 "Unsupported operation: commitTransaction containing SetLocation"
                                     + " for table '%s' and new location '%s'",
@@ -1051,7 +1087,8 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     List<PolarisMetaStoreManager.EntityWithPath> pendingUpdates =
         transactionMetaStoreManager.getPendingUpdates();
     PolarisMetaStoreManager.EntitiesResult result =
-        metaStoreManager.updateEntitiesPropertiesIfNotChanged(session, pendingUpdates);
+        metaStoreManager.updateEntitiesPropertiesIfNotChanged(
+            callContext.getPolarisCallContext(), pendingUpdates);
     if (!result.isSuccess()) {
       // TODO: Retries and server-side cleanup on failure
       throw new CommitFailedException(
@@ -1064,7 +1101,7 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     PolarisAuthorizableOperation op = PolarisAuthorizableOperation.LIST_VIEWS;
     authorizeBasicNamespaceOperationOrThrow(op, namespace);
 
-    return CatalogHandlers.listViews(viewCatalog, namespace);
+    return doCatalogOperation(() -> CatalogHandlers.listViews(viewCatalog, namespace));
   }
 
   public LoadViewResponse createView(Namespace namespace, CreateViewRequest request) {
@@ -1081,14 +1118,14 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     if (isExternal(catalog)) {
       throw new BadRequestException("Cannot create view on external catalogs.");
     }
-    return CatalogHandlers.createView(viewCatalog, namespace, request);
+    return doCatalogOperation(() -> CatalogHandlers.createView(viewCatalog, namespace, request));
   }
 
   public LoadViewResponse loadView(TableIdentifier viewIdentifier) {
     PolarisAuthorizableOperation op = PolarisAuthorizableOperation.LOAD_VIEW;
     authorizeBasicTableLikeOperationOrThrow(op, PolarisEntitySubType.VIEW, viewIdentifier);
 
-    return CatalogHandlers.loadView(viewCatalog, viewIdentifier);
+    return doCatalogOperation(() -> CatalogHandlers.loadView(viewCatalog, viewIdentifier));
   }
 
   public LoadViewResponse replaceView(TableIdentifier viewIdentifier, UpdateTableRequest request) {
@@ -1104,14 +1141,15 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     if (isExternal(catalog)) {
       throw new BadRequestException("Cannot replace view on external catalogs.");
     }
-    return CatalogHandlers.updateView(viewCatalog, viewIdentifier, applyUpdateFilters(request));
+    return doCatalogOperation(
+        () -> CatalogHandlers.updateView(viewCatalog, viewIdentifier, applyUpdateFilters(request)));
   }
 
   public void dropView(TableIdentifier viewIdentifier) {
     PolarisAuthorizableOperation op = PolarisAuthorizableOperation.DROP_VIEW;
     authorizeBasicTableLikeOperationOrThrow(op, PolarisEntitySubType.VIEW, viewIdentifier);
 
-    CatalogHandlers.dropView(viewCatalog, viewIdentifier);
+    doCatalogOperation(() -> CatalogHandlers.dropView(viewCatalog, viewIdentifier));
   }
 
   public void viewExists(TableIdentifier viewIdentifier) {
@@ -1119,7 +1157,7 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     authorizeBasicTableLikeOperationOrThrow(op, PolarisEntitySubType.VIEW, viewIdentifier);
 
     // TODO: Just skip CatalogHandlers for this one maybe
-    CatalogHandlers.loadView(viewCatalog, viewIdentifier);
+    doCatalogOperation(() -> CatalogHandlers.loadView(viewCatalog, viewIdentifier));
   }
 
   public void renameView(RenameTableRequest request) {
@@ -1136,6 +1174,9 @@ public class PolarisCatalogHandlerWrapper implements AutoCloseable {
     if (isExternal(catalog)) {
       throw new BadRequestException("Cannot rename view on external catalogs.");
     }
-    CatalogHandlers.renameView(viewCatalog, request);
+    doCatalogOperation(() -> CatalogHandlers.renameView(viewCatalog, request));
   }
+
+  @Override
+  public void close() throws Exception {}
 }

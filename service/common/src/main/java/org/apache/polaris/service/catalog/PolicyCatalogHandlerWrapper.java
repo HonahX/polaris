@@ -37,6 +37,8 @@ import org.apache.polaris.core.persistence.resolver.PolarisResolutionManifest;
 import org.apache.polaris.core.persistence.resolver.ResolverPath;
 import org.apache.polaris.core.persistence.resolver.ResolverStatus;
 import org.apache.polaris.core.policy.PolicyType;
+import org.apache.polaris.core.policy.PolicyValidator;
+import org.apache.polaris.core.policy.PolicyValidatorFactory;
 import org.apache.polaris.service.types.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -114,6 +116,11 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
         // TODO: custom policy type not yet suported
         throw new BadRequestException("Unknown policy type: %s", request.getType());
       }
+
+      PolicyValidator policyValidator = PolicyValidatorFactory.loadValidator(policyType);
+      if (policyValidator == null || !policyValidator.validate(request.getContent())) {
+        throw new BadRequestException("Invalid policy content: %s", request.getContent());
+      }
       entity =
           new PolicyEntity.Builder(namespace, request.getName())
               .setCatalogId(catalogEntity.getId())
@@ -176,7 +183,11 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
     PolicyEntity.Builder newPolicyBuilder = new PolicyEntity.Builder(policy);
 
     if (request.getContent() != null) {
-      // TODO: need to validate the content
+      PolicyType policyType = PolicyType.fromCode(policy.getPolicyTypeCode());
+      PolicyValidator policyValidator = PolicyValidatorFactory.loadValidator(policyType);
+      if (policyValidator == null || !policyValidator.validate(request.getContent())) {
+        throw new BadRequestException("Invalid policy content: %s", request.getContent());
+      }
       newPolicyBuilder.setContent(request.getContent());
     }
 

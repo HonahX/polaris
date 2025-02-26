@@ -20,19 +20,37 @@ package org.apache.polaris.service.catalog;
 
 import jakarta.annotation.Nonnull;
 import jakarta.ws.rs.core.SecurityContext;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
-import org.apache.iceberg.exceptions.*;
+import org.apache.iceberg.exceptions.AlreadyExistsException;
+import org.apache.iceberg.exceptions.BadRequestException;
+import org.apache.iceberg.exceptions.NoSuchNamespaceException;
+import org.apache.iceberg.exceptions.NoSuchTableException;
+import org.apache.iceberg.exceptions.NoSuchViewException;
+import org.apache.iceberg.exceptions.NotFoundException;
 import org.apache.polaris.core.PolarisCallContext;
 import org.apache.polaris.core.auth.AuthenticatedPolarisPrincipal;
 import org.apache.polaris.core.auth.PolarisAuthorizableOperation;
 import org.apache.polaris.core.auth.PolarisAuthorizer;
 import org.apache.polaris.core.catalog.PolarisCatalogHelpers;
 import org.apache.polaris.core.context.CallContext;
-import org.apache.polaris.core.entity.*;
-import org.apache.polaris.core.persistence.*;
+import org.apache.polaris.core.entity.CatalogEntity;
+import org.apache.polaris.core.entity.PolarisEntity;
+import org.apache.polaris.core.entity.PolarisEntitySubType;
+import org.apache.polaris.core.entity.PolarisEntityType;
+import org.apache.polaris.core.entity.PolicyEntity;
+import org.apache.polaris.core.persistence.BaseResult;
+import org.apache.polaris.core.persistence.PolarisEntityManager;
+import org.apache.polaris.core.persistence.PolarisMetaStoreManager;
+import org.apache.polaris.core.persistence.PolarisResolvedPathWrapper;
 import org.apache.polaris.core.persistence.resolver.PolarisResolutionManifest;
 import org.apache.polaris.core.persistence.resolver.ResolverPath;
 import org.apache.polaris.core.persistence.resolver.ResolverStatus;
@@ -40,7 +58,15 @@ import org.apache.polaris.core.policy.PolicyIdentifier;
 import org.apache.polaris.core.policy.PolicyType;
 import org.apache.polaris.core.policy.PolicyValidator;
 import org.apache.polaris.core.policy.PolicyValidatorFactory;
-import org.apache.polaris.service.types.*;
+import org.apache.polaris.service.types.CatalogIdentifier;
+import org.apache.polaris.service.types.CreatePolicyRequest;
+import org.apache.polaris.service.types.GetApplicablePoliciesResponse;
+import org.apache.polaris.service.types.LoadPolicyResult;
+import org.apache.polaris.service.types.NamespaceIdentifier;
+import org.apache.polaris.service.types.Policy;
+import org.apache.polaris.service.types.SetPolicyRequest;
+import org.apache.polaris.service.types.TableLikeIdentifier;
+import org.apache.polaris.service.types.UpdatePolicyRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -498,10 +524,11 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
     // TODO: need a policyIdentifier
     resolutionManifest.addPassthroughPath(
         new ResolverPath(
-            PolarisCatalogHelpers.policyIdentifierToList(PolicyIdentifier.of(namespace, policyName)),
+            PolarisCatalogHelpers.policyIdentifierToList(
+                PolicyIdentifier.of(namespace, policyName)),
             PolarisEntityType.POLICY,
             true /* optional */),
-            PolicyIdentifier.of(namespace, policyName));
+        PolicyIdentifier.of(namespace, policyName));
     resolutionManifest.resolveAll();
     PolarisResolvedPathWrapper target = resolutionManifest.getResolvedPath(namespace, true);
     if (target == null) {
@@ -607,7 +634,7 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
   }
 
   private @Nonnull PolarisMetaStoreManager.DropEntityResult dropPolicy(
-          PolicyIdentifier policyIdentifier) {
+      PolicyIdentifier policyIdentifier) {
     PolarisResolvedPathWrapper resolvedEntities =
         resolutionManifest.getResolvedPath(policyIdentifier);
     if (resolvedEntities == null) {

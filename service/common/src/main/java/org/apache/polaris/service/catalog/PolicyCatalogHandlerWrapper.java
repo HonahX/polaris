@@ -183,7 +183,7 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
     PolicyEntity.Builder newPolicyBuilder = new PolicyEntity.Builder(policy);
 
     if (request.getContent() != null) {
-      PolicyType policyType = PolicyType.fromCode(policy.getPolicyTypeCode());
+      PolicyType policyType = policy.getPolicyType();
       PolicyValidator policyValidator = PolicyValidatorFactory.loadValidator(policyType);
       if (policyValidator == null || !policyValidator.validate(request.getContent())) {
         throw new BadRequestException("Invalid policy content: %s", request.getContent());
@@ -640,7 +640,7 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
 
   private static Policy constructPolicy(PolicyEntity policyEntity) {
     return Policy.builder()
-        .setPolicyType(policyEntity.getPolicyTypeName())
+        .setPolicyType(policyEntity.getPolicyType().getName())
         .setName(policyEntity.getName())
         .setDescription(policyEntity.getDescription())
         .setContent(policyEntity.getContent())

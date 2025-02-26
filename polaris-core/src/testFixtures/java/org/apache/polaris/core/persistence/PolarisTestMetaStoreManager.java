@@ -2116,8 +2116,8 @@ public class PolarisTestMetaStoreManager {
     Assertions.assertThat(recordOnTypeSearch).isNotNull();
     Assertions.assertThat(recordOnTypeSearch.size()).isEqualTo(1);
     Assertions.assertThat(recordOnTypeSearch.get(0).getName()).isEqualTo("P1");
-    Assertions.assertThat(recordOnTypeSearch.get(0).getPolicyTypeName())
-        .isEqualTo(PredefinedPolicyType.DATA_COMPACTION.getName());
+    Assertions.assertThat(recordOnTypeSearch.get(0).getPolicyType())
+        .isEqualTo(PredefinedPolicyType.DATA_COMPACTION);
     polarisMetaStoreManager.detachPolicyFromEntity(
         polarisCallContext,
         N1_N2_T1,

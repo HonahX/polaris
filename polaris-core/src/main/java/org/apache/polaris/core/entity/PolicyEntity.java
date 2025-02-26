@@ -18,6 +18,7 @@
  */
 package org.apache.polaris.core.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.Preconditions;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.rest.RESTUtil;
@@ -25,7 +26,7 @@ import org.apache.polaris.core.policy.PolicyType;
 
 public class PolicyEntity extends PolarisEntity {
 
-  public static final String POLICY_TYPE_KEY = "policy-type-code";
+  public static final String POLICY_TYPE_CODE_KEY = "policy-type-code";
   public static final String POLICY_DESCRIPTION_KEY = "policy-description";
   public static final String POLICY_VERSION_KEY = "policy-version";
   public static final String POLICY_CONTENT_KEY = "policy-content";
@@ -42,30 +43,32 @@ public class PolicyEntity extends PolarisEntity {
     return null;
   }
 
-  public String getPolicyTypeName() {
-    String policyTypeCode = getPropertiesAsMap().get(POLICY_TYPE_KEY);
-    if (policyTypeCode != null) {
-      return PolicyType.fromCode(Integer.parseInt(policyTypeCode)).getName();
-    }
-    return null;
+  @JsonIgnore
+  public PolicyType getPolicyType() {
+    return PolicyType.fromCode(getPolicyTypeCode());
   }
 
+  @JsonIgnore
   public int getPolicyTypeCode() {
-    String policyTypeCode = getPropertiesAsMap().get(POLICY_TYPE_KEY);
+    String policyTypeCode = getPropertiesAsMap().get(POLICY_TYPE_CODE_KEY);
     if (policyTypeCode != null) {
       return Integer.parseInt(policyTypeCode);
     }
-    throw new IllegalStateException("Invalid policy entity");
+
+    return -1;
   }
 
+  @JsonIgnore
   public String getDescription() {
     return getPropertiesAsMap().get(POLICY_DESCRIPTION_KEY);
   }
 
+  @JsonIgnore
   public String getContent() {
     return getPropertiesAsMap().get(POLICY_CONTENT_KEY);
   }
 
+  @JsonIgnore
   public String getPolicyVersion() {
     return getPropertiesAsMap().get(POLICY_VERSION_KEY);
   }
@@ -76,7 +79,6 @@ public class PolicyEntity extends PolarisEntity {
       setType(PolarisEntityType.POLICY);
       setParentNamespace(namespace);
       setName(policyName);
-      // TODO: check whether version starts from 0
       setPolicyVersion(0);
     }
 
@@ -87,7 +89,7 @@ public class PolicyEntity extends PolarisEntity {
     @Override
     public PolicyEntity build() {
       Preconditions.checkArgument(
-          properties.get(POLICY_TYPE_KEY) != null, "Policy type must be specified");
+          properties.get(POLICY_TYPE_CODE_KEY) != null, "Policy type must be specified");
 
       return new PolicyEntity(buildBase());
     }
@@ -101,7 +103,7 @@ public class PolicyEntity extends PolarisEntity {
     }
 
     public Builder setPolicyType(PolicyType policyType) {
-      properties.put(POLICY_TYPE_KEY, Integer.toString(policyType.getCode()));
+      properties.put(POLICY_TYPE_CODE_KEY, Integer.toString(policyType.getCode()));
       return this;
     }
 
@@ -116,7 +118,6 @@ public class PolicyEntity extends PolarisEntity {
     }
 
     public Builder setContent(String content) {
-      // TODO: validate, but not here
       properties.put(POLICY_CONTENT_KEY, content);
       return this;
     }

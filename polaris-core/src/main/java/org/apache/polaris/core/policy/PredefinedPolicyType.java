@@ -23,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.collect.ImmutableMap;
 import jakarta.annotation.Nullable;
 
+/* Represents all predefined policy types in Polaris */
 public enum PredefinedPolicyType implements PolicyType {
   DATA_COMPACTION(0, "system.data-compaction", true);
 
@@ -56,22 +57,32 @@ public enum PredefinedPolicyType implements PolicyType {
     this.isInheritable = isInheritable;
   }
 
+  /** {@inheritDoc} */
   @Override
   @JsonValue
   public int getCode() {
     return code;
   }
 
+  /** {@inheritDoc} */
   @Override
   public String getName() {
     return name;
   }
 
+  /** {@inheritDoc} */
   @Override
   public boolean isInheritable() {
     return isInheritable;
   }
 
+  /**
+   * Retrieves a {@link PredefinedPolicyType} instance corresponding to the given type code.
+   *
+   * @param code the type code of the predefined policy type
+   * @return the corresponding {@link PredefinedPolicyType}, or {@code null} if no matching type is
+   *     found
+   */
   @JsonCreator
   public static @Nullable PredefinedPolicyType fromCode(int code) {
     if (code >= REVERSE_CODE_MAPPING_ARRAY.length) {
@@ -81,6 +92,13 @@ public enum PredefinedPolicyType implements PolicyType {
     return REVERSE_CODE_MAPPING_ARRAY[code];
   }
 
+  /**
+   * Retrieves a {@link PredefinedPolicyType} instance corresponding to the given policy name.
+   *
+   * @param name the name of the predefined policy type
+   * @return the corresponding {@link PredefinedPolicyType}, or {@code null} if no matching type is
+   *     found
+   */
   public static @Nullable PredefinedPolicyType fromName(String name) {
     return REVERSE_NAME_MAPPING_ARRAY.get(name);
   }

@@ -550,25 +550,43 @@ public class PolarisTreeMapMetaStoreSessionImpl implements PolarisMetaStoreSessi
   }
 
   @Override
-  public void writeToPolicyMappingRecords(@Nonnull PolarisPolicyMappingRecord record) {
+  public void writeToPolicyMappingRecords(
+      @Nonnull PolarisCallContext callCtx, @Nonnull PolarisPolicyMappingRecord record) {
     this.store.getSlicePolicyMappingRecords().write(record);
     this.store.getSlicePolicyMappingRecordsByPolicy().write(record);
   }
 
   @Override
-  public void deleteFromPolicyMappingRecords(@Nonnull PolarisPolicyMappingRecord record) {
+  public void deleteFromPolicyMappingRecords(
+      @Nonnull PolarisCallContext callCtx, @Nonnull PolarisPolicyMappingRecord record) {
     this.store.getSlicePolicyMappingRecords().delete(record);
     this.store.getSlicePolicyMappingRecordsByPolicy().delete(record);
   }
 
   @Override
   public void deleteAllPolicyMappingRecords(
-      @Nonnull List<PolarisPolicyMappingRecord> policyMappings) {
-    policyMappings.forEach(this::deleteFromPolicyMappingRecords);
+      @Nonnull PolarisCallContext callCtx, @Nonnull PolarisEntityCore entity) {
+
+    List<PolarisPolicyMappingRecord> policyMappingRecords;
+    if (entity.getType().equals(PolarisEntityType.POLICY)) {
+      policyMappingRecords =
+          loadAllPoliciesOnPolicy(callCtx, entity.getCatalogId(), entity.getId());
+      String prefix = this.store.buildPrefixKeyComposite(entity.getCatalogId(), entity.getId());
+      this.store.getSlicePolicyMappingRecordsByPolicy().deleteRange(prefix);
+      policyMappingRecords.forEach(pmr -> this.store.getSlicePolicyMappingRecords().delete(pmr));
+    } else {
+      String prefix = this.store.buildPrefixKeyComposite(entity.getCatalogId(), entity.getId());
+      policyMappingRecords =
+          loadAllPoliciesOnTarget(callCtx, entity.getCatalogId(), entity.getId());
+      this.store.getSlicePolicyMappingRecords().deleteRange(prefix);
+      policyMappingRecords.forEach(
+          pmr -> this.store.getSlicePolicyMappingRecordsByPolicy().delete(pmr));
+    }
   }
 
   @Override
   public @Nullable PolarisPolicyMappingRecord lookupPolicyMappingRecord(
+      @Nonnull PolarisCallContext callCtx,
       long targetCatalogId,
       long targetId,
       int policyTypeCode,
@@ -577,13 +595,16 @@ public class PolarisTreeMapMetaStoreSessionImpl implements PolarisMetaStoreSessi
     return this.store
         .getSlicePolicyMappingRecords()
         .read(
-            this.store.buildPrefixKeyComposite(
+            this.store.buildKeyComposite(
                 targetCatalogId, targetId, policyTypeCode, policyCatalogId, policyId));
   }
 
   @Override
   public @NotNull List<PolarisPolicyMappingRecord> lookupPolicyMappingRecordByTargetAndType(
-      long targetCatalogId, long targetId, int policyTypeCode) {
+      @Nonnull PolarisCallContext callCtx,
+      long targetCatalogId,
+      long targetId,
+      int policyTypeCode) {
     return this.store
         .getSlicePolicyMappingRecords()
         .readRange(this.store.buildPrefixKeyComposite(targetCatalogId, targetId, policyTypeCode));
@@ -591,7 +612,7 @@ public class PolarisTreeMapMetaStoreSessionImpl implements PolarisMetaStoreSessi
 
   @Override
   public @Nonnull List<PolarisPolicyMappingRecord> loadAllPoliciesOnTarget(
-      long targetCatalogId, long targetId) {
+      @Nonnull PolarisCallContext callCtx, long targetCatalogId, long targetId) {
     return this.store
         .getSlicePolicyMappingRecords()
         .readRange(this.store.buildPrefixKeyComposite(targetCatalogId, targetId));
@@ -599,7 +620,7 @@ public class PolarisTreeMapMetaStoreSessionImpl implements PolarisMetaStoreSessi
 
   @Override
   public @Nonnull List<PolarisPolicyMappingRecord> loadAllPoliciesOnPolicy(
-      long policyCatalogId, long policyId) {
+      @Nonnull PolarisCallContext callCtx, long policyCatalogId, long policyId) {
     return this.store
         .getSlicePolicyMappingRecordsByPolicy()
         .readRange(this.store.buildPrefixKeyComposite(policyCatalogId, policyId));

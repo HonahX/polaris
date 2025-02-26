@@ -90,6 +90,23 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
     }
   }
 
+  private PolicyCatalogHandlerWrapper newPolicyWrapper(Set<String> activatedPrincipalRoles) {
+    return newPolicyWrapper(activatedPrincipalRoles, CATALOG_NAME);
+  }
+
+  private PolicyCatalogHandlerWrapper newPolicyWrapper(
+      Set<String> activatedPrincipalRoles, String catalogName) {
+    final AuthenticatedPolarisPrincipal authenticatedPrincipal =
+        new AuthenticatedPolarisPrincipal(principalEntity, activatedPrincipalRoles);
+    return new PolicyCatalogHandlerWrapper(
+        callContext,
+        entityManager,
+        metaStoreManager,
+        securityContext(authenticatedPrincipal, activatedPrincipalRoles),
+        catalogName,
+        polarisAuthorizer);
+  }
+
   private PolarisCatalogHandlerWrapper newWrapper() {
     return newWrapper(Set.of());
   }
@@ -110,51 +127,6 @@ public class PolarisCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase 
         factory,
         catalogName,
         polarisAuthorizer);
-  }
-
-  private PolicyCatalogHandlerWrapper newPolicyWrapper(Set<String> activatedPrincipalRoles) {
-    return newPolicyWrapper(activatedPrincipalRoles, CATALOG_NAME);
-  }
-
-  private PolicyCatalogHandlerWrapper newPolicyWrapper(
-      Set<String> activatedPrincipalRoles, String catalogName) {
-    final AuthenticatedPolarisPrincipal authenticatedPrincipal =
-        new AuthenticatedPolarisPrincipal(principalEntity, activatedPrincipalRoles);
-    return new PolicyCatalogHandlerWrapper(
-        realmContext,
-        metaStoreSession,
-        configurationStore,
-        diagServices,
-        entityManager,
-        metaStoreManager,
-        securityContext(authenticatedPrincipal, activatedPrincipalRoles),
-        catalogName,
-        polarisAuthorizer);
-  }
-
-  private PolarisCatalogHandlerWrapper newWrapper(SecurityContext securityContext) {
-    return new PolarisCatalogHandlerWrapper(
-        realmContext,
-        metaStoreSession,
-        configurationStore,
-        diagServices,
-        entityManager,
-        metaStoreManager,
-        securityContext,
-        newCatalogFactory(),
-        CATALOG_NAME,
-        polarisAuthorizer);
-  }
-
-  private CallContextCatalogFactory newCatalogFactory() {
-    return new TestPolarisCallContextCatalogFactory(
-        entityManager,
-        metaStoreManager,
-        metaStoreSession,
-        configurationStore,
-        diagServices,
-        Mockito.mock(),
-        fileIOFactory);
   }
 
   /**

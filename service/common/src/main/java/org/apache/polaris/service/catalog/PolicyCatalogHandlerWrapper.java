@@ -25,13 +25,12 @@ import java.util.stream.Collectors;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.*;
-import org.apache.polaris.core.PolarisConfigurationStore;
-import org.apache.polaris.core.PolarisDiagnostics;
+import org.apache.polaris.core.PolarisCallContext;
 import org.apache.polaris.core.auth.AuthenticatedPolarisPrincipal;
 import org.apache.polaris.core.auth.PolarisAuthorizableOperation;
 import org.apache.polaris.core.auth.PolarisAuthorizer;
 import org.apache.polaris.core.catalog.PolarisCatalogHelpers;
-import org.apache.polaris.core.context.RealmContext;
+import org.apache.polaris.core.context.CallContext;
 import org.apache.polaris.core.entity.*;
 import org.apache.polaris.core.persistence.*;
 import org.apache.polaris.core.persistence.resolver.PolarisResolutionManifest;
@@ -45,10 +44,7 @@ import org.slf4j.LoggerFactory;
 public class PolicyCatalogHandlerWrapper implements AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(PolicyCatalogHandlerWrapper.class);
 
-  private final RealmContext realmContext;
-  private final PolarisMetaStoreSession session;
-  private final PolarisConfigurationStore configurationStore;
-  private final PolarisDiagnostics diagnostics;
+  private final CallContext callContext;
   private final PolarisEntityManager entityManager;
   private final PolarisMetaStoreManager metaStoreManager;
   private final String catalogName;
@@ -60,21 +56,15 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
   private PolarisResolutionManifest resolutionManifest = null;
 
   public PolicyCatalogHandlerWrapper(
-      RealmContext realmContext,
-      PolarisMetaStoreSession session,
-      PolarisConfigurationStore configurationStore,
-      PolarisDiagnostics diagnostics,
+      CallContext callContext,
       PolarisEntityManager entityManager,
       PolarisMetaStoreManager metaStoreManager,
       SecurityContext securityContext,
       String catalogName,
       PolarisAuthorizer authorizer) {
-    this.realmContext = realmContext;
-    this.session = session;
+    this.callContext = callContext;
     this.entityManager = entityManager;
     this.metaStoreManager = metaStoreManager;
-    this.diagnostics = diagnostics;
-    this.configurationStore = configurationStore;
     this.catalogName = catalogName;
     this.securityContext = securityContext;
     this.authenticatedPrincipal =
@@ -130,7 +120,7 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
               .setDescription(request.getDescription())
               .setPolicyType(policyType)
               .setContent(request.getContent())
-              .setId(getMetaStoreManager().generateNewEntityId(session).getId())
+              .setId(getMetaStoreManager().generateNewEntityId(getCurrentPolarisContext()).getId())
               .build();
     } else {
       // TODO this should be the track to throw AlreadyExist
@@ -227,7 +217,7 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
 
     PolarisEntity tableEntity = resolvedEntities.getRawLeafEntity();
     PolarisMetaStoreManager.LoadPolicyMappingsResult directMappingResult =
-        getMetaStoreManager().loadPoliciesOnEntity(session, tableEntity);
+        getMetaStoreManager().loadPoliciesOnEntity(getCurrentPolarisContext(), tableEntity);
     if (directMappingResult.isSuccess()) {
       finalResults.addAll(directMappingResult.getPolicyEntities());
       directMappingResult
@@ -243,7 +233,7 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
       for (int i = catalogPath.size() - 1; i >= 0; i--) {
         PolarisEntity parent = catalogPath.get(i);
         PolarisMetaStoreManager.LoadPolicyMappingsResult parentMappingResult =
-            getMetaStoreManager().loadPoliciesOnEntity(session, parent);
+            getMetaStoreManager().loadPoliciesOnEntity(getCurrentPolarisContext(), parent);
         if (parentMappingResult.isSuccess()) {
           parentMappingResult
               .getPolicyMappingRecords()
@@ -330,7 +320,7 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
     PolarisMetaStoreManager.AttachmentResult result =
         getMetaStoreManager()
             .attachPolicyToEntity(
-                session,
+                getCurrentPolarisContext(),
                 targetEntity,
                 PolarisEntity.toCoreList(targetCatalogPath),
                 PolicyEntity.of(policyEntity),
@@ -374,7 +364,7 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
     PolarisMetaStoreManager.AttachmentResult result =
         getMetaStoreManager()
             .attachPolicyToEntity(
-                session,
+                getCurrentPolarisContext(),
                 targetEntity,
                 PolarisEntity.toCoreList(targetCatalogPath),
                 PolicyEntity.of(policyEntity),
@@ -392,7 +382,7 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
       String policyName,
       NamespaceIdentifier namespaceIdentifier) {
     resolutionManifest =
-        entityManager.prepareResolutionManifest(session, securityContext, catalogName);
+        entityManager.prepareResolutionManifest(callContext, securityContext, catalogName);
     TableIdentifier policyIdentifier = TableIdentifier.of(namespace, policyName);
     resolutionManifest.addPath(
         new ResolverPath(
@@ -426,7 +416,6 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
     }
 
     authorizer.authorizeOrThrow(
-        realmContext,
         authenticatedPrincipal,
         resolutionManifest.getAllActivatedCatalogRoleAndPrincipalRoles(),
         op,
@@ -441,7 +430,7 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
       TableLikeIdentifier tableLikeIdentifier) {
     // TODO: currently for only one catalog, but tableLike can exist in a different catalog
     resolutionManifest =
-        entityManager.prepareResolutionManifest(session, securityContext, catalogName);
+        entityManager.prepareResolutionManifest(callContext, securityContext, catalogName);
     TableIdentifier policyIdentifier = TableIdentifier.of(namespace, policyName);
     resolutionManifest.addPath(
         new ResolverPath(
@@ -479,7 +468,6 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
     }
 
     authorizer.authorizeOrThrow(
-        realmContext,
         authenticatedPrincipal,
         resolutionManifest.getAllActivatedCatalogRoleAndPrincipalRoles(),
         op,
@@ -490,7 +478,7 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
   private void authorizeCreatePolicyUnderNamespaceOperationOrThrow(
       PolarisAuthorizableOperation op, Namespace namespace, String policyName) {
     resolutionManifest =
-        entityManager.prepareResolutionManifest(session, securityContext, catalogName);
+        entityManager.prepareResolutionManifest(callContext, securityContext, catalogName);
     resolutionManifest.addPath(
         new ResolverPath(Arrays.asList(namespace.levels()), PolarisEntityType.NAMESPACE),
         namespace);
@@ -510,7 +498,6 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
 
     // TODO: authorize
     authorizer.authorizeOrThrow(
-        realmContext,
         authenticatedPrincipal,
         resolutionManifest.getAllActivatedCatalogRoleAndPrincipalRoles(),
         op,
@@ -523,7 +510,7 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
   private void authorizeBasicPolicyOperationOrThrow(
       PolarisAuthorizableOperation op, Namespace namespace, String policyName) {
     resolutionManifest =
-        entityManager.prepareResolutionManifest(session, securityContext, catalogName);
+        entityManager.prepareResolutionManifest(callContext, securityContext, catalogName);
     TableIdentifier policyIdentifier = TableIdentifier.of(namespace, policyName);
     resolutionManifest.addPassthroughPath(
         new ResolverPath(
@@ -539,7 +526,6 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
     }
 
     authorizer.authorizeOrThrow(
-        realmContext,
         authenticatedPrincipal,
         resolutionManifest.getAllActivatedCatalogRoleAndPrincipalRoles(),
         op,
@@ -571,7 +557,8 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
     PolarisEntity returnedEntity =
         PolarisEntity.of(
             getMetaStoreManager()
-                .createEntityIfNotExists(session, PolarisEntity.toCoreList(catalogPath), entity));
+                .createEntityIfNotExists(
+                    getCurrentPolarisContext(), PolarisEntity.toCoreList(catalogPath), entity));
 
     LOGGER.debug("Created Policy entity {} with TableIdentifier {}", entity, identifier);
     if (returnedEntity == null) {
@@ -596,7 +583,7 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
         Optional.ofNullable(
                 getMetaStoreManager()
                     .updateEntityPropertiesIfNotChanged(
-                        session, PolarisEntity.toCoreList(catalogPath), entity)
+                        getCurrentPolarisContext(), PolarisEntity.toCoreList(catalogPath), entity)
                     .getEntity())
             .map(PolarisEntity::new)
             .orElse(null);
@@ -625,7 +612,11 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
     // TODO: temporarily make cleanup set to false, need further thinking
     return getMetaStoreManager()
         .dropEntityIfExists(
-            session, PolarisEntity.toCoreList(catalogPath), leafEntity, Map.of(), false);
+            getCurrentPolarisContext(),
+            PolarisEntity.toCoreList(catalogPath),
+            leafEntity,
+            Map.of(),
+            false);
   }
 
   private PolarisMetaStoreManager getMetaStoreManager() {
@@ -651,7 +642,7 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
   private void authorizeBasicTableLikeOperationOrThrow(
       PolarisAuthorizableOperation op, PolarisEntitySubType subType, TableIdentifier identifier) {
     resolutionManifest =
-        entityManager.prepareResolutionManifest(session, securityContext, catalogName);
+        entityManager.prepareResolutionManifest(callContext, securityContext, catalogName);
 
     // The underlying Catalog is also allowed to fetch "fresh" versions of the target entity.
     resolutionManifest.addPassthroughPath(
@@ -671,11 +662,14 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
       }
     }
     authorizer.authorizeOrThrow(
-        realmContext,
         authenticatedPrincipal,
         resolutionManifest.getAllActivatedCatalogRoleAndPrincipalRoles(),
         op,
         target,
         null /* secondary */);
+  }
+
+  private PolarisCallContext getCurrentPolarisContext() {
+    return callContext.getPolarisCallContext();
   }
 }

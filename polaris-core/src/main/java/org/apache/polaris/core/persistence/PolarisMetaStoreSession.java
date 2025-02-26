@@ -458,46 +458,35 @@ public interface PolarisMetaStoreSession {
   void deletePrincipalSecrets(
       @Nonnull PolarisCallContext callCtx, @Nonnull String clientId, long principalId);
 
-  default void writeToPolicyMappingRecords(@Nonnull PolarisPolicyMappingRecord record) {
-    throw new UnsupportedOperationException();
-  }
+  void writeToPolicyMappingRecords(
+      @Nonnull PolarisCallContext callCtx, @Nonnull PolarisPolicyMappingRecord record);
 
-  default void deleteFromPolicyMappingRecords(@Nonnull PolarisPolicyMappingRecord record) {
-    throw new UnsupportedOperationException();
-  }
+  void deleteFromPolicyMappingRecords(
+      @Nonnull PolarisCallContext callCtx, @Nonnull PolarisPolicyMappingRecord record);
 
-  default void deleteAllPolicyMappingRecords(
-      @Nonnull List<PolarisPolicyMappingRecord> policyMappings) {
-    throw new UnsupportedOperationException();
-  }
+  void deleteAllPolicyMappingRecords(
+      @Nonnull PolarisCallContext callCtx, @Nonnull PolarisEntityCore entity);
 
   @Nullable
-  default PolarisPolicyMappingRecord lookupPolicyMappingRecord(
+  PolarisPolicyMappingRecord lookupPolicyMappingRecord(
+      @Nonnull PolarisCallContext callCtx,
       long targetCatalogId,
       long targetId,
       int policyTypeCode,
       long policyCatalogId,
-      long policyId) {
-    throw new UnsupportedOperationException();
-  }
+      long policyId);
 
   @Nonnull
-  default List<PolarisPolicyMappingRecord> lookupPolicyMappingRecordByTargetAndType(
-      long targetCatalogId, long targetId, int policyTypeCode) {
-    throw new UnsupportedOperationException();
-  }
+  List<PolarisPolicyMappingRecord> lookupPolicyMappingRecordByTargetAndType(
+      @Nonnull PolarisCallContext callCtx, long targetCatalogId, long targetId, int policyTypeCode);
 
   @Nonnull
-  default List<PolarisPolicyMappingRecord> loadAllPoliciesOnTarget(
-      long targetCatalogId, long targetId) {
-    throw new UnsupportedOperationException();
-  }
+  List<PolarisPolicyMappingRecord> loadAllPoliciesOnTarget(
+      @Nonnull PolarisCallContext callCtx, long targetCatalogId, long targetId);
 
   @Nonnull
-  default List<PolarisPolicyMappingRecord> loadAllPoliciesOnPolicy(
-      long policyCatalogId, long policyId) {
-    throw new UnsupportedOperationException();
-  }
+  List<PolarisPolicyMappingRecord> loadAllPoliciesOnPolicy(
+      @Nonnull PolarisCallContext callCtx, long policyCatalogId, long policyId);
 
   /**
    * Create an in-memory storage integration

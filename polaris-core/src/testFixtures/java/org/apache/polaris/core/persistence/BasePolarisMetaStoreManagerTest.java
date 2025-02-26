@@ -74,10 +74,6 @@ public abstract class BasePolarisMetaStoreManagerTest {
 
   protected abstract PolarisTestMetaStoreManager createPolarisTestMetaStoreManager();
 
-  protected PolarisTestMetaStoreManager getPolarisTestMetaStoreManager() {
-    return polarisTestMetaStoreManager;
-  }
-
   /** validate that the root catalog was properly constructed */
   @Test
   void validateBootstrap() {
@@ -482,5 +478,10 @@ public abstract class BasePolarisMetaStoreManagerTest {
       executorService.shutdown();
       Assertions.assertThat(executorService.awaitTermination(10, TimeUnit.MINUTES)).isTrue();
     }
+  }
+
+  @Test
+  void testPolicyMapping() {
+    polarisTestMetaStoreManager.testPolicyMapping();
   }
 }

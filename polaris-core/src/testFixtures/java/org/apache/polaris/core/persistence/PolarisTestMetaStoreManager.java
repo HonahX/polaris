@@ -2118,6 +2118,15 @@ public class PolarisTestMetaStoreManager {
     Assertions.assertThat(recordOnTypeSearch.get(0).getName()).isEqualTo("P1");
     Assertions.assertThat(recordOnTypeSearch.get(0).getPolicyTypeName())
         .isEqualTo(PredefinedPolicyType.DATA_COMPACTION.getName());
+    polarisMetaStoreManager.detachPolicyFromEntity(
+        polarisCallContext,
+        N1_N2_T1,
+        List.of(catalog, N1, N1_N2),
+        PolicyEntity.of(N1_P1),
+        List.of(catalog, N1));
+    PolarisPolicyMappingManager.LoadPolicyMappingsResult emptySearch =
+        polarisMetaStoreManager.loadPoliciesOnEntity(polarisCallContext, N1_N2_T1);
+    Assertions.assertThat(emptySearch.getPolicyEntities()).isEmpty();
   }
 
   PolarisBaseEntity createPolicy(

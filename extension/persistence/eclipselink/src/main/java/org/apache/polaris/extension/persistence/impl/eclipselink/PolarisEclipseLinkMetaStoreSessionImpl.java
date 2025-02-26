@@ -39,15 +39,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.polaris.core.PolarisCallContext;
 import org.apache.polaris.core.context.RealmContext;
-import org.apache.polaris.core.entity.PolarisBaseEntity;
-import org.apache.polaris.core.entity.PolarisChangeTrackingVersions;
-import org.apache.polaris.core.entity.PolarisEntitiesActiveKey;
-import org.apache.polaris.core.entity.PolarisEntityActiveRecord;
-import org.apache.polaris.core.entity.PolarisEntityCore;
-import org.apache.polaris.core.entity.PolarisEntityId;
-import org.apache.polaris.core.entity.PolarisEntityType;
-import org.apache.polaris.core.entity.PolarisGrantRecord;
-import org.apache.polaris.core.entity.PolarisPrincipalSecrets;
+import org.apache.polaris.core.entity.*;
 import org.apache.polaris.core.exceptions.AlreadyExistsException;
 import org.apache.polaris.core.persistence.PolarisMetaStoreManagerImpl;
 import org.apache.polaris.core.persistence.PolarisMetaStoreSession;
@@ -56,11 +48,7 @@ import org.apache.polaris.core.persistence.RetryOnConcurrencyException;
 import org.apache.polaris.core.storage.PolarisStorageConfigurationInfo;
 import org.apache.polaris.core.storage.PolarisStorageIntegration;
 import org.apache.polaris.core.storage.PolarisStorageIntegrationProvider;
-import org.apache.polaris.jpa.models.ModelEntity;
-import org.apache.polaris.jpa.models.ModelEntityActive;
-import org.apache.polaris.jpa.models.ModelEntityChangeTracking;
-import org.apache.polaris.jpa.models.ModelGrantRecord;
-import org.apache.polaris.jpa.models.ModelPrincipalSecrets;
+import org.apache.polaris.jpa.models.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -654,6 +642,81 @@ public class PolarisEclipseLinkMetaStoreSessionImpl implements PolarisMetaStoreS
 
     // delete these secrets
     this.store.deletePrincipalSecrets(localSession.get(), clientId);
+  }
+
+  @Override
+  public void writeToPolicyMappingRecords(
+      @Nonnull PolarisCallContext callCtx, @Nonnull PolarisPolicyMappingRecord record) {
+
+    this.store.writeToPolicyMappingRecords(localSession.get(), record);
+  }
+
+  @Override
+  public void deleteFromPolicyMappingRecords(
+      @Nonnull PolarisCallContext callCtx, @Nonnull PolarisPolicyMappingRecord record) {
+    this.store.deleteFromPolicyMappingRecords(localSession.get(), record);
+  }
+
+  @Override
+  public void deleteAllPolicyMappingRecords(
+      @Nonnull PolarisCallContext callCtx, @Nonnull PolarisEntityCore entity) {
+    this.store.deleteAllPolicyMappingRecords(localSession.get(), entity);
+  }
+
+  @Nullable
+  @Override
+  public PolarisPolicyMappingRecord lookupPolicyMappingRecord(
+      @Nonnull PolarisCallContext callCtx,
+      long targetCatalogId,
+      long targetId,
+      int policyTypeCode,
+      long policyCatalogId,
+      long policyId) {
+    return ModelPolicyMappingRecord.toPolicyMappingRecord(
+        this.store.lookupPolicyMappingRecord(
+            localSession.get(),
+            targetCatalogId,
+            targetId,
+            policyTypeCode,
+            policyCatalogId,
+            policyId));
+  }
+
+  @Nonnull
+  @Override
+  public List<PolarisPolicyMappingRecord> lookupPolicyMappingRecordByTargetAndType(
+      @Nonnull PolarisCallContext callCtx,
+      long targetCatalogId,
+      long targetId,
+      int policyTypeCode) {
+    return this.store
+        .lookupPolicyMappingRecordByTargetAndType(
+            localSession.get(), targetCatalogId, targetId, policyTypeCode)
+        .stream()
+        .map(ModelPolicyMappingRecord::toPolicyMappingRecord)
+        .toList();
+  }
+
+  @Nonnull
+  @Override
+  public List<PolarisPolicyMappingRecord> loadAllPoliciesOnTarget(
+      @Nonnull PolarisCallContext callCtx, long targetCatalogId, long targetId) {
+    return this.store
+        .loadAllPoliciesOnTarget(localSession.get(), targetCatalogId, targetId)
+        .stream()
+        .map(ModelPolicyMappingRecord::toPolicyMappingRecord)
+        .toList();
+  }
+
+  @Nonnull
+  @Override
+  public List<PolarisPolicyMappingRecord> loadAllPoliciesOnPolicy(
+      @Nonnull PolarisCallContext callCtx, long policyCatalogId, long policyId) {
+    return this.store
+        .loadAllPoliciesOnPolicy(localSession.get(), policyCatalogId, policyId)
+        .stream()
+        .map(ModelPolicyMappingRecord::toPolicyMappingRecord)
+        .toList();
   }
 
   /** {@inheritDoc} */

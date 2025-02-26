@@ -320,14 +320,7 @@ public class PolarisMetaStoreManagerImpl implements PolarisMetaStoreManager {
 
       // TODO: need to delete all policy mapping
 
-      List<PolarisPolicyMappingRecord> policyMappingRecords = null;
-      if (entity.getType().equals(PolarisEntityType.POLICY)) {
-        policyMappingRecords = ms.loadAllPoliciesOnPolicy(entity.getCatalogId(), entity.getId());
-      } else {
-        policyMappingRecords = ms.loadAllPoliciesOnTarget(entity.getCatalogId(), entity.getId());
-      }
-
-      ms.deleteAllPolicyMappingRecords(policyMappingRecords);
+      ms.deleteAllPolicyMappingRecords(callCtx, entity);
       // TODO: finish deleting
 
       // remove the entity being dropped now
@@ -2491,7 +2484,7 @@ public class PolarisMetaStoreManagerImpl implements PolarisMetaStoreManager {
       // Verify that there is no other mapping of the same type but different entity
       List<PolarisPolicyMappingRecord> existingRecordsOfSameType =
           session.lookupPolicyMappingRecordByTargetAndType(
-              target.getCatalogId(), target.getId(), policy.getPolicyTypeCode());
+              callCtx, target.getCatalogId(), target.getId(), policy.getPolicyTypeCode());
       if (existingRecordsOfSameType.size() == 1) {
         PolarisPolicyMappingRecord existingRecord = existingRecordsOfSameType.get(0);
         if (existingRecord.getPolicyId() != policy.getId()
@@ -2531,7 +2524,7 @@ public class PolarisMetaStoreManagerImpl implements PolarisMetaStoreManager {
             policy.getPolicyTypeCode(),
             parameters);
 
-    ms.writeToPolicyMappingRecords(mappingRecord);
+    ms.writeToPolicyMappingRecords(callCtx, mappingRecord);
 
     return mappingRecord;
   }
@@ -2569,6 +2562,7 @@ public class PolarisMetaStoreManagerImpl implements PolarisMetaStoreManager {
 
     PolarisPolicyMappingRecord mappingRecord =
         session.lookupPolicyMappingRecord(
+            callCtx,
             target.getCatalogId(),
             target.getId(),
             policy.getPolicyTypeCode(),
@@ -2590,7 +2584,7 @@ public class PolarisMetaStoreManagerImpl implements PolarisMetaStoreManager {
       @Nonnull PolarisPolicyMappingRecord mappingRecord) {
     callContext.getDiagServices().checkNotNull(mappingRecord, "unexpected_null_mappingRecord");
 
-    session.deleteFromPolicyMappingRecords(mappingRecord);
+    session.deleteFromPolicyMappingRecords(callContext, mappingRecord);
   }
 
   @Override
@@ -2612,7 +2606,7 @@ public class PolarisMetaStoreManagerImpl implements PolarisMetaStoreManager {
     }
 
     final List<PolarisPolicyMappingRecord> policyMappingRecords =
-        session.loadAllPoliciesOnTarget(target.getCatalogId(), target.getId());
+        session.loadAllPoliciesOnTarget(callCtx, target.getCatalogId(), target.getId());
 
     List<PolarisEntityId> policyEntityIds =
         policyMappingRecords.stream()
@@ -2654,7 +2648,7 @@ public class PolarisMetaStoreManagerImpl implements PolarisMetaStoreManager {
 
     final List<PolarisPolicyMappingRecord> policyMappingRecords =
         session.lookupPolicyMappingRecordByTargetAndType(
-            target.getCatalogId(), target.getId(), policyType.getCode());
+            callCtx, target.getCatalogId(), target.getId(), policyType.getCode());
     List<PolarisEntityId> policyEntityIds =
         policyMappingRecords.stream()
             .map(

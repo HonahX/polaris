@@ -222,10 +222,7 @@ public class IcebergCatalogAdapter
     }
 
     return new PolicyCatalogHandlerWrapper(
-        realmContext,
-        session,
-        configurationStore,
-        diagnostics,
+        callContext,
         entityManager,
         metaStoreManager,
         securityContext,

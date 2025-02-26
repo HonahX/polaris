@@ -25,7 +25,6 @@ import org.apache.polaris.core.PolarisCallContext;
 import org.apache.polaris.core.PolarisConfigurationStore;
 import org.apache.polaris.core.PolarisDefaultDiagServiceImpl;
 import org.apache.polaris.core.PolarisDiagnostics;
-import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 public class PolarisTreeMapMetaStoreManagerTest extends BasePolarisMetaStoreManagerTest {
@@ -41,11 +40,5 @@ public class PolarisTreeMapMetaStoreManagerTest extends BasePolarisMetaStoreMana
             timeSource.withZone(ZoneId.systemDefault()));
 
     return new PolarisTestMetaStoreManager(new PolarisMetaStoreManagerImpl(), callCtx);
-  }
-
-  // Will need more test in the future.
-  @Test
-  void testPolicyMapping() {
-    this.getPolarisTestMetaStoreManager().testPolicyMapping();
   }
 }

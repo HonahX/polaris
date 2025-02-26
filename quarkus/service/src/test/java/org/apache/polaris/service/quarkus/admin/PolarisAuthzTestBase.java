@@ -619,12 +619,12 @@ public abstract class PolarisAuthzTestBase {
    *     PRINCIPAL_ROLE2 while runnint {@code action} with PRINCIPAL_ROLE1.
    */
   protected void doTestSufficientPrivileges(
-          List<PolarisPrivilege> sufficientPrivileges, Runnable action, Runnable cleanupAction) {
+      List<PolarisPrivilege> sufficientPrivileges, Runnable action, Runnable cleanupAction) {
     doTestSufficientPrivilegeSets(
-            sufficientPrivileges.stream().map(priv -> Set.of(priv)).toList(),
-            action,
-            cleanupAction,
-            PRINCIPAL_NAME);
+        sufficientPrivileges.stream().map(priv -> Set.of(priv)).toList(),
+        action,
+        cleanupAction,
+        PRINCIPAL_NAME);
   }
 
   /**
@@ -635,12 +635,12 @@ public abstract class PolarisAuthzTestBase {
    * @param principalName
    */
   protected void doTestSufficientPrivilegeSets(
-          List<Set<PolarisPrivilege>> sufficientPrivileges,
-          Runnable action,
-          Runnable cleanupAction,
-          String principalName) {
+      List<Set<PolarisPrivilege>> sufficientPrivileges,
+      Runnable action,
+      Runnable cleanupAction,
+      String principalName) {
     doTestSufficientPrivilegeSets(
-            sufficientPrivileges, action, cleanupAction, principalName, CATALOG_NAME);
+        sufficientPrivileges, action, cleanupAction, principalName, CATALOG_NAME);
   }
 
   /**
@@ -652,24 +652,24 @@ public abstract class PolarisAuthzTestBase {
    * @param catalogName
    */
   protected void doTestSufficientPrivilegeSets(
-          List<Set<PolarisPrivilege>> sufficientPrivileges,
-          Runnable action,
-          Runnable cleanupAction,
-          String principalName,
-          String catalogName) {
+      List<Set<PolarisPrivilege>> sufficientPrivileges,
+      Runnable action,
+      Runnable cleanupAction,
+      String principalName,
+      String catalogName) {
     doTestSufficientPrivilegeSets(
-            sufficientPrivileges,
-            action,
-            cleanupAction,
-            principalName,
-            (privilege) ->
-                    adminService.grantPrivilegeOnCatalogToRole(catalogName, CATALOG_ROLE1, privilege),
-            (privilege) ->
-                    adminService.revokePrivilegeOnCatalogFromRole(catalogName, CATALOG_ROLE1, privilege));
+        sufficientPrivileges,
+        action,
+        cleanupAction,
+        principalName,
+        (privilege) ->
+            adminService.grantPrivilegeOnCatalogToRole(catalogName, CATALOG_ROLE1, privilege),
+        (privilege) ->
+            adminService.revokePrivilegeOnCatalogFromRole(catalogName, CATALOG_ROLE1, privilege));
   }
 
   protected void doTestInsufficientPrivileges(
-          List<PolarisPrivilege> insufficientPrivileges, Runnable action) {
+      List<PolarisPrivilege> insufficientPrivileges, Runnable action) {
     doTestInsufficientPrivileges(insufficientPrivileges, PRINCIPAL_NAME, action);
   }
 
@@ -678,14 +678,14 @@ public abstract class PolarisAuthzTestBase {
    * CATALOG_NAME level, ensuring the action fails, then revoking after each test case.
    */
   protected void doTestInsufficientPrivileges(
-          List<PolarisPrivilege> insufficientPrivileges, String principalName, Runnable action) {
+      List<PolarisPrivilege> insufficientPrivileges, String principalName, Runnable action) {
     doTestInsufficientPrivileges(
-            insufficientPrivileges,
-            principalName,
-            action,
-            (privilege) ->
-                    adminService.grantPrivilegeOnCatalogToRole(CATALOG_NAME, CATALOG_ROLE1, privilege),
-            (privilege) ->
-                    adminService.revokePrivilegeOnCatalogFromRole(CATALOG_NAME, CATALOG_ROLE1, privilege));
+        insufficientPrivileges,
+        principalName,
+        action,
+        (privilege) ->
+            adminService.grantPrivilegeOnCatalogToRole(CATALOG_NAME, CATALOG_ROLE1, privilege),
+        (privilege) ->
+            adminService.revokePrivilegeOnCatalogFromRole(CATALOG_NAME, CATALOG_ROLE1, privilege));
   }
 }

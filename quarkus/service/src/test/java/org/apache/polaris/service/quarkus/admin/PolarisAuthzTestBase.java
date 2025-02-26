@@ -603,4 +603,89 @@ public abstract class PolarisAuthzTestBase {
       Assertions.assertThat(revokeAction.apply(privilege)).isTrue();
     }
   }
+
+  /**
+   * Tests each "sufficient" privilege individually using CATALOG_ROLE1 by granting at the
+   * CATALOG_NAME level, revoking after each test, and also ensuring that the request fails after
+   * revocation.
+   *
+   * @param sufficientPrivileges List of privileges that should be sufficient each in isolation for
+   *     {@code action} to succeed.
+   * @param action The operation being tested; could also be multiple operations that should all
+   *     succeed with the sufficient privilege
+   * @param cleanupAction If non-null, additional action to run to "undo" a previous success action
+   *     in case the action has side effects. Called before revoking the sufficient privilege;
+   *     either the cleanup privileges must be latent, or the cleanup action could be run with
+   *     PRINCIPAL_ROLE2 while runnint {@code action} with PRINCIPAL_ROLE1.
+   */
+  protected void doTestSufficientPrivileges(
+          List<PolarisPrivilege> sufficientPrivileges, Runnable action, Runnable cleanupAction) {
+    doTestSufficientPrivilegeSets(
+            sufficientPrivileges.stream().map(priv -> Set.of(priv)).toList(),
+            action,
+            cleanupAction,
+            PRINCIPAL_NAME);
+  }
+
+  /**
+   * @param sufficientPrivileges each set of concurrent privileges expected to be sufficient
+   *     together.
+   * @param action
+   * @param cleanupAction
+   * @param principalName
+   */
+  protected void doTestSufficientPrivilegeSets(
+          List<Set<PolarisPrivilege>> sufficientPrivileges,
+          Runnable action,
+          Runnable cleanupAction,
+          String principalName) {
+    doTestSufficientPrivilegeSets(
+            sufficientPrivileges, action, cleanupAction, principalName, CATALOG_NAME);
+  }
+
+  /**
+   * @param sufficientPrivileges each set of concurrent privileges expected to be sufficient
+   *     together.
+   * @param action
+   * @param cleanupAction
+   * @param principalName
+   * @param catalogName
+   */
+  protected void doTestSufficientPrivilegeSets(
+          List<Set<PolarisPrivilege>> sufficientPrivileges,
+          Runnable action,
+          Runnable cleanupAction,
+          String principalName,
+          String catalogName) {
+    doTestSufficientPrivilegeSets(
+            sufficientPrivileges,
+            action,
+            cleanupAction,
+            principalName,
+            (privilege) ->
+                    adminService.grantPrivilegeOnCatalogToRole(catalogName, CATALOG_ROLE1, privilege),
+            (privilege) ->
+                    adminService.revokePrivilegeOnCatalogFromRole(catalogName, CATALOG_ROLE1, privilege));
+  }
+
+  protected void doTestInsufficientPrivileges(
+          List<PolarisPrivilege> insufficientPrivileges, Runnable action) {
+    doTestInsufficientPrivileges(insufficientPrivileges, PRINCIPAL_NAME, action);
+  }
+
+  /**
+   * Tests each "insufficient" privilege individually using CATALOG_ROLE1 by granting at the
+   * CATALOG_NAME level, ensuring the action fails, then revoking after each test case.
+   */
+  protected void doTestInsufficientPrivileges(
+          List<PolarisPrivilege> insufficientPrivileges, String principalName, Runnable action) {
+    doTestInsufficientPrivileges(
+            insufficientPrivileges,
+            principalName,
+            action,
+            (privilege) ->
+                    adminService.grantPrivilegeOnCatalogToRole(CATALOG_NAME, CATALOG_ROLE1, privilege),
+            (privilege) ->
+                    adminService.revokePrivilegeOnCatalogFromRole(CATALOG_NAME, CATALOG_ROLE1, privilege));
+  }
 }

@@ -36,6 +36,7 @@ import org.apache.polaris.core.persistence.*;
 import org.apache.polaris.core.persistence.resolver.PolarisResolutionManifest;
 import org.apache.polaris.core.persistence.resolver.ResolverPath;
 import org.apache.polaris.core.persistence.resolver.ResolverStatus;
+import org.apache.polaris.core.policy.PolicyIdentifier;
 import org.apache.polaris.core.policy.PolicyType;
 import org.apache.polaris.core.policy.PolicyValidator;
 import org.apache.polaris.core.policy.PolicyValidatorFactory;
@@ -86,7 +87,7 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
     authorizeCreatePolicyUnderNamespaceOperationOrThrow(op, namespace, request.getName());
 
     // TODO: replace it with PolicyIdentifier
-    TableIdentifier identifier = TableIdentifier.of(namespace, request.getName());
+    PolicyIdentifier identifier = PolicyIdentifier.of(namespace, request.getName());
 
     PolarisResolvedPathWrapper resolvedPolicyEntities =
         resolutionManifest.getPassthroughResolvedPath(identifier);
@@ -144,7 +145,7 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
     authorizeBasicPolicyOperationOrThrow(op, namespace, policyName);
     // TODO: add a passthrough method to verify the type of the entity
     PolarisResolvedPathWrapper resolvedEntities =
-        resolutionManifest.getPassthroughResolvedPath(TableIdentifier.of(namespace, policyName));
+        resolutionManifest.getPassthroughResolvedPath(PolicyIdentifier.of(namespace, policyName));
     PolicyEntity policy = null;
 
     if (resolvedEntities != null) {
@@ -166,7 +167,7 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
     authorizeBasicPolicyOperationOrThrow(op, namespace, policyName);
 
     PolarisResolvedPathWrapper resolvedEntities =
-        resolutionManifest.getPassthroughResolvedPath(TableIdentifier.of(namespace, policyName));
+        resolutionManifest.getPassthroughResolvedPath(PolicyIdentifier.of(namespace, policyName));
     PolicyEntity policy = null;
 
     if (resolvedEntities != null) {
@@ -206,7 +207,7 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
     authorizeBasicPolicyOperationOrThrow(op, namespace, policyName);
 
     PolarisMetaStoreManager.DropEntityResult dropEntityResult =
-        dropPolicy(TableIdentifier.of(namespace, policyName));
+        dropPolicy(PolicyIdentifier.of(namespace, policyName));
     if (!dropEntityResult.isSuccess()) {
       // TODO: a better error message for policy
       throw new NoSuchTableException("Policy does not exist: %s", policyName);
@@ -305,7 +306,7 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
     PolarisAuthorizableOperation op = PolarisAuthorizableOperation.ATTACH_POLICY_TO_TABLE_LIKE;
     authorizeSetPolicyOnTableLikeOrThrow(op, namespace, policyName, tableLikeIdentifier);
 
-    TableIdentifier policyIdentifier = TableIdentifier.of(namespace, policyName);
+    PolicyIdentifier policyIdentifier = PolicyIdentifier.of(namespace, policyName);
 
     List<String> rawNamespace = tableLikeIdentifier.getNamespace();
     TableIdentifier targetIdentifier =
@@ -350,7 +351,7 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
       Map<String, String> parameters) {
     PolarisAuthorizableOperation op = PolarisAuthorizableOperation.ATTACH_POLICY_TO_NAMESPACE;
     authorizeSetPolicyOnNamespace(op, namespace, policyName, namespaceIdentifier);
-    TableIdentifier policyIdentifier = TableIdentifier.of(namespace, policyName);
+    PolicyIdentifier policyIdentifier = PolicyIdentifier.of(namespace, policyName);
 
     Namespace targetNamespace =
         Namespace.of(namespaceIdentifier.getNamespace().toArray(new String[0]));
@@ -394,10 +395,10 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
       NamespaceIdentifier namespaceIdentifier) {
     resolutionManifest =
         entityManager.prepareResolutionManifest(callContext, securityContext, catalogName);
-    TableIdentifier policyIdentifier = TableIdentifier.of(namespace, policyName);
+    PolicyIdentifier policyIdentifier = PolicyIdentifier.of(namespace, policyName);
     resolutionManifest.addPath(
         new ResolverPath(
-            PolarisCatalogHelpers.tableIdentifierToList(policyIdentifier),
+            PolarisCatalogHelpers.policyIdentifierToList(policyIdentifier),
             PolarisEntityType.POLICY),
         policyIdentifier);
     Namespace targetNamespace =
@@ -442,10 +443,10 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
     // TODO: currently for only one catalog, but tableLike can exist in a different catalog
     resolutionManifest =
         entityManager.prepareResolutionManifest(callContext, securityContext, catalogName);
-    TableIdentifier policyIdentifier = TableIdentifier.of(namespace, policyName);
+    PolicyIdentifier policyIdentifier = PolicyIdentifier.of(namespace, policyName);
     resolutionManifest.addPath(
         new ResolverPath(
-            PolarisCatalogHelpers.tableIdentifierToList(policyIdentifier),
+            PolarisCatalogHelpers.policyIdentifierToList(policyIdentifier),
             PolarisEntityType.POLICY),
         policyIdentifier);
     List<String> rawNamespace = tableLikeIdentifier.getNamespace();
@@ -497,10 +498,10 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
     // TODO: need a policyIdentifier
     resolutionManifest.addPassthroughPath(
         new ResolverPath(
-            PolarisCatalogHelpers.tableIdentifierToList(TableIdentifier.of(namespace, policyName)),
+            PolarisCatalogHelpers.policyIdentifierToList(PolicyIdentifier.of(namespace, policyName)),
             PolarisEntityType.POLICY,
             true /* optional */),
-        TableIdentifier.of(namespace, policyName));
+            PolicyIdentifier.of(namespace, policyName));
     resolutionManifest.resolveAll();
     PolarisResolvedPathWrapper target = resolutionManifest.getResolvedPath(namespace, true);
     if (target == null) {
@@ -514,18 +515,16 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
         op,
         target,
         null /* secondary */);
-    // TODO: unnecessary
-    // initializeCatalog();
   }
 
   private void authorizeBasicPolicyOperationOrThrow(
       PolarisAuthorizableOperation op, Namespace namespace, String policyName) {
     resolutionManifest =
         entityManager.prepareResolutionManifest(callContext, securityContext, catalogName);
-    TableIdentifier policyIdentifier = TableIdentifier.of(namespace, policyName);
+    PolicyIdentifier policyIdentifier = PolicyIdentifier.of(namespace, policyName);
     resolutionManifest.addPassthroughPath(
         new ResolverPath(
-            PolarisCatalogHelpers.tableIdentifierToList(policyIdentifier),
+            PolarisCatalogHelpers.policyIdentifierToList(policyIdentifier),
             PolarisEntityType.POLICY,
             true /* optional */),
         policyIdentifier);
@@ -545,7 +544,7 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
   }
 
   private PolarisEntity createPolicy(Namespace namespace, String policyName, PolarisEntity entity) {
-    TableIdentifier identifier = TableIdentifier.of(namespace, policyName);
+    PolicyIdentifier identifier = PolicyIdentifier.of(namespace, policyName);
     PolarisResolvedPathWrapper resolvedParent = resolutionManifest.getResolvedPath(namespace);
     if (resolvedParent == null) {
       // Illegal state because the namespace should've already been in the static resolution set.
@@ -571,7 +570,7 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
                 .createEntityIfNotExists(
                     getCurrentPolarisContext(), PolarisEntity.toCoreList(catalogPath), entity));
 
-    LOGGER.debug("Created Policy entity {} with TableIdentifier {}", entity, identifier);
+    LOGGER.debug("Created Policy entity {} with Identifier {}", entity, identifier);
     if (returnedEntity == null) {
       // TODO: Error or retry?
     }
@@ -580,7 +579,7 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
   }
 
   private PolarisEntity updatePolicy(Namespace namespace, String policyName, PolarisEntity entity) {
-    TableIdentifier identifier = TableIdentifier.of(namespace, policyName);
+    PolicyIdentifier identifier = PolicyIdentifier.of(namespace, policyName);
     PolarisResolvedPathWrapper resolvedEntities = resolutionManifest.getResolvedPath(identifier);
     if (resolvedEntities == null) {
       // TODO: change to Policy
@@ -608,7 +607,7 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
   }
 
   private @Nonnull PolarisMetaStoreManager.DropEntityResult dropPolicy(
-      TableIdentifier policyIdentifier) {
+          PolicyIdentifier policyIdentifier) {
     PolarisResolvedPathWrapper resolvedEntities =
         resolutionManifest.getResolvedPath(policyIdentifier);
     if (resolvedEntities == null) {

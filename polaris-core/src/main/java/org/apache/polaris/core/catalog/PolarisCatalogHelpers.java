@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.polaris.core.entity.PolarisEntity;
+import org.apache.polaris.core.policy.PolicyIdentifier;
 
 /**
  * Holds helper methods translating between persistence-layer structs and Iceberg objects shared by
@@ -43,8 +44,20 @@ public class PolarisCatalogHelpers {
     return fullList.build();
   }
 
+  public static List<String> policyIdentifierToList(PolicyIdentifier identifier) {
+    ImmutableList.Builder<String> fullList =
+        ImmutableList.builderWithExpectedSize(identifier.namespace().length() + 1);
+    fullList.addAll(Arrays.asList(identifier.namespace().levels()));
+    fullList.add(identifier.name());
+    return fullList.build();
+  }
+
   public static TableIdentifier listToTableIdentifier(List<String> ids) {
     return TableIdentifier.of(ids.toArray(new String[0]));
+  }
+
+  public static PolicyIdentifier listToPolicyIdentifier(List<String> ids) {
+    return PolicyIdentifier.of(ids.toArray(new String[0]));
   }
 
   public static Namespace getParentNamespace(Namespace namespace) {

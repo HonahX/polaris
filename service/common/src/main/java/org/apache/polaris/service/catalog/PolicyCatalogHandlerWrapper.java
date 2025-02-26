@@ -231,6 +231,7 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
     switch (request.getEntity()) {
       case CatalogIdentifier catalogIdentifier:
         {
+          // TODO: implement
           break;
         }
 
@@ -473,7 +474,6 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
             Arrays.asList(identifier.namespace().levels()), PolarisEntityType.NAMESPACE),
         identifier.namespace());
 
-    // TODO: need a policyIdentifier
     resolutionManifest.addPassthroughPath(
         new ResolverPath(
             PolarisCatalogHelpers.policyIdentifierToList(identifier),
@@ -519,6 +519,36 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
         op,
         target,
         null);
+  }
+
+  private void authorizeBasicTableLikeOperationOrThrow(
+      PolarisAuthorizableOperation op, PolarisEntitySubType subType, TableIdentifier identifier) {
+    resolutionManifest =
+        entityManager.prepareResolutionManifest(callContext, securityContext, catalogName);
+
+    // The underlying Catalog is also allowed to fetch "fresh" versions of the target entity.
+    resolutionManifest.addPassthroughPath(
+        new ResolverPath(
+            PolarisCatalogHelpers.tableIdentifierToList(identifier),
+            PolarisEntityType.TABLE_LIKE,
+            true /* optional */),
+        identifier);
+    resolutionManifest.resolveAll();
+    PolarisResolvedPathWrapper target =
+        resolutionManifest.getResolvedPath(identifier, subType, true);
+    if (target == null) {
+      if (subType == PolarisEntitySubType.TABLE) {
+        throw new NoSuchTableException("Table does not exist: %s", identifier);
+      } else {
+        throw new NoSuchViewException("View does not exist: %s", identifier);
+      }
+    }
+    authorizer.authorizeOrThrow(
+        authenticatedPrincipal,
+        resolutionManifest.getAllActivatedCatalogRoleAndPrincipalRoles(),
+        op,
+        target,
+        null /* secondary */);
   }
 
   private PolarisEntity createPolicy(PolicyIdentifier identifier, PolarisEntity entity) {
@@ -597,7 +627,6 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
     List<PolarisEntity> catalogPath = resolvedEntities.getRawParentPath();
     PolarisEntity leafEntity = resolvedEntities.getRawLeafEntity();
 
-    // TODO: temporarily make cleanup set to false, need further thinking
     return getMetaStoreManager()
         .dropEntityIfExists(
             getCurrentPolarisContext(),
@@ -625,36 +654,6 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
         .setCreatedAtMs(policyEntity.getCreateTimestamp())
         .setUpdatedAtMs(policyEntity.getLastUpdateTimestamp())
         .build();
-  }
-
-  private void authorizeBasicTableLikeOperationOrThrow(
-      PolarisAuthorizableOperation op, PolarisEntitySubType subType, TableIdentifier identifier) {
-    resolutionManifest =
-        entityManager.prepareResolutionManifest(callContext, securityContext, catalogName);
-
-    // The underlying Catalog is also allowed to fetch "fresh" versions of the target entity.
-    resolutionManifest.addPassthroughPath(
-        new ResolverPath(
-            PolarisCatalogHelpers.tableIdentifierToList(identifier),
-            PolarisEntityType.TABLE_LIKE,
-            true /* optional */),
-        identifier);
-    resolutionManifest.resolveAll();
-    PolarisResolvedPathWrapper target =
-        resolutionManifest.getResolvedPath(identifier, subType, true);
-    if (target == null) {
-      if (subType == PolarisEntitySubType.TABLE) {
-        throw new NoSuchTableException("Table does not exist: %s", identifier);
-      } else {
-        throw new NoSuchViewException("View does not exist: %s", identifier);
-      }
-    }
-    authorizer.authorizeOrThrow(
-        authenticatedPrincipal,
-        resolutionManifest.getAllActivatedCatalogRoleAndPrincipalRoles(),
-        op,
-        target,
-        null /* secondary */);
   }
 
   private List<PolicyEntity> getApplicablePoliciesOnEntity(

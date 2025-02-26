@@ -351,51 +351,15 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
       throw new NotFoundException("Table not found: %s", tableIdentifier);
     }
 
-    Set<Integer> existingInheritablePolicyTypes = new HashSet<>();
-    List<PolicyEntity> finalResults = new ArrayList<>();
-
     PolarisEntity tableEntity = resolvedEntities.getRawLeafEntity();
-    PolarisMetaStoreManager.LoadPolicyMappingsResult directMappingResult =
-        getMetaStoreManager().loadPoliciesOnEntity(getCurrentPolarisContext(), tableEntity);
-    if (directMappingResult.isSuccess()) {
-      finalResults.addAll(directMappingResult.getPolicyEntities());
-      directMappingResult
-          .getPolicyMappingRecords()
-          .forEach(
-              policyMappingRecord -> {
-                if (PolicyType.fromCode(policyMappingRecord.getPolicyTypeCode()).isInheritable()) {
-                  existingInheritablePolicyTypes.add(policyMappingRecord.getPolicyTypeCode());
-                }
-              });
+    List<PolarisEntity> catalogPath = resolvedEntities.getRawParentPath();
 
-      List<PolarisEntity> catalogPath = resolvedEntities.getRawParentPath();
-      for (int i = catalogPath.size() - 1; i >= 0; i--) {
-        PolarisEntity parent = catalogPath.get(i);
-        PolarisMetaStoreManager.LoadPolicyMappingsResult parentMappingResult =
-            getMetaStoreManager().loadPoliciesOnEntity(getCurrentPolarisContext(), parent);
-        if (parentMappingResult.isSuccess()) {
-          parentMappingResult
-              .getPolicyMappingRecords()
-              .forEach(
-                  policyMappingRecord -> {
-                    PolicyType policyType =
-                        PolicyType.fromCode(policyMappingRecord.getPolicyTypeCode());
-                    if (policyType.isInheritable()
-                        && !existingInheritablePolicyTypes.contains(policyType.getCode())) {
-                      existingInheritablePolicyTypes.add(policyType.getCode());
-                      finalResults.add(
-                          parentMappingResult
-                              .getPolicyEntitiesAsMap()
-                              .get(policyMappingRecord.getPolicyId()));
-                    }
-                  });
-        }
-      }
-    }
+    List<PolicyEntity> applicablePolicyEntities =
+        getApplicablePoliciesOnEntity(catalogPath, tableEntity);
 
     return GetApplicablePoliciesResponse.builder()
         .setPolicies(
-            finalResults.stream()
+            applicablePolicyEntities.stream()
                 .map(PolicyCatalogHandlerWrapper::constructPolicy)
                 .collect(Collectors.toSet()))
         .build();
@@ -691,6 +655,53 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
         op,
         target,
         null /* secondary */);
+  }
+
+  private List<PolicyEntity> getApplicablePoliciesOnEntity(
+      List<PolarisEntity> catalogPath, PolarisEntity entity) {
+    Set<Integer> existingInheritablePolicyTypes = new HashSet<>();
+    List<PolicyEntity> finalResults = new ArrayList<>();
+    PolarisMetaStoreManager.LoadPolicyMappingsResult directMappingResult =
+        getMetaStoreManager().loadPoliciesOnEntity(getCurrentPolarisContext(), entity);
+
+    if (directMappingResult.isSuccess()) {
+      finalResults.addAll(directMappingResult.getPolicyEntities());
+      directMappingResult
+          .getPolicyMappingRecords()
+          .forEach(
+              policyMappingRecord -> {
+                PolicyType policyType =
+                    PolicyType.fromCode(policyMappingRecord.getPolicyTypeCode());
+                if (policyType.isInheritable()) {
+                  existingInheritablePolicyTypes.add(policyMappingRecord.getPolicyTypeCode());
+                }
+              });
+    }
+
+    for (int i = catalogPath.size() - 1; i >= 0; i--) {
+      PolarisEntity parent = catalogPath.get(i);
+      PolarisMetaStoreManager.LoadPolicyMappingsResult parentMappingResult =
+          getMetaStoreManager().loadPoliciesOnEntity(getCurrentPolarisContext(), parent);
+
+      if (parentMappingResult.isSuccess()) {
+        parentMappingResult
+            .getPolicyMappingRecords()
+            .forEach(
+                policyMappingRecord -> {
+                  PolicyType policyType =
+                      PolicyType.fromCode(policyMappingRecord.getPolicyTypeCode());
+                  if (policyType.isInheritable()
+                      && existingInheritablePolicyTypes.add(policyType.getCode())) {
+                    finalResults.add(
+                        parentMappingResult
+                            .getPolicyEntitiesAsMap()
+                            .get(policyMappingRecord.getPolicyId()));
+                  }
+                });
+      }
+    }
+
+    return finalResults;
   }
 
   private PolarisCallContext getCurrentPolarisContext() {

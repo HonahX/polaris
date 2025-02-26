@@ -257,8 +257,7 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
       String policyName,
       TableLikeIdentifier tableLikeIdentifier,
       Map<String, String> parameters) {
-    PolarisAuthorizableOperation op = PolarisAuthorizableOperation.ATTACH_POLICY_TO_TABLE_LIKE;
-    authorizeSetPolicyOnTableLikeOrThrow(op, namespace, policyName, tableLikeIdentifier);
+    authorizeSetPolicyOnTableLikeOrThrow(namespace, policyName, tableLikeIdentifier);
 
     PolicyIdentifier policyIdentifier = PolicyIdentifier.of(namespace, policyName);
 
@@ -414,7 +413,6 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
   }
 
   private void authorizeSetPolicyOnTableLikeOrThrow(
-      PolarisAuthorizableOperation op,
       Namespace namespace,
       String policyName,
       TableLikeIdentifier tableLikeIdentifier) {
@@ -455,6 +453,13 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
         resolutionManifest.getResolvedPath(targetIdentifier, true);
     if (tableLikeWrapper == null) {
       throw new NotFoundException("Target path does not exist: %s", targetIdentifier);
+    }
+
+    PolarisAuthorizableOperation op;
+    if (tableLikeWrapper.getRawLeafEntity().getSubType() == PolarisEntitySubType.TABLE) {
+      op = PolarisAuthorizableOperation.ATTACH_POLICY_TO_TABLE;
+    } else {
+      op = PolarisAuthorizableOperation.ATTACH_POLICY_TO_VIEW;
     }
 
     authorizer.authorizeOrThrow(

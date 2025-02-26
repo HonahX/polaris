@@ -291,7 +291,7 @@ public class PolicyCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase {
         .isTrue();
     Assertions.assertThat(
             adminService.grantPrivilegeOnCatalogToRole(
-                CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.TABLE_LIKE_ATTACH_POLICY))
+                CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.TABLE_ATTACH_POLICY))
         .isTrue();
     Assertions.assertThat(
             adminService.grantPrivilegeOnCatalogToRole(

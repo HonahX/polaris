@@ -27,6 +27,7 @@ import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.rest.requests.CreateTableRequest;
 import org.apache.polaris.core.auth.AuthenticatedPolarisPrincipal;
 import org.apache.polaris.core.entity.PolarisPrivilege;
+import org.apache.polaris.core.policy.PolicyIdentifier;
 import org.apache.polaris.core.policy.PredefinedPolicyType;
 import org.apache.polaris.service.catalog.PolarisCatalogHandlerWrapper;
 import org.apache.polaris.service.catalog.PolicyCatalogHandlerWrapper;
@@ -39,6 +40,7 @@ import org.apache.polaris.service.types.LoadPolicyResult;
 import org.apache.polaris.service.types.NamespaceIdentifier;
 import org.apache.polaris.service.types.SetPolicyRequest;
 import org.apache.polaris.service.types.TableLikeIdentifier;
+import org.apache.polaris.service.types.UnsetPolicyRequest;
 import org.apache.polaris.service.types.UpdatePolicyRequest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -297,6 +299,14 @@ public class PolicyCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase {
             adminService.grantPrivilegeOnCatalogToRole(
                 CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.NAMESPACE_ATTACH_POLICY))
         .isTrue();
+      Assertions.assertThat(
+                      adminService.grantPrivilegeOnCatalogToRole(
+                              CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.NAMESPACE_DETACH_POLICY))
+              .isTrue();
+    Assertions.assertThat(
+            adminService.grantPrivilegeOnCatalogToRole(
+                CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.POLICY_DETACH))
+        .isTrue();
 
     final TableIdentifier newtable = TableIdentifier.of(NS1, "newtable");
     final CreateTableRequest createRequest =
@@ -340,5 +350,20 @@ public class PolicyCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase {
     GetApplicablePoliciesResponse result =
         newPolicyWrapper(Set.of(PRINCIPAL_ROLE2)).getApplicablePolicies(newtable);
     Assertions.assertThat(result.getPolicies()).hasSize(1);
+
+    final UnsetPolicyRequest unsetPolicyRequest =
+        UnsetPolicyRequest.builder()
+            .setEntity(
+                NamespaceIdentifier.builder()
+                    .setCatalog(CATALOG_NAME)
+                    .setNamespace(Arrays.asList(NS1.levels()))
+                    .setType(EntityIdentifier.TypeEnum.NAMESPACE)
+                    .build())
+            .build();
+
+    newPolicyWrapper(Set.of(PRINCIPAL_ROLE2)).unsetPolicy(PolicyIdentifier.of(NS2, "policy_test"), unsetPolicyRequest);
+      GetApplicablePoliciesResponse emptyResult =
+              newPolicyWrapper(Set.of(PRINCIPAL_ROLE2)).getApplicablePolicies(newtable);
+      Assertions.assertThat(emptyResult.getPolicies()).hasSize(0);
   }
 }

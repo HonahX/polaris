@@ -66,6 +66,7 @@ import org.apache.polaris.service.types.NamespaceIdentifier;
 import org.apache.polaris.service.types.Policy;
 import org.apache.polaris.service.types.SetPolicyRequest;
 import org.apache.polaris.service.types.TableLikeIdentifier;
+import org.apache.polaris.service.types.UnsetPolicyRequest;
 import org.apache.polaris.service.types.UpdatePolicyRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -341,6 +342,113 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
     }
   }
 
+  public void unsetPolicy(PolicyIdentifier identifier, UnsetPolicyRequest request) {
+    switch (request.getEntity()) {
+      case CatalogIdentifier catalogIdentifier:
+        {
+          // TODO: implement
+          break;
+        }
+
+      case NamespaceIdentifier namespaceIdentifier:
+        {
+          unsetPolicyFromNamespace(identifier, namespaceIdentifier);
+          break;
+        }
+
+      case TableLikeIdentifier tableLikeIdentifier:
+        {
+          unsetPolicyFromTableLike(identifier, tableLikeIdentifier);
+          break;
+        }
+
+      default:
+        LOGGER.atWarn().log("Invalid Entity %s", request.getEntity());
+    }
+  }
+
+  public void unsetPolicyFromTableLike(
+      PolicyIdentifier policyIdentifier, TableLikeIdentifier tableLikeIdentifier) {
+    authorizeUnsetPolicyFromTableLikeOrThrow(
+        policyIdentifier.namespace(), policyIdentifier.name(), tableLikeIdentifier);
+
+    List<String> rawNamespace = tableLikeIdentifier.getNamespace();
+    TableIdentifier targetIdentifier =
+        TableIdentifier.of(
+            Namespace.of(rawNamespace.toArray(new String[0])), tableLikeIdentifier.getName());
+
+    PolarisResolvedPathWrapper resolvedPolicyPathWrapper =
+        resolutionManifest.getResolvedPath(policyIdentifier);
+    if (resolvedPolicyPathWrapper == null) {
+      throw new NotFoundException("Policy does not exist: %s", policyIdentifier);
+    }
+
+    PolarisResolvedPathWrapper resolvedTargetPathWrapper =
+        resolutionManifest.getResolvedPath(targetIdentifier);
+    if (resolvedTargetPathWrapper == null) {
+      throw new NotFoundException("Target path does not exist: %s", targetIdentifier);
+    }
+    List<PolarisEntity> policyCatalogPath = resolvedPolicyPathWrapper.getRawParentPath();
+    PolarisEntity policyEntity = resolvedPolicyPathWrapper.getRawLeafEntity();
+
+    List<PolarisEntity> targetCatalogPath = resolvedTargetPathWrapper.getRawParentPath();
+    PolarisEntity targetEntity = resolvedTargetPathWrapper.getRawLeafEntity();
+
+    PolarisMetaStoreManager.AttachmentResult result =
+        getMetaStoreManager()
+            .detachPolicyFromEntity(
+                getCurrentPolarisContext(),
+                targetEntity,
+                PolarisEntity.toCoreList(targetCatalogPath),
+                PolicyEntity.of(policyEntity),
+                PolarisEntity.toCoreList(policyCatalogPath));
+
+    if (!result.isSuccess()) {
+      throw new IllegalStateException("Failed to detach policy from entity");
+    }
+  }
+
+  public void unsetPolicyFromNamespace(
+      PolicyIdentifier policyIdentifier, NamespaceIdentifier namespaceIdentifier) {
+    PolarisAuthorizableOperation op = PolarisAuthorizableOperation.DETACH_POLICY_FROM_NAMESPACE;
+    authorizeSetPolicyOnNamespace(
+        op, policyIdentifier.namespace(), policyIdentifier.name(), namespaceIdentifier);
+
+    Namespace targetNamespace =
+        Namespace.of(namespaceIdentifier.getNamespace().toArray(new String[0]));
+
+    PolarisResolvedPathWrapper resolvedPolicyPathWrapper =
+        resolutionManifest.getResolvedPath(policyIdentifier);
+    if (resolvedPolicyPathWrapper == null) {
+      throw new NotFoundException("Policy does not exist: %s", policyIdentifier);
+    }
+
+    PolarisResolvedPathWrapper resolvedTargetPathWrapper =
+        resolutionManifest.getResolvedPath(targetNamespace);
+    if (resolvedTargetPathWrapper == null) {
+      throw new NotFoundException("Target path does not exist: %s", targetNamespace);
+    }
+
+    List<PolarisEntity> policyCatalogPath = resolvedPolicyPathWrapper.getRawParentPath();
+    PolarisEntity policyEntity = resolvedPolicyPathWrapper.getRawLeafEntity();
+
+    List<PolarisEntity> targetCatalogPath = resolvedTargetPathWrapper.getRawParentPath();
+    PolarisEntity targetEntity = resolvedTargetPathWrapper.getRawLeafEntity();
+
+    PolarisMetaStoreManager.AttachmentResult result =
+        getMetaStoreManager()
+            .detachPolicyFromEntity(
+                getCurrentPolarisContext(),
+                targetEntity,
+                PolarisEntity.toCoreList(targetCatalogPath),
+                PolicyEntity.of(policyEntity),
+                PolarisEntity.toCoreList(policyCatalogPath));
+
+    if (!result.isSuccess()) {
+      throw new IllegalStateException("Failed to detach policy from entity");
+    }
+  }
+
   public GetApplicablePoliciesResponse getApplicablePolicies(TableIdentifier tableIdentifier) {
     PolarisAuthorizableOperation op = PolarisAuthorizableOperation.LOAD_TABLE;
     authorizeBasicTableLikeOperationOrThrow(op, PolarisEntitySubType.TABLE, tableIdentifier);
@@ -412,10 +520,11 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
         namespaceWrapper);
   }
 
-  private void authorizeSetPolicyOnTableLikeOrThrow(
+  private void authorizePolicyMappingOnTableLikeOperationOrThrow(
       Namespace namespace,
       String policyName,
-      TableLikeIdentifier tableLikeIdentifier) {
+      TableLikeIdentifier tableLikeIdentifier,
+      boolean isAttach) {
     // TODO: currently for only one catalog, but tableLike can exist in a different catalog
     resolutionManifest =
         entityManager.prepareResolutionManifest(callContext, securityContext, catalogName);
@@ -457,9 +566,15 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
 
     PolarisAuthorizableOperation op;
     if (tableLikeWrapper.getRawLeafEntity().getSubType() == PolarisEntitySubType.TABLE) {
-      op = PolarisAuthorizableOperation.ATTACH_POLICY_TO_TABLE;
+      op =
+          isAttach
+              ? PolarisAuthorizableOperation.ATTACH_POLICY_TO_TABLE
+              : PolarisAuthorizableOperation.DETACH_POLICY_FROM_TABLE;
     } else {
-      op = PolarisAuthorizableOperation.ATTACH_POLICY_TO_VIEW;
+      op =
+          isAttach
+              ? PolarisAuthorizableOperation.ATTACH_POLICY_TO_VIEW
+              : PolarisAuthorizableOperation.DETACH_POLICY_FROM_VIEW;
     }
 
     authorizer.authorizeOrThrow(
@@ -468,6 +583,18 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
         op,
         policyWrapper,
         tableLikeWrapper);
+  }
+
+  private void authorizeSetPolicyOnTableLikeOrThrow(
+      Namespace namespace, String policyName, TableLikeIdentifier tableLikeIdentifier) {
+    authorizePolicyMappingOnTableLikeOperationOrThrow(
+        namespace, policyName, tableLikeIdentifier, true);
+  }
+
+  private void authorizeUnsetPolicyFromTableLikeOrThrow(
+      Namespace namespace, String policyName, TableLikeIdentifier tableLikeIdentifier) {
+    authorizePolicyMappingOnTableLikeOperationOrThrow(
+        namespace, policyName, tableLikeIdentifier, false);
   }
 
   private void authorizeCreatePolicyUnderNamespaceOperationOrThrow(

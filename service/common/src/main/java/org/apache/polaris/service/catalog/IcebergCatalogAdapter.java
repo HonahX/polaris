@@ -66,6 +66,7 @@ import org.apache.polaris.core.persistence.PolarisMetaStoreSession;
 import org.apache.polaris.core.persistence.ResolvedPolarisEntity;
 import org.apache.polaris.core.persistence.resolver.Resolver;
 import org.apache.polaris.core.persistence.resolver.ResolverStatus;
+import org.apache.polaris.core.policy.PolicyIdentifier;
 import org.apache.polaris.service.catalog.api.IcebergRestCatalogApiService;
 import org.apache.polaris.service.catalog.api.IcebergRestConfigurationApiService;
 import org.apache.polaris.service.context.CallContextCatalogFactory;
@@ -728,7 +729,15 @@ public class IcebergCatalogAdapter
       UnsetPolicyRequest unsetPolicyRequest,
       RealmContext realmContext,
       SecurityContext securityContext) {
-    throw new UnsupportedOperationException();
+    Namespace ns = decodeNamespace(namespace);
+    PolicyIdentifier policyIdentifier = PolicyIdentifier.of(ns, RESTUtil.decodeString(policy));
+    return withPolicyHandler(
+        securityContext,
+        prefix,
+        catalog -> {
+          catalog.unsetPolicy(policyIdentifier, unsetPolicyRequest);
+          return Response.status(Response.Status.NO_CONTENT).build();
+        });
   }
 
   @Override

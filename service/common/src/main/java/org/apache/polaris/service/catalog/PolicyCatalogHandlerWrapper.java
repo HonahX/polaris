@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
@@ -60,6 +61,7 @@ import org.apache.polaris.core.policy.PolicyValidator;
 import org.apache.polaris.core.policy.PolicyValidatorFactory;
 import org.apache.polaris.service.types.CatalogIdentifier;
 import org.apache.polaris.service.types.CreatePolicyRequest;
+import org.apache.polaris.service.types.EntityIdentifier;
 import org.apache.polaris.service.types.GetApplicablePoliciesResponse;
 import org.apache.polaris.service.types.ListPoliciesResponse;
 import org.apache.polaris.service.types.LoadPolicyResult;
@@ -497,7 +499,75 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
     }
   }
 
-  public GetApplicablePoliciesResponse getApplicablePolicies(TableIdentifier tableIdentifier) {
+  public GetApplicablePoliciesResponse getApplicablePolicies(EntityIdentifier entityIdentifier) {
+      return switch (entityIdentifier) {
+          case CatalogIdentifier catalogIdentifier ->
+                  throw new BadRequestException("Get Applicable Policies on Catalog not supported yey");
+          case NamespaceIdentifier namespaceIdentifier -> getApplicablePoliciesOnNamespace(namespaceIdentifier);
+          case TableLikeIdentifier tableLikeIdentifier -> getApplicablePoliciesOnTableLike(tableLikeIdentifier);
+          default -> throw new BadRequestException("Invalid Entity %s", entityIdentifier);
+      };
+
+  }
+
+  public GetApplicablePoliciesResponse getApplicablePoliciesOnNamespace(NamespaceIdentifier namespaceIdentifier) {
+    Namespace namespace = Namespace.of(namespaceIdentifier.getNamespace().toArray(new String[0]));
+    PolarisAuthorizableOperation op = PolarisAuthorizableOperation.LOAD_NAMESPACE_METADATA;
+    authorizeBasicNamespaceOperationOrThrow(op, namespace);
+
+    PolarisResolvedPathWrapper resolvedEntities =
+            resolutionManifest.getResolvedPath(namespace);
+    if (resolvedEntities == null) {
+      throw new NotFoundException("Target not found: %s", namespace);
+    }
+
+    PolarisEntity targetEntity = resolvedEntities.getRawLeafEntity();
+    List<PolarisEntity> catalogPath = resolvedEntities.getRawParentPath();
+
+    List<PolicyEntity> applicablePolicyEntities =
+            getApplicablePoliciesOnEntity(catalogPath, targetEntity);
+
+    return GetApplicablePoliciesResponse.builder()
+            .setPolicies(
+                    applicablePolicyEntities.stream()
+                            .map(PolicyCatalogHandlerWrapper::constructPolicy)
+                            .collect(Collectors.toSet()))
+            .build();
+  }
+
+  public GetApplicablePoliciesResponse getApplicablePoliciesOnTableLike(TableLikeIdentifier tableLikeIdentifier) {
+    TableIdentifier identifier = TableIdentifier.of(Namespace.of(tableLikeIdentifier.getNamespace().toArray(new String[0])), tableLikeIdentifier.getName());
+    authorizeBasicTableLikeOperationOrThrow((entitySubType -> {
+      if (entitySubType == PolarisEntitySubType.TABLE) {
+        return PolarisAuthorizableOperation.LOAD_TABLE;
+      } else if (entitySubType == PolarisEntitySubType.VIEW) {
+        return PolarisAuthorizableOperation.LOAD_VIEW;
+      } else {
+        return null;
+      }
+    }), identifier);
+
+    PolarisResolvedPathWrapper resolvedEntities =
+            resolutionManifest.getPassthroughResolvedPath(identifier);
+    if (resolvedEntities == null) {
+      throw new NotFoundException("Target not found: %s", identifier);
+    }
+
+    PolarisEntity targetEntity = resolvedEntities.getRawLeafEntity();
+    List<PolarisEntity> catalogPath = resolvedEntities.getRawParentPath();
+
+    List<PolicyEntity> applicablePolicyEntities =
+            getApplicablePoliciesOnEntity(catalogPath, targetEntity);
+
+    return GetApplicablePoliciesResponse.builder()
+            .setPolicies(
+                    applicablePolicyEntities.stream()
+                            .map(PolicyCatalogHandlerWrapper::constructPolicy)
+                            .collect(Collectors.toSet()))
+            .build();
+  }
+
+  public GetApplicablePoliciesResponse getApplicablePoliciesOnTable(TableIdentifier tableIdentifier) {
     PolarisAuthorizableOperation op = PolarisAuthorizableOperation.LOAD_TABLE;
     authorizeBasicTableLikeOperationOrThrow(op, PolarisEntitySubType.TABLE, tableIdentifier);
 
@@ -729,6 +799,36 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
         op,
         target,
         null /* secondary */);
+  }
+
+  private void authorizeBasicTableLikeOperationOrThrow(
+          Function<PolarisEntitySubType, PolarisAuthorizableOperation> opFunction, TableIdentifier identifier) {
+    resolutionManifest =
+            entityManager.prepareResolutionManifest(callContext, securityContext, catalogName);
+
+    // The underlying Catalog is also allowed to fetch "fresh" versions of the target entity.
+    resolutionManifest.addPassthroughPath(
+            new ResolverPath(
+                    PolarisCatalogHelpers.tableIdentifierToList(identifier),
+                    PolarisEntityType.TABLE_LIKE,
+                    true /* optional */),
+            identifier);
+    resolutionManifest.resolveAll();
+    PolarisResolvedPathWrapper target =
+            resolutionManifest.getResolvedPath(identifier,true);
+    if (target == null) {
+     throw new NotFoundException("Target does not exist: %s", identifier);
+    }
+    PolarisAuthorizableOperation op = opFunction.apply(target.getRawLeafEntity().getSubType());
+    if (op == null) {
+      throw new BadRequestException("Unsupported target type: %s", target.getRawLeafEntity().getSubType());
+    }
+    authorizer.authorizeOrThrow(
+            authenticatedPrincipal,
+            resolutionManifest.getAllActivatedCatalogRoleAndPrincipalRoles(),
+            op,
+            target,
+            null /* secondary */);
   }
 
   private void authorizeBasicNamespaceOperationOrThrow(

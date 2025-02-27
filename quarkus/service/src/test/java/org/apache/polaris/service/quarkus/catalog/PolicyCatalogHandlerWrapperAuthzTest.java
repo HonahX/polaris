@@ -314,6 +314,8 @@ public class PolicyCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase {
         .isTrue();
 
     final TableIdentifier newtable = TableIdentifier.of(NS1, "newtable");
+    final List<String> NS1_LIST = Arrays.asList(NS1.levels());
+    final TableLikeIdentifier newTableLike = TableLikeIdentifier.builder(CATALOG_NAME, NS1_LIST, "newtable", EntityIdentifier.TypeEnum.TABLE_LIKE).build();
     final CreateTableRequest createRequest =
         CreateTableRequest.builder().withName("newtable").withSchema(SCHEMA).build();
     final String exampleContent = "{\"enable\": False}";
@@ -353,7 +355,7 @@ public class PolicyCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase {
     newPolicyWrapper(Set.of(PRINCIPAL_ROLE2))
         .setPolicy(NS2, "policy_test", setPolicyOnNamespaceRequest);
     GetApplicablePoliciesResponse result =
-        newPolicyWrapper(Set.of(PRINCIPAL_ROLE2)).getApplicablePolicies(newtable);
+        newPolicyWrapper(Set.of(PRINCIPAL_ROLE2)).getApplicablePolicies(newTableLike);
     Assertions.assertThat(result.getPolicies()).hasSize(1);
 
     final UnsetPolicyRequest unsetPolicyRequest =
@@ -369,7 +371,7 @@ public class PolicyCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase {
     newPolicyWrapper(Set.of(PRINCIPAL_ROLE2))
         .unsetPolicy(PolicyIdentifier.of(NS2, "policy_test"), unsetPolicyRequest);
     GetApplicablePoliciesResponse emptyResult =
-        newPolicyWrapper(Set.of(PRINCIPAL_ROLE2)).getApplicablePolicies(newtable);
+        newPolicyWrapper(Set.of(PRINCIPAL_ROLE2)).getApplicablePolicies(newTableLike);
     Assertions.assertThat(emptyResult.getPolicies()).hasSize(0);
 
     ListPoliciesResponse response =

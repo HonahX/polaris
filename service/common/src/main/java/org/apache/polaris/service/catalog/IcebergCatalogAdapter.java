@@ -835,6 +835,6 @@ public class IcebergCatalogAdapter
     return withPolicyHandler(
         securityContext,
         prefix,
-        catalog -> Response.ok(catalog.getApplicablePolicies(tableIdentifier)).build());
+        catalog -> Response.ok(catalog.getApplicablePoliciesOnTable(tableIdentifier)).build());
   }
 }

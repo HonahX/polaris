@@ -66,6 +66,42 @@ paths:
         5XX:
           $ref: '../rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
 
+    get:
+      tags:
+        - Catalog API
+      summary: List all policy identifiers underneath a given namespace
+      description: Return all policy identifiers under this namespace
+      operationId: listPolicies
+      parameters:
+        - $ref: '../rest-catalog-open-api.yaml#/components/parameters/page-token'
+        - $ref: '../rest-catalog-open-api.yaml#/components/parameters/page-size'
+        - $ref: '#/components/parameters/policy-type'
+
+      responses:
+        '200':
+          $ref: '#/components/responses/ListPoliciesResponse'
+        '400':
+          $ref: '../rest-catalog-open-api.yaml#/components/responses/BadRequestErrorResponse'
+        '401':
+          $ref: '../rest-catalog-open-api.yaml#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '../rest-catalog-open-api.yaml#/components/responses/ForbiddenResponse'
+        '404':
+          description: Not Found - The namespace specified does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '../rest-catalog-open-api.yaml#/components/schemas/ErrorModel'
+              examples:
+                NamespaceNotFound:
+                  $ref: '../rest-catalog-open-api.yaml#/components/examples/NoSuchNamespaceError'
+        '419':
+          $ref: '../rest-catalog-open-api.yaml#/components/responses/AuthenticationTimeoutResponse'
+        '503':
+          $ref: '../rest-catalog-open-api.yaml#/components/responses/ServiceUnavailableResponse'
+        5XX:
+          $ref: '../rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
+
   /v1/{prefix}/namespaces/{namespace}/policies/{policyName}:
     parameters:
       - $ref: '../rest-catalog-open-api.yaml#/components/parameters/prefix'
@@ -76,7 +112,7 @@ paths:
       tags:
         - Catalog API
       summary: 'Get a policy'
-      operationId: getPolicy
+      operationId: loadPolicy
       description: |
         Get a policy from the catalog
         
@@ -154,7 +190,7 @@ paths:
       tags:
         - Catalog API
       summary: Delete a policy from the catalog
-      operationId: deletePolicy
+      operationId: dropPolicy
       description: Remove a policy from the catalog
       responses:
         204:
@@ -283,6 +319,9 @@ paths:
         5XX:
           $ref: '../rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
 
+  
+  
+  
   /v1/{prefix}/namespaces/{namespace}/tables/{table}/policies:
     parameters:
       - $ref: '../rest-catalog-open-api.yaml#/components/parameters/prefix'
@@ -335,7 +374,22 @@ components:
       schema:
         $ref: '#/components/schemas/PolicyName'
 
+    policy-type:
+      name: policyType
+      in: query
+      required: false
+      allowEmptyValue: true
+      schema:
+        $ref: '#/components/schemas/PolicyType'
+
+
   schemas:
+    PolicyType:
+      description: The type of a policy
+      type: string
+      nullable: true
+      example: system.data-compaction
+
     PolicyName:
       type: string
       description:
@@ -492,6 +546,18 @@ components:
       required:
         - type
 
+    PolicyIdentifier:
+      type: object
+      required:
+        - namespace
+        - name
+      properties:
+        namespace:
+          $ref: '../rest-catalog-open-api.yaml#/components/schemas/Namespace'
+        name:
+          type: string
+          nullable: false
+
     GetApplicablePoliciesResponse:
       type: object
       required:
@@ -504,6 +570,19 @@ components:
           uniqueItems: true
           items:
             $ref: '#/components/schemas/Policy'
+
+    ListPoliciesResponse:
+      type: object
+      properties:
+        next-page-token:
+          $ref: '../rest-catalog-open-api.yaml#/components/schemas/PageToken'
+        identifiers:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/PolicyIdentifier'
+
+
 
   responses:
     CreatePolicyResponse:
@@ -529,6 +608,19 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/LoadPolicyResult'
+
+    ListPoliciesResponse:
+      description: a list of policy identifiers
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ListPoliciesResponse'
+          examples:
+            ListPoliciesResponseNonEmpty:
+              $ref: '#/components/examples/ListPoliciesNonEmptyExample'
+            ListPoliciesResponseEmpty:
+              $ref: '#/components/examples/ListPoliciesEmptyExample'
+
 
     GetApplicablePoliciesResponse:
       description: A list of policies applicable to the table
@@ -569,3 +661,21 @@ components:
           "code": 404
         }
       }
+
+    ListPoliciesNonEmptyExample:
+      summary: A non-empty list of policy identifiers
+      value:
+        identifiers:
+          - namespace:
+            - accounting
+            - tax
+            name: policy1
+          - namespace:
+            - accounting
+            - tax
+            name: policy2
+
+    ListPoliciesEmptyExample:
+      summary: An empty list for a namespace with no policies
+      value:
+        identifiers: []

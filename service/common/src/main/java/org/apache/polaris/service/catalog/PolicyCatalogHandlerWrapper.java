@@ -61,6 +61,7 @@ import org.apache.polaris.core.policy.PolicyValidatorFactory;
 import org.apache.polaris.service.types.CatalogIdentifier;
 import org.apache.polaris.service.types.CreatePolicyRequest;
 import org.apache.polaris.service.types.GetApplicablePoliciesResponse;
+import org.apache.polaris.service.types.ListPoliciesResponse;
 import org.apache.polaris.service.types.LoadPolicyResult;
 import org.apache.polaris.service.types.NamespaceIdentifier;
 import org.apache.polaris.service.types.Policy;
@@ -226,6 +227,53 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
       // TODO: a better error message for policy
       throw new NoSuchTableException("Policy does not exist: %s", policyName);
     }
+  }
+
+  public ListPoliciesResponse listPolicies(Namespace namespace, PolicyType policyType) {
+    PolarisAuthorizableOperation op = PolarisAuthorizableOperation.LIST_POLICY;
+    authorizeBasicNamespaceOperationOrThrow(op, namespace);
+
+    PolarisResolvedPathWrapper resolvedEntities = resolutionManifest.getResolvedPath(namespace);
+    if (resolvedEntities == null) {
+      throw new IllegalStateException(
+          String.format("Failed to fetch resolved namespace '%s'", namespace));
+    }
+
+    List<PolarisEntity> catalogPath = resolvedEntities.getRawFullPath();
+    List<PolicyEntity> policyEntities =
+        getMetaStoreManager()
+            .listEntities(
+                getCurrentPolarisContext(),
+                PolarisEntity.toCoreList(catalogPath),
+                PolarisEntityType.POLICY,
+                PolarisEntitySubType.ANY_SUBTYPE)
+            .getEntities()
+            .stream()
+            .map(
+                polarisEntityActiveRecord ->
+                    PolicyEntity.of(
+                        getMetaStoreManager()
+                            .loadEntity(
+                                getCurrentPolarisContext(),
+                                polarisEntityActiveRecord.getCatalogId(),
+                                polarisEntityActiveRecord.getId())
+                            .getEntity()))
+            .filter(
+                policyEntity -> policyType == null || policyEntity.getPolicyType() == policyType)
+            .toList();
+
+    List<PolarisEntity.NameAndId> entities =
+        policyEntities.stream().map(PolarisEntity::nameAndId).toList();
+    List<org.apache.polaris.service.types.PolicyIdentifier> policyIdentifiers =
+        PolarisCatalogHelpers.nameAndIdToTableIdentifiers(catalogPath, entities).stream()
+            .map(
+                tableIdentifier ->
+                    org.apache.polaris.service.types.PolicyIdentifier.builder(
+                            Arrays.asList(tableIdentifier.namespace().levels()),
+                            tableIdentifier.name())
+                        .build())
+            .toList();
+    return ListPoliciesResponse.builder().setIdentifiers(new HashSet<>(policyIdentifiers)).build();
   }
 
   public void setPolicy(Namespace namespace, String policyName, SetPolicyRequest request) {
@@ -674,6 +722,26 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
       } else {
         throw new NoSuchViewException("View does not exist: %s", identifier);
       }
+    }
+    authorizer.authorizeOrThrow(
+        authenticatedPrincipal,
+        resolutionManifest.getAllActivatedCatalogRoleAndPrincipalRoles(),
+        op,
+        target,
+        null /* secondary */);
+  }
+
+  private void authorizeBasicNamespaceOperationOrThrow(
+      PolarisAuthorizableOperation op, Namespace namespace) {
+    resolutionManifest =
+        entityManager.prepareResolutionManifest(callContext, securityContext, catalogName);
+    resolutionManifest.addPath(
+        new ResolverPath(Arrays.asList(namespace.levels()), PolarisEntityType.NAMESPACE),
+        namespace);
+    resolutionManifest.resolveAll();
+    PolarisResolvedPathWrapper target = resolutionManifest.getResolvedPath(namespace, true);
+    if (target == null) {
+      throw new NoSuchNamespaceException("Namespace does not exist: %s", namespace);
     }
     authorizer.authorizeOrThrow(
         authenticatedPrincipal,

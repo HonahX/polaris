@@ -21,15 +21,18 @@ package org.apache.polaris.service.catalog;
 import static org.apache.polaris.service.catalog.AccessDelegationMode.VENDED_CREDENTIALS;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Optional;
@@ -67,6 +70,7 @@ import org.apache.polaris.core.persistence.ResolvedPolarisEntity;
 import org.apache.polaris.core.persistence.resolver.Resolver;
 import org.apache.polaris.core.persistence.resolver.ResolverStatus;
 import org.apache.polaris.core.policy.PolicyIdentifier;
+import org.apache.polaris.core.policy.PolicyType;
 import org.apache.polaris.service.catalog.api.IcebergRestCatalogApiService;
 import org.apache.polaris.service.catalog.api.IcebergRestConfigurationApiService;
 import org.apache.polaris.service.context.CallContextCatalogFactory;
@@ -270,6 +274,58 @@ public class IcebergCatalogAdapter
 
   private static Namespace decodeNamespace(String namespace) {
     return RESTUtil.decodeNamespace(URLEncoder.encode(namespace, Charset.defaultCharset()));
+  }
+
+  private static EntityIdentifier decodeEntityIdentifier(
+      String entityType, String entityIdentifier) {
+    Splitter COMPONENT_ESCAPED_SPLITTER = Splitter.on("%2F");
+
+    String[] components =
+        Iterables.toArray(COMPONENT_ESCAPED_SPLITTER.split(entityIdentifier), String.class);
+
+    switch (entityType) {
+      case "catalog":
+        {
+          Preconditions.checkArgument(
+              components.length == 1, "Invalid catalog identifier: %s", entityIdentifier);
+          return CatalogIdentifier.builder(
+                  RESTUtil.decodeString(components[0]), EntityIdentifier.TypeEnum.CATALOG)
+              .build();
+        }
+
+      case "namespace":
+        {
+          Preconditions.checkArgument(
+              components.length == 2, "Invalid namespace identifier: %s", entityIdentifier);
+          String catalogName = RESTUtil.decodeString(components[0]);
+          Namespace namespace = RESTUtil.decodeNamespace(components[1]);
+          return NamespaceIdentifier.builder(
+                  catalogName,
+                  Arrays.asList(namespace.levels()),
+                  EntityIdentifier.TypeEnum.NAMESPACE)
+              .build();
+        }
+
+      case "table-like":
+        {
+          Preconditions.checkArgument(
+              components.length == 3, "Invalid namespace identifier: %s", entityIdentifier);
+          String catalogName = RESTUtil.decodeString(components[0]);
+          Namespace namespace = RESTUtil.decodeNamespace(components[1]);
+          String name = RESTUtil.decodeString(components[2]);
+          return TableLikeIdentifier.builder(
+                  catalogName,
+                  Arrays.asList(namespace.levels()),
+                  name,
+                  EntityIdentifier.TypeEnum.TABLE_LIKE)
+              .build();
+        }
+
+      default:
+        {
+          throw new BadRequestException("Unsupported entity type: %s", entityType);
+        }
+    }
   }
 
   @Override
@@ -660,7 +716,7 @@ public class IcebergCatalogAdapter
   }
 
   @Override
-  public Response getPolicy(
+  public Response loadPolicy(
       String prefix,
       String namespace,
       String policy,
@@ -687,7 +743,7 @@ public class IcebergCatalogAdapter
   }
 
   @Override
-  public Response deletePolicy(
+  public Response dropPolicy(
       String prefix,
       String namespace,
       String policy,
@@ -738,6 +794,33 @@ public class IcebergCatalogAdapter
           catalog.unsetPolicy(policyIdentifier, unsetPolicyRequest);
           return Response.status(Response.Status.NO_CONTENT).build();
         });
+  }
+
+  @Override
+  public Response listPolicies(
+      String prefix,
+      String namespace,
+      String pageToken,
+      Integer pageSize,
+      String policyType,
+      RealmContext realmContext,
+      SecurityContext securityContext) {
+    Namespace ns = decodeNamespace(namespace);
+    PolicyType type = PolicyType.fromName(RESTUtil.decodeString(policyType));
+    return withPolicyHandler(
+        securityContext, prefix, catalog -> Response.ok(catalog.listPolicies(ns, type)).build());
+  }
+
+  @Override
+  public Response getApplicablePolicies(
+      String prefix,
+      String entityType,
+      String entityIdentifier,
+      String pageToken,
+      Integer pageSize,
+      RealmContext realmContext,
+      SecurityContext securityContext) {
+    return null; // not implemented
   }
 
   @Override

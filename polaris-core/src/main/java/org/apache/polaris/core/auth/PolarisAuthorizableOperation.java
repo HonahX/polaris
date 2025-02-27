@@ -18,10 +18,10 @@
  */
 package org.apache.polaris.core.auth;
 
+import static org.apache.polaris.core.entity.PolarisPrivilege.*;
+
 import java.util.EnumSet;
 import org.apache.polaris.core.entity.PolarisPrivilege;
-
-import static org.apache.polaris.core.entity.PolarisPrivilege.*;
 
 /**
  * Denotes the fine-grained expansion of all Polaris operations that are associated with some set of

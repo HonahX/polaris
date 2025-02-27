@@ -319,7 +319,49 @@ paths:
         5XX:
           $ref: '../rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
 
-  
+  /v1/{prefix}/applicablePolicies:
+    parameters:
+      - $ref: '../rest-catalog-open-api.yaml#/components/parameters/prefix'
+    
+    get:
+      tags:
+        - Catalog API
+      summary: Get Applicable policies for catalog, namespace, table, or views
+      operationId: getApplicablePolicies
+      description: Get Applicable policies for catalog, namespace, table, or views
+      parameters:
+        - $ref: '../rest-catalog-open-api.yaml#/components/parameters/page-token'
+        - $ref: '../rest-catalog-open-api.yaml#/components/parameters/page-size'
+        - $ref: '#/components/parameters/entity-type'
+        - $ref: '#/components/parameters/entity-identifier'
+
+      responses:
+        200:
+          $ref: '#/components/responses/GetApplicablePoliciesResponse'
+        400:
+          $ref: '../rest-catalog-open-api.yaml#/components/responses/BadRequestErrorResponse'
+        401:
+          $ref: '../rest-catalog-open-api.yaml#/components/responses/UnauthorizedResponse'
+        403:
+          $ref: '../rest-catalog-open-api.yaml#/components/responses/ForbiddenResponse'
+        404: # TODO: need an general error for no such entity
+          description:
+            Not Found - NoSuchTableException, table to load does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '../rest-catalog-open-api.yaml#/components/schemas/IcebergErrorResponse'
+              examples:
+                TableToLoadDoesNotExist:
+                  $ref: '../rest-catalog-open-api.yaml#/components/examples/NoSuchTableError'
+        419:
+          $ref: '../rest-catalog-open-api.yaml#/components/responses/AuthenticationTimeoutResponse'
+        503:
+          $ref: '../rest-catalog-open-api.yaml#/components/responses/ServiceUnavailableResponse'
+        5XX:
+          $ref: '../rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
+
+
   
   
   /v1/{prefix}/namespaces/{namespace}/tables/{table}/policies:
@@ -381,6 +423,28 @@ components:
       allowEmptyValue: true
       schema:
         $ref: '#/components/schemas/PolicyType'
+
+    entity-type:
+      name: entityType
+      in: query
+      required: true
+      allowEmptyValue: false
+      schema:
+        type: string
+        enum:
+          - catalog
+          - namespace
+          - table-like
+
+    entity-identifier:
+      name: entityIdentifier
+      in: query
+      required: true
+      allowEmptyValue: false
+      schema:
+        type: string
+
+    
 
 
   schemas:
@@ -547,16 +611,7 @@ components:
         - type
 
     PolicyIdentifier:
-      type: object
-      required:
-        - namespace
-        - name
-      properties:
-        namespace:
-          $ref: '../rest-catalog-open-api.yaml#/components/schemas/Namespace'
-        name:
-          type: string
-          nullable: false
+      $ref: '../rest-catalog-open-api.yaml#/components/schemas/TableIdentifier'
 
     GetApplicablePoliciesResponse:
       type: object

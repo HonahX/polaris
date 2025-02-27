@@ -36,6 +36,7 @@ import org.apache.polaris.service.quarkus.admin.PolarisAuthzTestBase;
 import org.apache.polaris.service.types.CreatePolicyRequest;
 import org.apache.polaris.service.types.EntityIdentifier;
 import org.apache.polaris.service.types.GetApplicablePoliciesResponse;
+import org.apache.polaris.service.types.ListPoliciesResponse;
 import org.apache.polaris.service.types.LoadPolicyResult;
 import org.apache.polaris.service.types.NamespaceIdentifier;
 import org.apache.polaris.service.types.SetPolicyRequest;
@@ -299,13 +300,17 @@ public class PolicyCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase {
             adminService.grantPrivilegeOnCatalogToRole(
                 CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.NAMESPACE_ATTACH_POLICY))
         .isTrue();
-      Assertions.assertThat(
-                      adminService.grantPrivilegeOnCatalogToRole(
-                              CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.NAMESPACE_DETACH_POLICY))
-              .isTrue();
+    Assertions.assertThat(
+            adminService.grantPrivilegeOnCatalogToRole(
+                CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.NAMESPACE_DETACH_POLICY))
+        .isTrue();
     Assertions.assertThat(
             adminService.grantPrivilegeOnCatalogToRole(
                 CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.POLICY_DETACH))
+        .isTrue();
+    Assertions.assertThat(
+            adminService.grantPrivilegeOnCatalogToRole(
+                CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.POLICY_LIST))
         .isTrue();
 
     final TableIdentifier newtable = TableIdentifier.of(NS1, "newtable");
@@ -361,9 +366,14 @@ public class PolicyCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase {
                     .build())
             .build();
 
-    newPolicyWrapper(Set.of(PRINCIPAL_ROLE2)).unsetPolicy(PolicyIdentifier.of(NS2, "policy_test"), unsetPolicyRequest);
-      GetApplicablePoliciesResponse emptyResult =
-              newPolicyWrapper(Set.of(PRINCIPAL_ROLE2)).getApplicablePolicies(newtable);
-      Assertions.assertThat(emptyResult.getPolicies()).hasSize(0);
+    newPolicyWrapper(Set.of(PRINCIPAL_ROLE2))
+        .unsetPolicy(PolicyIdentifier.of(NS2, "policy_test"), unsetPolicyRequest);
+    GetApplicablePoliciesResponse emptyResult =
+        newPolicyWrapper(Set.of(PRINCIPAL_ROLE2)).getApplicablePolicies(newtable);
+    Assertions.assertThat(emptyResult.getPolicies()).hasSize(0);
+
+    ListPoliciesResponse response =
+        newPolicyWrapper(Set.of(PRINCIPAL_ROLE2)).listPolicies(NS2, null);
+    Assertions.assertThat(response.getIdentifiers()).hasSize(1);
   }
 }

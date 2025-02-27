@@ -60,6 +60,8 @@ val policyManagementModels =
       "UnsetPolicyRequest",
       "UpdatePolicyRequest",
       "GetApplicablePoliciesResponse",
+      "ListPoliciesResponse",
+      "PolicyIdentifier",
     )
     .joinToString(",")
 

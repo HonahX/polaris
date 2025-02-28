@@ -323,17 +323,19 @@ paths:
     parameters:
       - $ref: '../rest-catalog-open-api.yaml#/components/parameters/prefix'
     
-    get:
+    post:
       tags:
         - Catalog API
       summary: Get Applicable policies for catalog, namespace, table, or views
       operationId: getApplicablePolicies
       description: Get Applicable policies for catalog, namespace, table, or views
-      parameters:
-        - $ref: '../rest-catalog-open-api.yaml#/components/parameters/page-token'
-        - $ref: '../rest-catalog-open-api.yaml#/components/parameters/page-size'
-        - $ref: '#/components/parameters/entity-type'
-        - $ref: '#/components/parameters/entity-identifier'
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetApplicablePoliciesRequest'
 
       responses:
         200:
@@ -423,28 +425,6 @@ components:
       allowEmptyValue: true
       schema:
         $ref: '#/components/schemas/PolicyType'
-
-    entity-type:
-      name: entityType
-      in: query
-      required: true
-      allowEmptyValue: false
-      schema:
-        type: string
-        enum:
-          - catalog
-          - namespace
-          - table-like
-
-    entity-identifier:
-      name: entityIdentifier
-      in: query
-      required: true
-      allowEmptyValue: false
-      schema:
-        type: string
-
-    
 
 
   schemas:
@@ -550,6 +530,23 @@ components:
         entity:
           $ref: '#/components/schemas/EntityIdentifier'
 
+    GetApplicablePoliciesRequest:
+      type: object
+      required:
+        entity
+      properties:
+        entity:
+          $ref: '#/components/schemas/EntityIdentifier'
+        policy-type:
+          $ref: '#/components/schemas/PolicyType'
+        page-size:
+          description: For servers that support pagination, this signals an upper bound of the number of results that a client will receive. For servers that do not support pagination, clients may receive results larger than the indicated `pageSize`.
+          type: integer
+          minimum: 1
+        page-token:
+          $ref: '../rest-catalog-open-api.yaml#/components/schemas/PageToken'
+          
+
     CatalogIdentifier:
       allOf:
         - $ref: '#/components/schemas/EntityIdentifier'
@@ -610,9 +607,6 @@ components:
       required:
         - type
 
-    PolicyIdentifier:
-      $ref: '../rest-catalog-open-api.yaml#/components/schemas/TableIdentifier'
-
     GetApplicablePoliciesResponse:
       type: object
       required:
@@ -635,7 +629,7 @@ components:
           type: array
           uniqueItems: true
           items:
-            $ref: '#/components/schemas/PolicyIdentifier'
+            $ref: '../rest-catalog-open-api.yaml#/components/schemas/TableIdentifier'
 
 
 

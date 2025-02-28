@@ -61,7 +61,7 @@ val policyManagementModels =
       "UpdatePolicyRequest",
       "GetApplicablePoliciesResponse",
       "ListPoliciesResponse",
-      "PolicyIdentifier",
+      "GetApplicablePoliciesRequest"
     )
     .joinToString(",")
 
@@ -118,6 +118,7 @@ openApiGenerate {
       "RegisterTableRequest" to "org.apache.iceberg.rest.requests.RegisterTableRequest",
       "IcebergErrorResponse" to "org.apache.iceberg.rest.responses.ErrorResponse",
       "OAuthError" to "org.apache.iceberg.rest.responses.ErrorResponse",
+      "TableIdentifier" to "org.apache.iceberg.catalog.TableIdentifier",
 
       // Custom types defined below
       "CommitViewRequest" to "org.apache.polaris.service.types.CommitViewRequest",

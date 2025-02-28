@@ -812,29 +812,11 @@ public class IcebergCatalogAdapter
   }
 
   @Override
-  public Response getApplicablePolicies(
-      String prefix,
-      String entityType,
-      String entityIdentifier,
-      String pageToken,
-      Integer pageSize,
-      RealmContext realmContext,
-      SecurityContext securityContext) {
-    return null; // not implemented
-  }
+  public Response getApplicablePolicies(String prefix,GetApplicablePoliciesRequest getApplicablePoliciesRequest,RealmContext realmContext,SecurityContext securityContext) {
 
-  @Override
-  public Response getApplicablePoliciesOnTable(
-      String prefix,
-      String namespace,
-      String table,
-      RealmContext realmContext,
-      SecurityContext securityContext) {
-    Namespace ns = decodeNamespace(namespace);
-    TableIdentifier tableIdentifier = TableIdentifier.of(ns, RESTUtil.decodeString(table));
+    PolicyType type = PolicyType.fromName(RESTUtil.decodeString(getApplicablePoliciesRequest.getPolicyType()));
+
     return withPolicyHandler(
-        securityContext,
-        prefix,
-        catalog -> Response.ok(catalog.getApplicablePoliciesOnTable(tableIdentifier)).build());
+            securityContext, prefix, catalog -> Response.ok(catalog.getApplicablePolicies(getApplicablePoliciesRequest.getEntity(), type)).build());
   }
 }

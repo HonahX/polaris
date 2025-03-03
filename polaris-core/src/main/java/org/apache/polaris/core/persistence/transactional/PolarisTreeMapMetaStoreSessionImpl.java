@@ -572,7 +572,7 @@ public class PolarisTreeMapMetaStoreSessionImpl extends TransactionalPersistence
   }
 
   @Override
-  public @NotNull List<PolarisPolicyMappingRecord> lookupPolicyMappingRecordByTargetAndType(
+  public @NotNull List<PolarisPolicyMappingRecord> loadPoliciesOnTargetByType(
       @Nonnull PolarisCallContext callCtx,
       long targetCatalogId,
       long targetId,

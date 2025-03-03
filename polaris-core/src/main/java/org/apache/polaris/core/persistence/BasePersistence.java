@@ -384,7 +384,7 @@ public interface BasePersistence {
       long policyId);
 
   @Nonnull
-  List<PolarisPolicyMappingRecord> lookupPolicyMappingRecordByTargetAndType(
+  List<PolarisPolicyMappingRecord> loadPoliciesOnTargetByType(
       @Nonnull PolarisCallContext callCtx, long targetCatalogId, long targetId, int policyTypeCode);
 
   @Nonnull

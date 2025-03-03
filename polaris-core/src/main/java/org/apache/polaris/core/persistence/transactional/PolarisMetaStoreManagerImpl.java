@@ -2388,7 +2388,7 @@ public class PolarisMetaStoreManagerImpl extends BaseMetaStoreManager {
     if (policyType.isInheritable()) {
       // Verify that there is no other mapping of the same type but different entity
       List<PolarisPolicyMappingRecord> existingRecordsOfSameType =
-          session.lookupPolicyMappingRecordByTargetAndType(
+          session.loadPoliciesOnTargetByType(
               callCtx, target.getCatalogId(), target.getId(), policy.getPolicyTypeCode());
       if (existingRecordsOfSameType.size() == 1) {
         PolarisPolicyMappingRecord existingRecord = existingRecordsOfSameType.get(0);
@@ -2554,7 +2554,7 @@ public class PolarisMetaStoreManagerImpl extends BaseMetaStoreManager {
     }
 
     final List<PolarisPolicyMappingRecord> policyMappingRecords =
-        session.lookupPolicyMappingRecordByTargetAndType(
+        session.loadPoliciesOnTargetByType(
             callCtx, target.getCatalogId(), target.getId(), policyType.getCode());
     List<PolarisEntityId> policyEntityIds =
         policyMappingRecords.stream()

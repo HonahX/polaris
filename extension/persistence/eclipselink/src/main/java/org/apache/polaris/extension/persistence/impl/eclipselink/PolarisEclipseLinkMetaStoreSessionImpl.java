@@ -669,7 +669,7 @@ public class PolarisEclipseLinkMetaStoreSessionImpl extends TransactionalPersist
 
   @Nonnull
   @Override
-  public List<PolarisPolicyMappingRecord> lookupPolicyMappingRecordByTargetAndType(
+  public List<PolarisPolicyMappingRecord> loadPoliciesOnTargetByType(
       @Nonnull PolarisCallContext callCtx,
       long targetCatalogId,
       long targetId,

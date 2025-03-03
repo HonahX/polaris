@@ -443,13 +443,10 @@ public class PolarisEclipseLinkStore {
     diagnosticServices.check(session != null, "session_is_null");
     checkInitialized();
 
-    if (entity.getType() == PolarisEntityType.POLICY) {
-      loadAllPoliciesOnPolicy(session, entity.getCatalogId(), entity.getId())
-          .forEach(session::remove);
-    } else {
-      loadAllPoliciesOnTarget(session, entity.getCatalogId(), entity.getId())
-          .forEach(session::remove);
-    }
+    loadAllPoliciesOnPolicy(session, entity.getCatalogId(), entity.getId())
+        .forEach(session::remove);
+    loadAllPoliciesOnTarget(session, entity.getCatalogId(), entity.getId())
+        .forEach(session::remove);
   }
 
   ModelPolicyMappingRecord lookupPolicyMappingRecord(

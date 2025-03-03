@@ -365,15 +365,50 @@ public interface BasePersistence {
       long catalogId,
       long parentId);
 
+  /**
+   * Write the specified policyMappingRecord to the policy_mapping_records table. If there is a
+   * conflict (existing record with the same PK), all attributes of the new record will replace the
+   * existing one.
+   *
+   * @param callCtx call context
+   * @param record policy mapping record to write, potentially replacing an existing policy mapping
+   *     with the same key
+   */
   void writeToPolicyMappingRecords(
       @Nonnull PolarisCallContext callCtx, @Nonnull PolarisPolicyMappingRecord record);
 
+  /**
+   * Delete the specified policyMappingRecord to the policy_mapping_records table.
+   *
+   * @param callCtx call context
+   * @param record policy mapping record to delete.
+   */
   void deleteFromPolicyMappingRecords(
       @Nonnull PolarisCallContext callCtx, @Nonnull PolarisPolicyMappingRecord record);
 
+  /**
+   * Delete the all policy mapping records in the policy_mapping_records table for the specified
+   * entity. This method will delete all policy mapping records on the entity TODO: think about the
+   * best way to make this simpler
+   *
+   * @param callCtx call context
+   * @param entity
+   */
   void deleteAllPolicyMappingRecords(
       @Nonnull PolarisCallContext callCtx, @Nonnull PolarisEntityCore entity);
 
+  /**
+   * Look up the specified policy mapping record from the policy_mapping_records table. Return NULL
+   * if not found
+   *
+   * @param callCtx call context
+   * @param targetCatalogId catalog id of the target entity, NULL_ID if the entity is top-level
+   * @param targetId id of the target entity
+   * @param policyTypeCode type code of the policy entity
+   * @param policyCatalogId catalog id of the policy entity
+   * @param policyId id of the policy entity
+   * @return the policy mapping record if found, NULL if not found
+   */
   @Nullable
   PolarisPolicyMappingRecord lookupPolicyMappingRecord(
       @Nonnull PolarisCallContext callCtx,
@@ -383,14 +418,40 @@ public interface BasePersistence {
       long policyCatalogId,
       long policyId);
 
+  /**
+   * Get all policies on the specified target entity with specified policy type.
+   *
+   * @param callCtx call context
+   * @param targetCatalogId catalog id of the target entity, NULL_ID if the entity is top-level
+   * @param targetId id of the target entity
+   * @param policyTypeCode type code of the policy entity
+   * @return the list of policy mapping records for the specified target entity with the specified
+   *     policy type
+   */
   @Nonnull
   List<PolarisPolicyMappingRecord> loadPoliciesOnTargetByType(
       @Nonnull PolarisCallContext callCtx, long targetCatalogId, long targetId, int policyTypeCode);
 
+  /**
+   * Get all policies on the specified target entity.
+   *
+   * @param callCtx call context
+   * @param targetCatalogId catalog id of the target entity, NULL_ID if the entity is top-level
+   * @param targetId id of the target entity
+   * @return the list of policy mapping records for the specified target entity
+   */
   @Nonnull
   List<PolarisPolicyMappingRecord> loadAllPoliciesOnTarget(
       @Nonnull PolarisCallContext callCtx, long targetCatalogId, long targetId);
 
+  /**
+   * Get all targets of the specified policy entity
+   *
+   * @param callCtx call context
+   * @param policyCatalogId catalog id of the policy entity, NULL_ID if the entity is top-level
+   * @param policyId id of the policy entity
+   * @return the list of policy mapping records for the specified policy entity
+   */
   @Nonnull
   List<PolarisPolicyMappingRecord> loadAllPoliciesOnPolicy(
       @Nonnull PolarisCallContext callCtx, long policyCatalogId, long policyId);

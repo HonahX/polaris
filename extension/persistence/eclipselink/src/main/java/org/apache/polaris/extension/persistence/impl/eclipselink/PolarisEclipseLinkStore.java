@@ -439,7 +439,7 @@ public class PolarisEclipseLinkStore {
     session.remove(lookupPolicyMappingRecord);
   }
 
-  void deleteAllPolicyMappingRecords(EntityManager session, PolarisEntityCore entity) {
+  void deleteAllEntityPolicyMappingRecords(EntityManager session, PolarisEntityCore entity) {
     diagnosticServices.check(session != null, "session_is_null");
     checkInitialized();
 

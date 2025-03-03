@@ -643,9 +643,12 @@ public class PolarisEclipseLinkMetaStoreSessionImpl extends TransactionalPersist
   }
 
   @Override
-  public void deleteAllPolicyMappingRecords(
-      @Nonnull PolarisCallContext callCtx, @Nonnull PolarisEntityCore entity) {
-    this.store.deleteAllPolicyMappingRecords(localSession.get(), entity);
+  public void deleteAllEntityPolicyMappingRecords(
+      @Nonnull PolarisCallContext callCtx,
+      @Nonnull PolarisEntityCore entity,
+      @Nonnull List<PolarisPolicyMappingRecord> mappingOnTarget,
+      @Nonnull List<PolarisPolicyMappingRecord> mappingOnPolicy) {
+    this.store.deleteAllEntityPolicyMappingRecords(localSession.get(), entity);
   }
 
   @Nullable

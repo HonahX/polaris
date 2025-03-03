@@ -262,7 +262,16 @@ public class PolarisMetaStoreManagerImpl extends BaseMetaStoreManager {
 
     // TODO: need to delete all policy mapping
 
-    ms.deleteAllPolicyMappingRecords(callCtx, entity);
+    final List<PolarisPolicyMappingRecord> mappingRecordsToDelete =
+        (entity.getType() == PolarisEntityType.POLICY)
+            ? ms.loadAllPoliciesOnPolicy(callCtx, entity.getCatalogId(), entity.getId())
+            : ms.loadAllPoliciesOnTarget(callCtx, entity.getCatalogId(), entity.getId());
+
+    if (entity.getType() == PolarisEntityType.POLICY) {
+      ms.deleteAllEntityPolicyMappingRecords(callCtx, entity, List.of(), mappingRecordsToDelete);
+    } else {
+      ms.deleteAllEntityPolicyMappingRecords(callCtx, entity, mappingRecordsToDelete, List.of());
+    }
     // TODO: finish deleting
 
     // remove the entity being dropped now

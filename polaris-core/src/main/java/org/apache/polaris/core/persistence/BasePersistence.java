@@ -83,7 +83,6 @@ public interface BasePersistence {
    *
    * @param callCtx call context
    * @param entities entities to persist
-   * @param nameOrParentChanged if true, also write it to by-name lookups if applicable
    * @param originalEntities original states of the entity to use for compare-and-swap purposes, or
    *     null if this is expected to be a brand-new entity; must contain exactly as many elements as
    *     {@code entities} where each item corresponds to the element of {@code entities} in the same
@@ -148,9 +147,7 @@ public interface BasePersistence {
   void deleteAll(@Nonnull PolarisCallContext callCtx);
 
   /**
-   * Lookup an entity given its catalog id (which can be {@link
-   * org.apache.polaris.core.entity.PolarisEntityConstants#NULL_ID} for top-level entities) and its
-   * entityId.
+   * Lookup an entity given its catalog id (which can be for top-level entities) and its entityId.
    *
    * @param callCtx call context
    * @param catalogId catalog id or NULL_ID
@@ -165,11 +162,9 @@ public interface BasePersistence {
    * Lookup an entity given its catalogId, parentId, typeCode, and name.
    *
    * @param callCtx call context
-   * @param catalogId catalog id or {@link
-   *     org.apache.polaris.core.entity.PolarisEntityConstants#NULL_ID} for top-level entities like
-   *     CATALOG, PRINCIPAL and PRINCIPAL_ROLE. Note that by convention, a catalog itself has
-   *     NULL_ID for its catalogId since the catalog is not "nested" under itself or any other
-   *     catalog.
+   * @param catalogId catalog id or for top-level entities like CATALOG, PRINCIPAL and
+   *     PRINCIPAL_ROLE. Note that by convention, a catalog itself has NULL_ID for its catalogId
+   *     since the catalog is not "nested" under itself or any other catalog.
    * @param parentId id of the parent
    * @param typeCode the PolarisEntityType code of the entity to lookup
    * @param name the name of the entity
@@ -388,14 +383,20 @@ public interface BasePersistence {
 
   /**
    * Delete the all policy mapping records in the policy_mapping_records table for the specified
-   * entity. This method will delete all policy mapping records on the entity TODO: think about the
-   * best way to make this simpler
+   * entity. This method will delete all policy mapping records on the entity
    *
    * @param callCtx call context
-   * @param entity
+   * @param entity entity whose policy mapping records should be deleted
+   * @param mappingOnTarget all mappings on that target entity. Empty list if that entity is not a
+   *     target
+   * @param mappingOnPolicy all mappings on that policy entity. Empty list if that entity is not a
+   *     policy
    */
-  void deleteAllPolicyMappingRecords(
-      @Nonnull PolarisCallContext callCtx, @Nonnull PolarisEntityCore entity);
+  void deleteAllEntityPolicyMappingRecords(
+      @Nonnull PolarisCallContext callCtx,
+      @Nonnull PolarisEntityCore entity,
+      @Nonnull List<PolarisPolicyMappingRecord> mappingOnTarget,
+      @Nonnull List<PolarisPolicyMappingRecord> mappingOnPolicy);
 
   /**
    * Look up the specified policy mapping record from the policy_mapping_records table. Return NULL

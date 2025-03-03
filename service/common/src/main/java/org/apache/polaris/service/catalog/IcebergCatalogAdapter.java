@@ -65,10 +65,10 @@ import org.apache.polaris.core.context.RealmContext;
 import org.apache.polaris.core.entity.PolarisEntity;
 import org.apache.polaris.core.persistence.PolarisEntityManager;
 import org.apache.polaris.core.persistence.PolarisMetaStoreManager;
-import org.apache.polaris.core.persistence.PolarisMetaStoreSession;
 import org.apache.polaris.core.persistence.ResolvedPolarisEntity;
 import org.apache.polaris.core.persistence.resolver.Resolver;
 import org.apache.polaris.core.persistence.resolver.ResolverStatus;
+import org.apache.polaris.core.persistence.transactional.TransactionalPersistence;
 import org.apache.polaris.core.policy.PolicyIdentifier;
 import org.apache.polaris.core.policy.PolicyType;
 import org.apache.polaris.service.catalog.api.IcebergRestCatalogApiService;
@@ -129,7 +129,7 @@ public class IcebergCatalogAdapter
   private final CallContextCatalogFactory catalogFactory;
   private final PolarisEntityManager entityManager;
   private final PolarisMetaStoreManager metaStoreManager;
-  private final PolarisMetaStoreSession session;
+  private final TransactionalPersistence session;
   private final PolarisConfigurationStore configurationStore;
   private final PolarisDiagnostics diagnostics;
   private final PolarisAuthorizer polarisAuthorizer;
@@ -142,7 +142,7 @@ public class IcebergCatalogAdapter
       CallContextCatalogFactory catalogFactory,
       PolarisEntityManager entityManager,
       PolarisMetaStoreManager metaStoreManager,
-      PolarisMetaStoreSession session,
+      TransactionalPersistence session,
       PolarisConfigurationStore configurationStore,
       PolarisDiagnostics diagnostics,
       PolarisAuthorizer polarisAuthorizer,

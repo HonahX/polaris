@@ -36,7 +36,6 @@ import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.exceptions.BadRequestException;
 import org.apache.iceberg.exceptions.NoSuchNamespaceException;
 import org.apache.iceberg.exceptions.NoSuchTableException;
-import org.apache.iceberg.exceptions.NoSuchViewException;
 import org.apache.iceberg.exceptions.NotFoundException;
 import org.apache.polaris.core.PolarisCallContext;
 import org.apache.polaris.core.auth.AuthenticatedPolarisPrincipal;
@@ -48,7 +47,6 @@ import org.apache.polaris.core.entity.CatalogEntity;
 import org.apache.polaris.core.entity.PolarisEntity;
 import org.apache.polaris.core.entity.PolarisEntitySubType;
 import org.apache.polaris.core.entity.PolarisEntityType;
-import org.apache.polaris.core.entity.PolarisPolicyMappingRecord;
 import org.apache.polaris.core.entity.PolicyEntity;
 import org.apache.polaris.core.persistence.BaseResult;
 import org.apache.polaris.core.persistence.PolarisEntityManager;
@@ -268,7 +266,10 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
 
     List<PolarisEntity.NameAndId> entities =
         policyEntities.stream().map(PolarisEntity::nameAndId).toList();
-    return ListPoliciesResponse.builder().setIdentifiers(new HashSet<>(PolarisCatalogHelpers.nameAndIdToTableIdentifiers(catalogPath, entities))).build();
+    return ListPoliciesResponse.builder()
+        .setIdentifiers(
+            new HashSet<>(PolarisCatalogHelpers.nameAndIdToTableIdentifiers(catalogPath, entities)))
+        .build();
   }
 
   public void setPolicy(Namespace namespace, String policyName, SetPolicyRequest request) {
@@ -492,7 +493,8 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
     }
   }
 
-  public GetApplicablePoliciesResponse getApplicablePolicies(EntityIdentifier entityIdentifier, PolicyType policyType) {
+  public GetApplicablePoliciesResponse getApplicablePolicies(
+      EntityIdentifier entityIdentifier, PolicyType policyType) {
     return switch (entityIdentifier) {
       case CatalogIdentifier catalogIdentifier ->
           throw new BadRequestException("Get Applicable Policies on Catalog not supported yey");
@@ -904,7 +906,7 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
   }
 
   private List<PolicyEntity> getApplicablePoliciesOnEntity(
-          List<PolarisEntity> catalogPath, PolarisEntity entity, PolicyType type) {
+      List<PolarisEntity> catalogPath, PolarisEntity entity, PolicyType type) {
     if (type == null) {
       return getApplicablePoliciesOnEntity(catalogPath, entity);
     } else {
@@ -915,9 +917,9 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
   private List<PolicyEntity> getApplicablePoliciesOnEntityWithType(
       List<PolarisEntity> catalogPath, PolarisEntity entity, PolicyType type) {
     PolarisMetaStoreManager.LoadPolicyMappingsResult directMappingResult =
-            getMetaStoreManager().loadPoliciesOnEntity(getCurrentPolarisContext(), entity);
+        getMetaStoreManager().loadPoliciesOnEntityByType(getCurrentPolarisContext(), entity, type);
     if (directMappingResult.isSuccess()) {
-      if (!type.isInheritable()) {
+      if (!type.isInheritable() || !directMappingResult.getPolicyEntities().isEmpty()) {
         return directMappingResult.getPolicyEntities();
       }
     }
@@ -925,14 +927,12 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
     for (int i = catalogPath.size() - 1; i >= 0; i--) {
       PolarisEntity parent = catalogPath.get(i);
       PolarisMetaStoreManager.LoadPolicyMappingsResult parentMappingResult =
-              getMetaStoreManager().loadPoliciesOnEntity(getCurrentPolarisContext(), parent);
+          getMetaStoreManager()
+              .loadPoliciesOnEntityByType(getCurrentPolarisContext(), parent, type);
 
       if (parentMappingResult.isSuccess()) {
-        List<PolarisPolicyMappingRecord> records = parentMappingResult.getPolicyMappingRecords();
-        for (PolarisPolicyMappingRecord record : records) {
-          if (PolicyType.fromCode(record.getPolicyTypeCode()) == type) {
-            return parentMappingResult.getPolicyEntities();
-          }
+        if (!parentMappingResult.getPolicyEntities().isEmpty()) {
+          return parentMappingResult.getPolicyEntities();
         }
       }
     }

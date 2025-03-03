@@ -40,6 +40,7 @@ import org.apache.polaris.jpa.models.ModelEntity;
 import org.apache.polaris.jpa.models.ModelEntityActive;
 import org.apache.polaris.jpa.models.ModelEntityChangeTracking;
 import org.apache.polaris.jpa.models.ModelGrantRecord;
+import org.apache.polaris.jpa.models.ModelPolicyMappingRecord;
 import org.apache.polaris.jpa.models.ModelPrincipalSecrets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

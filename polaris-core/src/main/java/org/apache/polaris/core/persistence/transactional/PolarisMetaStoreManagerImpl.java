@@ -52,8 +52,8 @@ import org.apache.polaris.core.entity.PolarisPrincipalSecrets;
 import org.apache.polaris.core.entity.PolarisPrivilege;
 import org.apache.polaris.core.entity.PolarisTaskConstants;
 import org.apache.polaris.core.entity.PolicyEntity;
-import org.apache.polaris.core.policy.PolicyType;
 import org.apache.polaris.core.persistence.*;
+import org.apache.polaris.core.policy.PolicyType;
 import org.apache.polaris.core.storage.PolarisCredentialProperty;
 import org.apache.polaris.core.storage.PolarisStorageActions;
 import org.apache.polaris.core.storage.PolarisStorageConfigurationInfo;
@@ -260,10 +260,10 @@ public class PolarisMetaStoreManagerImpl extends BaseMetaStoreManager {
       ms.writeEntity(callCtx, entityGrantChanged, false, originalEntity);
     }
 
-      // TODO: need to delete all policy mapping
+    // TODO: need to delete all policy mapping
 
-      ms.deleteAllPolicyMappingRecords(callCtx, entity);
-      // TODO: finish deleting
+    ms.deleteAllPolicyMappingRecords(callCtx, entity);
+    // TODO: finish deleting
 
     // remove the entity being dropped now
     ms.deleteEntity(callCtx, entity);
@@ -2352,7 +2352,7 @@ public class PolarisMetaStoreManagerImpl extends BaseMetaStoreManager {
       @Nonnull PolicyEntity policy,
       @Nonnull List<PolarisEntityCore> policyCatalogPath,
       Map<String, String> parameters) {
-    PolarisMetaStoreSession ms = callCtx.getMetaStore();
+    TransactionalPersistence ms = callCtx.getMetaStore();
 
     return ms.runInTransaction(
         callCtx,
@@ -2363,7 +2363,7 @@ public class PolarisMetaStoreManagerImpl extends BaseMetaStoreManager {
 
   private @Nonnull AttachmentResult doAttachPolicyToEntity(
       @Nonnull PolarisCallContext callCtx,
-      @Nonnull PolarisMetaStoreSession session,
+      @Nonnull TransactionalPersistence session,
       @Nonnull PolarisEntityCore target,
       @Nonnull List<PolarisEntityCore> targetCatalogPath,
       @Nonnull PolicyEntity policy,
@@ -2413,7 +2413,7 @@ public class PolarisMetaStoreManagerImpl extends BaseMetaStoreManager {
 
   private @Nonnull PolarisPolicyMappingRecord persistNewPolicyMappingRecord(
       @Nonnull PolarisCallContext callCtx,
-      @Nonnull PolarisMetaStoreSession ms,
+      @Nonnull TransactionalPersistence ms,
       @Nonnull PolarisEntityCore target,
       @Nonnull PolicyEntity policy,
       Map<String, String> parameters) {
@@ -2441,7 +2441,7 @@ public class PolarisMetaStoreManagerImpl extends BaseMetaStoreManager {
       @Nonnull List<PolarisEntityCore> targetCatalogPath,
       @Nonnull PolicyEntity policy,
       @Nonnull List<PolarisEntityCore> policyCatalogPath) {
-    PolarisMetaStoreSession ms = callCtx.getMetaStore();
+    TransactionalPersistence ms = callCtx.getMetaStore();
     return ms.runInTransaction(
         callCtx,
         () ->
@@ -2451,7 +2451,7 @@ public class PolarisMetaStoreManagerImpl extends BaseMetaStoreManager {
 
   private AttachmentResult doDetachPolicyFromEntity(
       @Nonnull PolarisCallContext callCtx,
-      @Nonnull PolarisMetaStoreSession session,
+      @Nonnull TransactionalPersistence session,
       @Nonnull PolarisEntityCore target,
       @Nonnull List<PolarisEntityCore> targetCatalogPath,
       @Nonnull PolicyEntity policy,
@@ -2485,7 +2485,7 @@ public class PolarisMetaStoreManagerImpl extends BaseMetaStoreManager {
   // TODO: this can be optional, just integrate with the above method
   private void detachPolicyMappingRecord(
       @Nonnull PolarisCallContext callContext,
-      @Nonnull PolarisMetaStoreSession session,
+      @Nonnull TransactionalPersistence session,
       @Nonnull PolarisPolicyMappingRecord mappingRecord) {
     callContext.getDiagServices().checkNotNull(mappingRecord, "unexpected_null_mappingRecord");
 
@@ -2495,17 +2495,18 @@ public class PolarisMetaStoreManagerImpl extends BaseMetaStoreManager {
   @Override
   public LoadPolicyMappingsResult loadPoliciesOnEntity(
       @Nonnull PolarisCallContext callCtx, @Nonnull PolarisEntityCore target) {
-    PolarisMetaStoreSession ms = callCtx.getMetaStore();
+    TransactionalPersistence ms = callCtx.getMetaStore();
     return ms.runInReadTransaction(callCtx, () -> this.doLoadPoliciesOnEntity(callCtx, ms, target));
   }
 
   private LoadPolicyMappingsResult doLoadPoliciesOnEntity(
       @Nonnull PolarisCallContext callCtx,
-      @Nonnull PolarisMetaStoreSession session,
+      @Nonnull TransactionalPersistence session,
       @Nonnull PolarisEntityCore target) {
     // TODO: make sure this can check if the target entity exists
-    int entityVersion = session.lookupEntityVersion(callCtx, target.getCatalogId(), target.getId());
-    if (entityVersion == 0) {
+    int grantRecordVersion =
+        session.lookupEntityGrantRecordsVersion(callCtx, target.getCatalogId(), target.getId());
+    if (grantRecordVersion == 0) {
       // Target entity does not exists
       return new LoadPolicyMappingsResult(BaseResult.ReturnStatus.ENTITY_NOT_FOUND, null);
     }
@@ -2534,19 +2535,20 @@ public class PolarisMetaStoreManagerImpl extends BaseMetaStoreManager {
       @Nonnull PolarisCallContext callCtx,
       @Nonnull PolarisEntityCore target,
       @Nonnull PolicyType policyType) {
-    PolarisMetaStoreSession ms = callCtx.getMetaStore();
+    TransactionalPersistence ms = callCtx.getMetaStore();
     return ms.runInReadTransaction(
         callCtx, () -> this.doLoadPoliciesOnEntityByType(callCtx, ms, target, policyType));
   }
 
   public LoadPolicyMappingsResult doLoadPoliciesOnEntityByType(
       @Nonnull PolarisCallContext callCtx,
-      @Nonnull PolarisMetaStoreSession session,
+      @Nonnull TransactionalPersistence session,
       @Nonnull PolarisEntityCore target,
       @Nonnull PolicyType policyType) {
     // TODO: do we need to resolve to make sure the entity is correct?
-    int entityVersion = session.lookupEntityVersion(callCtx, target.getCatalogId(), target.getId());
-    if (entityVersion == 0) {
+    int grantRecordVersion =
+        session.lookupEntityGrantRecordsVersion(callCtx, target.getCatalogId(), target.getId());
+    if (grantRecordVersion == 0) {
       // Target entity does not exists
       return new LoadPolicyMappingsResult(BaseResult.ReturnStatus.ENTITY_NOT_FOUND, null);
     }
@@ -2572,7 +2574,7 @@ public class PolarisMetaStoreManagerImpl extends BaseMetaStoreManager {
 
   private PolarisEntityResolver resolveAttachPolicyToEntity(
       @Nonnull PolarisCallContext callCtx,
-      @Nonnull PolarisMetaStoreSession ms,
+      @Nonnull TransactionalPersistence ms,
       @Nonnull PolarisEntityCore entity,
       @Nonnull List<PolarisEntityCore> catalogPath) {
     callCtx.getDiagServices().checkNotNull(entity, "unexpected_null_entity");

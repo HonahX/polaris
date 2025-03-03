@@ -812,11 +812,21 @@ public class IcebergCatalogAdapter
   }
 
   @Override
-  public Response getApplicablePolicies(String prefix,GetApplicablePoliciesRequest getApplicablePoliciesRequest,RealmContext realmContext,SecurityContext securityContext) {
+  public Response getApplicablePolicies(
+      String prefix,
+      GetApplicablePoliciesRequest getApplicablePoliciesRequest,
+      RealmContext realmContext,
+      SecurityContext securityContext) {
 
-    PolicyType type = PolicyType.fromName(RESTUtil.decodeString(getApplicablePoliciesRequest.getPolicyType()));
+    PolicyType type =
+        PolicyType.fromName(RESTUtil.decodeString(getApplicablePoliciesRequest.getPolicyType()));
 
     return withPolicyHandler(
-            securityContext, prefix, catalog -> Response.ok(catalog.getApplicablePolicies(getApplicablePoliciesRequest.getEntity(), type)).build());
+        securityContext,
+        prefix,
+        catalog ->
+            Response.ok(
+                    catalog.getApplicablePolicies(getApplicablePoliciesRequest.getEntity(), type))
+                .build());
   }
 }

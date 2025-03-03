@@ -31,6 +31,7 @@ import org.apache.polaris.core.entity.PolarisEntityCore;
 import org.apache.polaris.core.entity.PolarisEntityId;
 import org.apache.polaris.core.entity.PolarisEntityType;
 import org.apache.polaris.core.entity.PolarisGrantRecord;
+import org.apache.polaris.core.entity.PolarisPolicyMappingRecord;
 
 /**
  * Interface to the Polaris persistence backend, with which to persist and retrieve all the data
@@ -363,4 +364,34 @@ public interface BasePersistence {
       @Nullable PolarisEntityType optionalEntityType,
       long catalogId,
       long parentId);
+
+  void writeToPolicyMappingRecords(
+      @Nonnull PolarisCallContext callCtx, @Nonnull PolarisPolicyMappingRecord record);
+
+  void deleteFromPolicyMappingRecords(
+      @Nonnull PolarisCallContext callCtx, @Nonnull PolarisPolicyMappingRecord record);
+
+  void deleteAllPolicyMappingRecords(
+      @Nonnull PolarisCallContext callCtx, @Nonnull PolarisEntityCore entity);
+
+  @Nullable
+  PolarisPolicyMappingRecord lookupPolicyMappingRecord(
+      @Nonnull PolarisCallContext callCtx,
+      long targetCatalogId,
+      long targetId,
+      int policyTypeCode,
+      long policyCatalogId,
+      long policyId);
+
+  @Nonnull
+  List<PolarisPolicyMappingRecord> lookupPolicyMappingRecordByTargetAndType(
+      @Nonnull PolarisCallContext callCtx, long targetCatalogId, long targetId, int policyTypeCode);
+
+  @Nonnull
+  List<PolarisPolicyMappingRecord> loadAllPoliciesOnTarget(
+      @Nonnull PolarisCallContext callCtx, long targetCatalogId, long targetId);
+
+  @Nonnull
+  List<PolarisPolicyMappingRecord> loadAllPoliciesOnPolicy(
+      @Nonnull PolarisCallContext callCtx, long policyCatalogId, long policyId);
 }

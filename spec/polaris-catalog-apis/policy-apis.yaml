@@ -22,8 +22,8 @@ paths:
 
   /v1/{prefix}/namespaces/{namespace}/policies:
     parameters:
-      - $ref: '../rest-catalog-open-api.yaml#/components/parameters/prefix'
-      - $ref: '../rest-catalog-open-api.yaml#/components/parameters/namespace'
+      - $ref: '../iceberg-rest-catalog-open-api.yaml#/components/parameters/prefix'
+      - $ref: '../iceberg-rest-catalog-open-api.yaml#/components/parameters/namespace'
 
     post:
       tags:
@@ -54,17 +54,17 @@ paths:
         200:
           $ref: '#/components/responses/CreatePolicyResponse'
         400:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/BadRequestErrorResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/BadRequestErrorResponse'
         401:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/UnauthorizedResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/UnauthorizedResponse'
         403:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/ForbiddenResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/ForbiddenResponse'
         419:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/AuthenticationTimeoutResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/AuthenticationTimeoutResponse'
         503:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/ServiceUnavailableResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/ServiceUnavailableResponse'
         5XX:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
 
     get:
       tags:
@@ -73,39 +73,39 @@ paths:
       description: Return all policy identifiers under this namespace
       operationId: listPolicies
       parameters:
-        - $ref: '../rest-catalog-open-api.yaml#/components/parameters/page-token'
-        - $ref: '../rest-catalog-open-api.yaml#/components/parameters/page-size'
+        - $ref: '../iceberg-rest-catalog-open-api.yaml#/components/parameters/page-token'
+        - $ref: '../iceberg-rest-catalog-open-api.yaml#/components/parameters/page-size'
         - $ref: '#/components/parameters/policy-type'
 
       responses:
         '200':
           $ref: '#/components/responses/ListPoliciesResponse'
         '400':
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/BadRequestErrorResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/BadRequestErrorResponse'
         '401':
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/UnauthorizedResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/UnauthorizedResponse'
         '403':
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/ForbiddenResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/ForbiddenResponse'
         '404':
           description: Not Found - The namespace specified does not exist
           content:
             application/json:
               schema:
-                $ref: '../rest-catalog-open-api.yaml#/components/schemas/ErrorModel'
+                $ref: '../iceberg-rest-catalog-open-api.yaml#/components/schemas/ErrorModel'
               examples:
                 NamespaceNotFound:
-                  $ref: '../rest-catalog-open-api.yaml#/components/examples/NoSuchNamespaceError'
+                  $ref: '../iceberg-rest-catalog-open-api.yaml#/components/examples/NoSuchNamespaceError'
         '419':
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/AuthenticationTimeoutResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/AuthenticationTimeoutResponse'
         '503':
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/ServiceUnavailableResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/ServiceUnavailableResponse'
         5XX:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
 
   /v1/{prefix}/namespaces/{namespace}/policies/{policyName}:
     parameters:
-      - $ref: '../rest-catalog-open-api.yaml#/components/parameters/prefix'
-      - $ref: '../rest-catalog-open-api.yaml#/components/parameters/namespace'
+      - $ref: '../iceberg-rest-catalog-open-api.yaml#/components/parameters/prefix'
+      - $ref: '../iceberg-rest-catalog-open-api.yaml#/components/parameters/namespace'
       - $ref: '#/components/parameters/policy-name'
 
     get:
@@ -121,27 +121,27 @@ paths:
         200:
           $ref: '#/components/responses/LoadPolicyResponse'
         400:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/BadRequestErrorResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/BadRequestErrorResponse'
         401:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/UnauthorizedResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/UnauthorizedResponse'
         403:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/ForbiddenResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/ForbiddenResponse'
         404:
           description:
             Not Found - NoSuchPolicyException, policy to get does not exist
           content:
             application/json:
               schema:
-                $ref: '../rest-catalog-open-api.yaml#/components/schemas/IcebergErrorResponse'
+                $ref: '../iceberg-rest-catalog-open-api.yaml#/components/schemas/IcebergErrorResponse'
               examples:
                 PolicyToGetDoesNotExist:
                   $ref: '#/components/examples/NoSuchPolicyError'
         419:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/AuthenticationTimeoutResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/AuthenticationTimeoutResponse'
         503:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/ServiceUnavailableResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/ServiceUnavailableResponse'
         5XX:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
 
     put:
       tags:
@@ -164,27 +164,27 @@ paths:
         200:
           $ref: '#/components/responses/UpdatePolicyResponse'
         400:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/BadRequestErrorResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/BadRequestErrorResponse'
         401:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/UnauthorizedResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/UnauthorizedResponse'
         403:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/ForbiddenResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/ForbiddenResponse'
         404:
           description:
             Not Found - NoSuchPolicyException, policy to get does not exist
           content:
             application/json:
               schema:
-                $ref: '../rest-catalog-open-api.yaml#/components/schemas/IcebergErrorResponse'
+                $ref: '../iceberg-rest-catalog-open-api.yaml#/components/schemas/IcebergErrorResponse'
               examples:
                 PolicyToUpdateDoesNotExist:
                   $ref: '#/components/examples/NoSuchPolicyError'
         419:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/AuthenticationTimeoutResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/AuthenticationTimeoutResponse'
         503:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/ServiceUnavailableResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/ServiceUnavailableResponse'
         5XX:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
 
     delete:
       tags:
@@ -196,32 +196,32 @@ paths:
         204:
           description: Success, no content
         400:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/BadRequestErrorResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/BadRequestErrorResponse'
         401:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/UnauthorizedResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/UnauthorizedResponse'
         403:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/ForbiddenResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/ForbiddenResponse'
         404:
           description:
             Not Found - NoSuchPolicyException, policy to get does not exist
           content:
             application/json:
               schema:
-                $ref: '../rest-catalog-open-api.yaml#/components/schemas/IcebergErrorResponse'
+                $ref: '../iceberg-rest-catalog-open-api.yaml#/components/schemas/IcebergErrorResponse'
               examples:
                 PolicyToDeleteDoesNotExist:
                   $ref: '#/components/examples/NoSuchPolicyError'
         419:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/AuthenticationTimeoutResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/AuthenticationTimeoutResponse'
         503:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/ServiceUnavailableResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/ServiceUnavailableResponse'
         5XX:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
 
   /v1/{prefix}/namespaces/{namespace}/policies/{policyName}/mappings:
     parameters:
-      - $ref: '../rest-catalog-open-api.yaml#/components/parameters/prefix'
-      - $ref: '../rest-catalog-open-api.yaml#/components/parameters/namespace'
+      - $ref: '../iceberg-rest-catalog-open-api.yaml#/components/parameters/prefix'
+      - $ref: '../iceberg-rest-catalog-open-api.yaml#/components/parameters/namespace'
       - $ref: '#/components/parameters/policy-name'
 
     put:
@@ -249,29 +249,29 @@ paths:
         204:
           description: Success, no content
         400:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/BadRequestErrorResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/BadRequestErrorResponse'
         401:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/UnauthorizedResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/UnauthorizedResponse'
         403:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/ForbiddenResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/ForbiddenResponse'
         404:
           description:
             Not Found - NoSuchPolicyException, NoSuchEntityException
           content:
             application/json:
               schema:
-                $ref: '../rest-catalog-open-api.yaml#/components/schemas/IcebergErrorResponse'
+                $ref: '../iceberg-rest-catalog-open-api.yaml#/components/schemas/IcebergErrorResponse'
               examples:
                 PolicyToSetDoesNotExist:
                   $ref: '#/components/examples/NoSuchPolicyError'
                 EntityToSetDoesNotExist:
                   $ref: '#/components/examples/NoSuchEntityError'
         419:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/AuthenticationTimeoutResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/AuthenticationTimeoutResponse'
         503:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/ServiceUnavailableResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/ServiceUnavailableResponse'
         5XX:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
 
     post:
       tags:
@@ -293,18 +293,18 @@ paths:
         204:
           description: Success, no content
         400:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/BadRequestErrorResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/BadRequestErrorResponse'
         401:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/UnauthorizedResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/UnauthorizedResponse'
         403:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/ForbiddenResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/ForbiddenResponse'
         404:
           description:
             Not Found - NoSuchPolicyException, NoSuchEntityException, NoSuchMappingException
           content:
             application/json:
               schema:
-                $ref: '../rest-catalog-open-api.yaml#/components/schemas/IcebergErrorResponse'
+                $ref: '../iceberg-rest-catalog-open-api.yaml#/components/schemas/IcebergErrorResponse'
               examples:
                 PolicyToUnsetDoesNotExist:
                   $ref: '#/components/examples/NoSuchPolicyError'
@@ -313,15 +313,15 @@ paths:
                 MappingToUnsetDoesNotExist:
                   $ref: '#/components/examples/NoSuchMappingError'
         419:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/AuthenticationTimeoutResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/AuthenticationTimeoutResponse'
         503:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/ServiceUnavailableResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/ServiceUnavailableResponse'
         5XX:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
 
   /v1/{prefix}/applicablePolicies:
     parameters:
-      - $ref: '../rest-catalog-open-api.yaml#/components/parameters/prefix'
+      - $ref: '../iceberg-rest-catalog-open-api.yaml#/components/parameters/prefix'
     
     post:
       tags:
@@ -341,36 +341,36 @@ paths:
         200:
           $ref: '#/components/responses/GetApplicablePoliciesResponse'
         400:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/BadRequestErrorResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/BadRequestErrorResponse'
         401:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/UnauthorizedResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/UnauthorizedResponse'
         403:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/ForbiddenResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/ForbiddenResponse'
         404: # TODO: need an general error for no such entity
           description:
             Not Found - NoSuchTableException, table to load does not exist
           content:
             application/json:
               schema:
-                $ref: '../rest-catalog-open-api.yaml#/components/schemas/IcebergErrorResponse'
+                $ref: '../iceberg-rest-catalog-open-api.yaml#/components/schemas/IcebergErrorResponse'
               examples:
                 TableToLoadDoesNotExist:
-                  $ref: '../rest-catalog-open-api.yaml#/components/examples/NoSuchTableError'
+                  $ref: '../iceberg-rest-catalog-open-api.yaml#/components/examples/NoSuchTableError'
         419:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/AuthenticationTimeoutResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/AuthenticationTimeoutResponse'
         503:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/ServiceUnavailableResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/ServiceUnavailableResponse'
         5XX:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
 
 
   
   
   /v1/{prefix}/namespaces/{namespace}/tables/{table}/policies:
     parameters:
-      - $ref: '../rest-catalog-open-api.yaml#/components/parameters/prefix'
-      - $ref: '../rest-catalog-open-api.yaml#/components/parameters/namespace'
-      - $ref: '../rest-catalog-open-api.yaml#/components/parameters/table'
+      - $ref: '../iceberg-rest-catalog-open-api.yaml#/components/parameters/prefix'
+      - $ref: '../iceberg-rest-catalog-open-api.yaml#/components/parameters/namespace'
+      - $ref: '../iceberg-rest-catalog-open-api.yaml#/components/parameters/table'
 
     get:
       tags:
@@ -386,27 +386,27 @@ paths:
         200:
           $ref: '#/components/responses/GetApplicablePoliciesResponse'
         400:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/BadRequestErrorResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/BadRequestErrorResponse'
         401:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/UnauthorizedResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/UnauthorizedResponse'
         403:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/ForbiddenResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/ForbiddenResponse'
         404:
           description:
             Not Found - NoSuchTableException, table to load does not exist
           content:
             application/json:
               schema:
-                $ref: '../rest-catalog-open-api.yaml#/components/schemas/IcebergErrorResponse'
+                $ref: '../iceberg-rest-catalog-open-api.yaml#/components/schemas/IcebergErrorResponse'
               examples:
                 TableToLoadDoesNotExist:
-                  $ref: '../rest-catalog-open-api.yaml#/components/examples/NoSuchTableError'
+                  $ref: '../iceberg-rest-catalog-open-api.yaml#/components/examples/NoSuchTableError'
         419:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/AuthenticationTimeoutResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/AuthenticationTimeoutResponse'
         503:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/ServiceUnavailableResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/ServiceUnavailableResponse'
         5XX:
-          $ref: '../rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
 
 
 components:
@@ -544,7 +544,7 @@ components:
           type: integer
           minimum: 1
         page-token:
-          $ref: '../rest-catalog-open-api.yaml#/components/schemas/PageToken'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/schemas/PageToken'
           
 
     CatalogIdentifier:
@@ -569,7 +569,7 @@ components:
               type: string
               nullable: false
             namespace:
-              $ref: '../rest-catalog-open-api.yaml#/components/schemas/Namespace'
+              $ref: '../iceberg-rest-catalog-open-api.yaml#/components/schemas/Namespace'
 
     TableLikeIdentifier:
       allOf:
@@ -584,7 +584,7 @@ components:
               type: string
               nullable: false
             namespace:
-              $ref: '../rest-catalog-open-api.yaml#/components/schemas/Namespace'
+              $ref: '../iceberg-rest-catalog-open-api.yaml#/components/schemas/Namespace'
             name:
               type: string
               nullable: false
@@ -613,7 +613,7 @@ components:
         - policies
       properties:
         next-page-token:
-          $ref: '../rest-catalog-open-api.yaml#/components/schemas/PageToken'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/schemas/PageToken'
         policies:
           type: array
           uniqueItems: true
@@ -624,12 +624,12 @@ components:
       type: object
       properties:
         next-page-token:
-          $ref: '../rest-catalog-open-api.yaml#/components/schemas/PageToken'
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/schemas/PageToken'
         identifiers:
           type: array
           uniqueItems: true
           items:
-            $ref: '../rest-catalog-open-api.yaml#/components/schemas/TableIdentifier'
+            $ref: '../iceberg-rest-catalog-open-api.yaml#/components/schemas/TableIdentifier'
 
 
 

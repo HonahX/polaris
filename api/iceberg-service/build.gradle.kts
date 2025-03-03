@@ -61,7 +61,7 @@ val policyManagementModels =
       "UpdatePolicyRequest",
       "GetApplicablePoliciesResponse",
       "ListPoliciesResponse",
-      "GetApplicablePoliciesRequest"
+      "GetApplicablePoliciesRequest",
     )
     .joinToString(",")
 

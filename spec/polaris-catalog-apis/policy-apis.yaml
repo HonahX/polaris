@@ -323,6 +323,57 @@ paths:
     parameters:
       - $ref: '../iceberg-rest-catalog-open-api.yaml#/components/parameters/prefix'
     
+    get:
+      tags:
+        - Catalog API
+      summary: Get Applicable policies for catalog, namespace, table, or views
+      operationId: getApplicablePoliciesUsingParameter
+      description: Get Applicable policies for catalog, namespace, table, or views
+      parameters:
+        - $ref: '../iceberg-rest-catalog-open-api.yaml#/components/parameters/page-token'
+        - $ref: '../iceberg-rest-catalog-open-api.yaml#/components/parameters/page-size'
+        - name: namespace
+          in: query
+          required: false
+          description:
+            A namespace identifier as a single string.
+            Multipart namespace parts should be separated by the unit separator (`0x1F`) byte.
+          schema:
+            type: string
+          examples:
+            singlepart_namespace:
+              value: "accounting"
+            multipart_namespace:
+              value: "accounting%1Ftax"
+        - $ref: '#/components/parameters/table-like'
+        - $ref: '#/components/parameters/policy-type'
+
+      responses:
+        200:
+          $ref: '#/components/responses/GetApplicablePoliciesResponse'
+        400:
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/BadRequestErrorResponse'
+        401:
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/UnauthorizedResponse'
+        403:
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/ForbiddenResponse'
+        404: # TODO: need a general error for no such entity
+          description:
+            Not Found - NoSuchTableException, table to load does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '../iceberg-rest-catalog-open-api.yaml#/components/schemas/IcebergErrorResponse'
+              examples:
+                TableToLoadDoesNotExist:
+                  $ref: '../iceberg-rest-catalog-open-api.yaml#/components/examples/NoSuchTableError'
+        419:
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/AuthenticationTimeoutResponse'
+        503:
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/ServiceUnavailableResponse'
+        5XX:
+          $ref: '../iceberg-rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
+    
     post:
       tags:
         - Catalog API
@@ -426,6 +477,17 @@ components:
       schema:
         $ref: '#/components/schemas/PolicyType'
 
+    table-like:
+      name: tableLike
+      in: query
+      required: false
+      description: Name of the table like entity
+      schema:
+        type: string
+      example: "table"
+
+
+
 
   schemas:
     PolicyType:
@@ -496,7 +558,7 @@ components:
         content:
           type: string
 
-    LoadPolicyResult:
+    LoadPolicyResponse:
       type: object
       properties:
         policy:
@@ -639,14 +701,14 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/LoadPolicyResult'
+            $ref: '#/components/schemas/LoadPolicyResponse'
 
     LoadPolicyResponse:
       description: Policy object result when getting a policy
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/LoadPolicyResult'
+            $ref: '#/components/schemas/LoadPolicyResponse'
 
     UpdatePolicyResponse:
       description:
@@ -656,7 +718,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/LoadPolicyResult'
+            $ref: '#/components/schemas/LoadPolicyResponse'
 
     ListPoliciesResponse:
       description: a list of policy identifiers

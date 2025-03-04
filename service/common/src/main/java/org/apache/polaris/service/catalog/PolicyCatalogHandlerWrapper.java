@@ -64,7 +64,7 @@ import org.apache.polaris.service.types.CreatePolicyRequest;
 import org.apache.polaris.service.types.EntityIdentifier;
 import org.apache.polaris.service.types.GetApplicablePoliciesResponse;
 import org.apache.polaris.service.types.ListPoliciesResponse;
-import org.apache.polaris.service.types.LoadPolicyResult;
+import org.apache.polaris.service.types.LoadPolicyResponse;
 import org.apache.polaris.service.types.NamespaceIdentifier;
 import org.apache.polaris.service.types.Policy;
 import org.apache.polaris.service.types.SetPolicyRequest;
@@ -110,7 +110,7 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
     // TODO: nothing to close right now
   }
 
-  public LoadPolicyResult createPolicy(Namespace namespace, CreatePolicyRequest request) {
+  public LoadPolicyResponse createPolicy(Namespace namespace, CreatePolicyRequest request) {
     PolarisAuthorizableOperation op = PolarisAuthorizableOperation.CREATE_POLICY;
     PolicyIdentifier identifier = PolicyIdentifier.of(namespace, request.getName());
 
@@ -152,7 +152,7 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
     return constructPolicyResult(policyEntity);
   }
 
-  public LoadPolicyResult getPolicy(Namespace namespace, String policyName) {
+  public LoadPolicyResponse getPolicy(Namespace namespace, String policyName) {
     PolarisAuthorizableOperation op = PolarisAuthorizableOperation.GET_POLICY;
     PolicyIdentifier identifier = PolicyIdentifier.of(namespace, policyName);
 
@@ -175,7 +175,7 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
     return constructPolicyResult(policy);
   }
 
-  public LoadPolicyResult updatePolicy(
+  public LoadPolicyResponse updatePolicy(
       Namespace namespace, String policyName, UpdatePolicyRequest request) {
     PolarisAuthorizableOperation op = PolarisAuthorizableOperation.UPDATE_POLICY;
     PolicyIdentifier identifier = PolicyIdentifier.of(namespace, policyName);
@@ -509,6 +509,12 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
   private GetApplicablePoliciesResponse getApplicablePoliciesOnNamespace(
       NamespaceIdentifier namespaceIdentifier, PolicyType policyType) {
     Namespace namespace = Namespace.of(namespaceIdentifier.getNamespace().toArray(new String[0]));
+    return getApplicablePoliciesOnNamespace(namespace, policyType);
+  }
+
+  public GetApplicablePoliciesResponse getApplicablePoliciesOnNamespace(
+          Namespace namespace, PolicyType policyType
+  ) {
     PolarisAuthorizableOperation op = PolarisAuthorizableOperation.LOAD_NAMESPACE_METADATA;
     authorizeBasicNamespaceOperationOrThrow(op, namespace);
 
@@ -521,14 +527,14 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
     List<PolarisEntity> catalogPath = resolvedEntities.getRawParentPath();
 
     List<PolicyEntity> applicablePolicyEntities =
-        getApplicablePoliciesOnEntity(catalogPath, targetEntity, policyType);
+            getApplicablePoliciesOnEntity(catalogPath, targetEntity, policyType);
 
     return GetApplicablePoliciesResponse.builder()
-        .setPolicies(
-            applicablePolicyEntities.stream()
-                .map(PolicyCatalogHandlerWrapper::constructPolicy)
-                .collect(Collectors.toSet()))
-        .build();
+            .setPolicies(
+                    applicablePolicyEntities.stream()
+                            .map(PolicyCatalogHandlerWrapper::constructPolicy)
+                            .collect(Collectors.toSet()))
+            .build();
   }
 
   private GetApplicablePoliciesResponse getApplicablePoliciesOnTableLike(
@@ -537,20 +543,25 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
         TableIdentifier.of(
             Namespace.of(tableLikeIdentifier.getNamespace().toArray(new String[0])),
             tableLikeIdentifier.getName());
+    return getApplicablePoliciesOnTableLike(identifier, policyType);
+  }
+
+  public GetApplicablePoliciesResponse getApplicablePoliciesOnTableLike(
+          TableIdentifier identifier, PolicyType policyType) {
     authorizeBasicTableLikeOperationOrThrow(
-        (entitySubType -> {
-          if (entitySubType == PolarisEntitySubType.TABLE) {
-            return PolarisAuthorizableOperation.LOAD_TABLE;
-          } else if (entitySubType == PolarisEntitySubType.VIEW) {
-            return PolarisAuthorizableOperation.LOAD_VIEW;
-          } else {
-            return null;
-          }
-        }),
-        identifier);
+            (entitySubType -> {
+              if (entitySubType == PolarisEntitySubType.TABLE) {
+                return PolarisAuthorizableOperation.LOAD_TABLE;
+              } else if (entitySubType == PolarisEntitySubType.VIEW) {
+                return PolarisAuthorizableOperation.LOAD_VIEW;
+              } else {
+                return null;
+              }
+            }),
+            identifier);
 
     PolarisResolvedPathWrapper resolvedEntities =
-        resolutionManifest.getPassthroughResolvedPath(identifier);
+            resolutionManifest.getPassthroughResolvedPath(identifier);
     if (resolvedEntities == null) {
       throw new NotFoundException("Target not found: %s", identifier);
     }
@@ -559,14 +570,14 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
     List<PolarisEntity> catalogPath = resolvedEntities.getRawParentPath();
 
     List<PolicyEntity> applicablePolicyEntities =
-        getApplicablePoliciesOnEntity(catalogPath, targetEntity, policyType);
+            getApplicablePoliciesOnEntity(catalogPath, targetEntity, policyType);
 
     return GetApplicablePoliciesResponse.builder()
-        .setPolicies(
-            applicablePolicyEntities.stream()
-                .map(PolicyCatalogHandlerWrapper::constructPolicy)
-                .collect(Collectors.toSet()))
-        .build();
+            .setPolicies(
+                    applicablePolicyEntities.stream()
+                            .map(PolicyCatalogHandlerWrapper::constructPolicy)
+                            .collect(Collectors.toSet()))
+            .build();
   }
 
   private void authorizeSetPolicyOnNamespace(
@@ -889,8 +900,8 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
     return metaStoreManager;
   }
 
-  private static LoadPolicyResult constructPolicyResult(PolicyEntity policyEntity) {
-    return LoadPolicyResult.builder().setPolicy(constructPolicy(policyEntity)).build();
+  private static LoadPolicyResponse constructPolicyResult(PolicyEntity policyEntity) {
+    return LoadPolicyResponse.builder().setPolicy(constructPolicy(policyEntity)).build();
   }
 
   private static Policy constructPolicy(PolicyEntity policyEntity) {

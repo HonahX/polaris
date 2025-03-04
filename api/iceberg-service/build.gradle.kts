@@ -52,7 +52,7 @@ val policyManagementModels =
       "CatalogIdentifier",
       "CreatePolicyRequest",
       "EntityIdentifier",
-      "LoadPolicyResult",
+      "LoadPolicyResponse",
       "NamespaceIdentifier",
       "Policy",
       "SetPolicyRequest",

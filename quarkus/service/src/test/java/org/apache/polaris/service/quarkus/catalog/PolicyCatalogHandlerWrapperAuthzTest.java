@@ -37,7 +37,7 @@ import org.apache.polaris.service.types.CreatePolicyRequest;
 import org.apache.polaris.service.types.EntityIdentifier;
 import org.apache.polaris.service.types.GetApplicablePoliciesResponse;
 import org.apache.polaris.service.types.ListPoliciesResponse;
-import org.apache.polaris.service.types.LoadPolicyResult;
+import org.apache.polaris.service.types.LoadPolicyResponse;
 import org.apache.polaris.service.types.NamespaceIdentifier;
 import org.apache.polaris.service.types.SetPolicyRequest;
 import org.apache.polaris.service.types.TableLikeIdentifier;
@@ -107,7 +107,7 @@ public class PolicyCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase {
                   .setContent("{\"enable\": False}")
                   .setDescription("description_test")
                   .build();
-          LoadPolicyResult result =
+          LoadPolicyResponse result =
               newPolicyWrapper(Set.of(PRINCIPAL_ROLE1)).createPolicy(NS2, createPolicyRequest);
         },
         () -> {
@@ -178,7 +178,7 @@ public class PolicyCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase {
                   .setContent(exampleContent)
                   .setDescription("description_test")
                   .build();
-          LoadPolicyResult result =
+          LoadPolicyResponse result =
               newPolicyWrapper(Set.of(PRINCIPAL_ROLE1)).createPolicy(NS2, createPolicyRequest);
           Assertions.assertThat(result.getPolicy().getName()).isEqualTo("policy_test");
           Assertions.assertThat(result.getPolicy().getPolicyType())
@@ -193,7 +193,7 @@ public class PolicyCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase {
     doTestSufficientPrivileges(
         List.of(PolarisPrivilege.POLICY_READ),
         () -> {
-          LoadPolicyResult result =
+          LoadPolicyResponse result =
               newPolicyWrapper(Set.of(PRINCIPAL_ROLE1)).getPolicy(NS2, "policy_test");
           Assertions.assertThat(result.getPolicy().getName()).isEqualTo("policy_test");
           Assertions.assertThat(result.getPolicy().getPolicyType())
@@ -213,7 +213,7 @@ public class PolicyCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase {
                   .setContent(updatedContent)
                   .setDescription("updated_description")
                   .build();
-          LoadPolicyResult result =
+          LoadPolicyResponse result =
               newPolicyWrapper(Set.of(PRINCIPAL_ROLE1))
                   .updatePolicy(NS2, "policy_test", updatePolicyRequest);
           Assertions.assertThat(result.getPolicy().getName()).isEqualTo("policy_test");
@@ -228,7 +228,7 @@ public class PolicyCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase {
     doTestSufficientPrivileges(
         List.of(PolarisPrivilege.POLICY_READ),
         () -> {
-          LoadPolicyResult result =
+          LoadPolicyResponse result =
               newPolicyWrapper(Set.of(PRINCIPAL_ROLE1)).getPolicy(NS2, "policy_test");
           Assertions.assertThat(result.getPolicy().getName()).isEqualTo("policy_test");
           Assertions.assertThat(result.getPolicy().getPolicyType())
@@ -358,7 +358,7 @@ public class PolicyCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase {
     newPolicyWrapper(Set.of(PRINCIPAL_ROLE2))
         .setPolicy(NS2, "policy_test", setPolicyOnNamespaceRequest);
     GetApplicablePoliciesResponse result =
-        newPolicyWrapper(Set.of(PRINCIPAL_ROLE2)).getApplicablePolicies(newTableLike, null);
+        newPolicyWrapper(Set.of(PRINCIPAL_ROLE2)).getApplicablePoliciesOnTableLike(newtable, null);
     Assertions.assertThat(result.getPolicies()).hasSize(1);
 
     final UnsetPolicyRequest unsetPolicyRequest =
@@ -374,7 +374,7 @@ public class PolicyCatalogHandlerWrapperAuthzTest extends PolarisAuthzTestBase {
     newPolicyWrapper(Set.of(PRINCIPAL_ROLE2))
         .unsetPolicy(PolicyIdentifier.of(NS2, "policy_test"), unsetPolicyRequest);
     GetApplicablePoliciesResponse emptyResult =
-        newPolicyWrapper(Set.of(PRINCIPAL_ROLE2)).getApplicablePolicies(newTableLike, null);
+        newPolicyWrapper(Set.of(PRINCIPAL_ROLE2)).getApplicablePoliciesOnTableLike(newtable, null);
     Assertions.assertThat(emptyResult.getPolicies()).hasSize(0);
 
     ListPoliciesResponse response =

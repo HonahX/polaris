@@ -1403,6 +1403,40 @@ paths:
           $ref: '#/components/responses/ServiceUnavailableResponse'
         5XX:
           $ref: '#/components/responses/ServerErrorResponse'
+    get:
+      tags:
+        - Catalog API
+      summary: List all policy identifiers underneath a given namespace
+      description: Return all policy identifiers under this namespace
+      operationId: listPolicies
+      parameters:
+        - $ref: '#/components/parameters/page-token'
+        - $ref: '#/components/parameters/page-size'
+        - $ref: '#/components/parameters/policy-type'
+      responses:
+        '200':
+          $ref: '#/components/responses/ListPoliciesResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestErrorResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '404':
+          description: Not Found - The namespace specified does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+              examples:
+                NamespaceNotFound:
+                  $ref: '#/components/examples/NoSuchNamespaceError'
+        '419':
+          $ref: '#/components/responses/AuthenticationTimeoutResponse'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailableResponse'
+        5XX:
+          $ref: '#/components/responses/ServerErrorResponse'
   /v1/{prefix}/namespaces/{namespace}/policies/{policyName}:
     parameters:
       - $ref: '#/components/parameters/prefix'
@@ -1412,7 +1446,7 @@ paths:
       tags:
         - Catalog API
       summary: Get a policy
-      operationId: getPolicy
+      operationId: loadPolicy
       description: |
         Get a policy from the catalog
 
@@ -1485,7 +1519,7 @@ paths:
       tags:
         - Catalog API
       summary: Delete a policy from the catalog
-      operationId: deletePolicy
+      operationId: dropPolicy
       description: Remove a policy from the catalog
       responses:
         '204':
@@ -1599,6 +1633,90 @@ paths:
                   $ref: '#/components/examples/NoSuchEntityError'
                 MappingToUnsetDoesNotExist:
                   $ref: '#/components/examples/NoSuchMappingError'
+        '419':
+          $ref: '#/components/responses/AuthenticationTimeoutResponse'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailableResponse'
+        5XX:
+          $ref: '#/components/responses/ServerErrorResponse'
+  /v1/{prefix}/applicablePolicies:
+    parameters:
+      - $ref: '#/components/parameters/prefix'
+    get:
+      tags:
+        - Catalog API
+      summary: Get Applicable policies for catalog, namespace, table, or views
+      operationId: getApplicablePoliciesUsingParameter
+      description: Get Applicable policies for catalog, namespace, table, or views
+      parameters:
+        - $ref: '#/components/parameters/page-token'
+        - $ref: '#/components/parameters/page-size'
+        - name: namespace
+          in: query
+          required: false
+          description: A namespace identifier as a single string. Multipart namespace parts should be separated by the unit separator (`0x1F`) byte.
+          schema:
+            type: string
+          examples:
+            singlepart_namespace:
+              value: accounting
+            multipart_namespace:
+              value: accounting%1Ftax
+        - $ref: '#/components/parameters/table-like-name'
+      responses:
+        '200':
+          $ref: '#/components/responses/GetApplicablePoliciesResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestErrorResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '404':
+          description: Not Found - NoSuchTableException, table to load does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IcebergErrorResponse'
+              examples:
+                TableToLoadDoesNotExist:
+                  $ref: '#/components/examples/NoSuchTableError'
+        '419':
+          $ref: '#/components/responses/AuthenticationTimeoutResponse'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailableResponse'
+        5XX:
+          $ref: '#/components/responses/ServerErrorResponse'
+    post:
+      tags:
+        - Catalog API
+      summary: Get Applicable policies for catalog, namespace, table, or views
+      operationId: getApplicablePolicies
+      description: Get Applicable policies for catalog, namespace, table, or views
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetApplicablePoliciesRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/GetApplicablePoliciesResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestErrorResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '404':
+          description: Not Found - NoSuchTableException, table to load does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IcebergErrorResponse'
+              examples:
+                TableToLoadDoesNotExist:
+                  $ref: '#/components/examples/NoSuchTableError'
         '419':
           $ref: '#/components/responses/AuthenticationTimeoutResponse'
         '503':
@@ -3503,6 +3621,21 @@ components:
           $ref: '#/components/schemas/NotificationType'
         payload:
           $ref: '#/components/schemas/TableUpdateNotification'
+    PolicyType:
+      description: The type of a policy
+      type: string
+      nullable: true
+      example: system.data-compaction
+    ListPoliciesResponse:
+      type: object
+      properties:
+        next-page-token:
+          $ref: '#/components/schemas/PageToken'
+        identifiers:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/TableIdentifier'
     PolicyName:
       type: string
       description: A policy name. A valid policy name should only consist of uppercase and lowercase letters (A-Z, a-z), digits (0-9), hyphens (-), underscores (_).
@@ -3518,6 +3651,56 @@ components:
           $ref: '#/components/schemas/PolicyName'
         type:
           type: string
+        description:
+          type: string
+        content:
+          type: string
+    Policy:
+      type: object
+      description: |
+        A policy in Apache Polaris defines a set of rules for governing access, data usage, and operational consistency across various catalog resources. 
+        Policies are stored within Polaris and can be applied to catalogs, namespaces, tables, views, and other table-like entities.
+        For example, they can be used for fine-grained control over who can perform specific actions on certain resources.
+
+        The policy object includes
+        - **policy-type:** The type of the policy, which determines the expected format and semantics of the policy content.
+        - **name:**  A human-readable name for the policy, which must be unique within a given namespace.
+        - **description:** Detailed description of the purpose and functionalities of the policy.
+        - **content:** Policy content, which can be validated against predefined schemas of a policy type.
+        - **version:** Indicates the current version of the policy. Versions increased monotonically, the default value is 0
+        - **created_at:** A timestamp (in milliseconds) indicating when the policy was created.
+        - **updated_at:** A timestamp (in milliseconds) indicating the last update time of the policy.
+
+        Policies stored in Polaris serve as the persistent definition for access control and governance rules.
+      required:
+        - policy-type
+        - name
+        - version
+      properties:
+        policy-type:
+          type: string
+        name:
+          $ref: '#/components/schemas/PolicyName'
+        description:
+          type: string
+        content:
+          type: string
+        version:
+          type: integer
+        created-at-ms:
+          type: integer
+          format: int64
+        updated-at-ms:
+          type: integer
+          format: int64
+    LoadPolicyResult:
+      type: object
+      properties:
+        policy:
+          $ref: '#/components/schemas/Policy'
+    UpdatePolicyRequest:
+      type: object
+      properties:
         description:
           type: string
         content:
@@ -3578,60 +3761,6 @@ components:
             name:
               type: string
               nullable: false
-    Policy:
-      type: object
-      description: |
-        A policy in Apache Polaris defines a set of rules for governing access, data usage, and operational consistency across various catalog resources. 
-        Policies are stored within Polaris and can be applied to catalogs, namespaces, tables, views, and other table-like entities.
-        For example, they can be used for fine-grained control over who can perform specific actions on certain resources.
-
-        The policy object includes
-        - **owner-entity:** The entity that owns the policy
-        - **policy-type:** The type of the policy, which determines the expected format and semantics of the policy content.
-        - **name:**  A human-readable name for the policy, which must be unique within a given namespace.
-        - **description:** Detailed description of the purpose and functionalities of the policy.
-        - **content:** Policy content, which can be validated against predefined schemas of a policy type.
-        - **version:** Indicates the current version of the policy. Versions increased monotonically, the default value is 0
-        - **created_at:** A timestamp (in milliseconds) indicating when the policy was created.
-        - **updated_at:** A timestamp (in milliseconds) indicating the last update time of the policy.
-
-        Policies stored in Polaris serve as the persistent definition for access control and governance rules.
-      required:
-        - owner-entity
-        - policy-type
-        - name
-        - version
-      properties:
-        owner-entity:
-          $ref: '#/components/schemas/EntityIdentifier'
-        policy-type:
-          type: string
-        name:
-          $ref: '#/components/schemas/PolicyName'
-        description:
-          type: string
-        content:
-          type: string
-        version:
-          type: integer
-        created-at-ms:
-          type: integer
-          format: int64
-        updated-at-ms:
-          type: integer
-          format: int64
-    LoadPolicyResult:
-      type: object
-      properties:
-        policy:
-          $ref: '#/components/schemas/Policy'
-    UpdatePolicyRequest:
-      type: object
-      properties:
-        description:
-          type: string
-        content:
-          type: string
     SetPolicyRequest:
       type: object
       required:
@@ -3650,6 +3779,32 @@ components:
       properties:
         entity:
           $ref: '#/components/schemas/EntityIdentifier'
+    GetApplicablePoliciesResponse:
+      type: object
+      required:
+        - policies
+      properties:
+        next-page-token:
+          $ref: '#/components/schemas/PageToken'
+        policies:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/Policy'
+    GetApplicablePoliciesRequest:
+      type: object
+      required: entity
+      properties:
+        entity:
+          $ref: '#/components/schemas/EntityIdentifier'
+        policy-type:
+          $ref: '#/components/schemas/PolicyType'
+        page-size:
+          description: For servers that support pagination, this signals an upper bound of the number of results that a client will receive. For servers that do not support pagination, clients may receive results larger than the indicated `pageSize`.
+          type: integer
+          minimum: 1
+        page-token:
+          $ref: '#/components/schemas/PageToken'
   responses:
     BadRequestErrorResponse:
       description: Indicates a bad request error. It could be caused by an unexpected request body format or other forms of request validation failure, such as invalid json. Usually serves application/json content, although in some cases simple text/plain content might be returned by the server's middleware.
@@ -3829,6 +3984,17 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/LoadViewResult'
+    ListPoliciesResponse:
+      description: a list of policy identifiers
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ListPoliciesResponse'
+          examples:
+            ListPoliciesResponseNonEmpty:
+              $ref: '#/components/examples/ListPoliciesNonEmptyExample'
+            ListPoliciesResponseEmpty:
+              $ref: '#/components/examples/ListPoliciesEmptyExample'
     CreatePolicyResponse:
       description: Policy object result after creating a policy
       content:
@@ -3849,6 +4015,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/LoadPolicyResult'
+    GetApplicablePoliciesResponse:
+      description: A list of policies applicable to the table
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GetApplicablePoliciesResponse'
   parameters:
     prefix:
       name: prefix
@@ -3918,12 +4090,27 @@ components:
       schema:
         type: string
       example: sales
+    policy-type:
+      name: policyType
+      in: query
+      required: false
+      allowEmptyValue: true
+      schema:
+        $ref: '#/components/schemas/PolicyType'
     policy-name:
       name: policyName
       in: path
       required: true
       schema:
         $ref: '#/components/schemas/PolicyName'
+    table-like-name:
+      name: tableLikeName
+      in: query
+      required: false
+      description: Name of the table like entity
+      schema:
+        type: string
+      example: table
   examples:
     ListNamespacesNonEmptyExample:
       summary: A non-empty list of namespaces
@@ -4036,6 +4223,22 @@ components:
             - accounting
             - tax
           name: owed-view
+    ListPoliciesNonEmptyExample:
+      summary: A non-empty list of policy identifiers
+      value:
+        identifiers:
+          - namespace:
+              - accounting
+              - tax
+            name: policy1
+          - namespace:
+              - accounting
+              - tax
+            name: policy2
+    ListPoliciesEmptyExample:
+      summary: An empty list for a namespace with no policies
+      value:
+        identifiers: []
     NoSuchPolicyError:
       summary: The requested policy does not exist
       value:

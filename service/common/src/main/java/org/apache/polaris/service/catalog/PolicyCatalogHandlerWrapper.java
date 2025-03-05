@@ -513,8 +513,7 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
   }
 
   public GetApplicablePoliciesResponse getApplicablePoliciesOnNamespace(
-          Namespace namespace, PolicyType policyType
-  ) {
+      Namespace namespace, PolicyType policyType) {
     PolarisAuthorizableOperation op = PolarisAuthorizableOperation.LOAD_NAMESPACE_METADATA;
     authorizeBasicNamespaceOperationOrThrow(op, namespace);
 
@@ -527,14 +526,14 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
     List<PolarisEntity> catalogPath = resolvedEntities.getRawParentPath();
 
     List<PolicyEntity> applicablePolicyEntities =
-            getApplicablePoliciesOnEntity(catalogPath, targetEntity, policyType);
+        getApplicablePoliciesOnEntity(catalogPath, targetEntity, policyType);
 
     return GetApplicablePoliciesResponse.builder()
-            .setPolicies(
-                    applicablePolicyEntities.stream()
-                            .map(PolicyCatalogHandlerWrapper::constructPolicy)
-                            .collect(Collectors.toSet()))
-            .build();
+        .setPolicies(
+            applicablePolicyEntities.stream()
+                .map(PolicyCatalogHandlerWrapper::constructPolicy)
+                .collect(Collectors.toSet()))
+        .build();
   }
 
   private GetApplicablePoliciesResponse getApplicablePoliciesOnTableLike(
@@ -547,21 +546,21 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
   }
 
   public GetApplicablePoliciesResponse getApplicablePoliciesOnTableLike(
-          TableIdentifier identifier, PolicyType policyType) {
+      TableIdentifier identifier, PolicyType policyType) {
     authorizeBasicTableLikeOperationOrThrow(
-            (entitySubType -> {
-              if (entitySubType == PolarisEntitySubType.TABLE) {
-                return PolarisAuthorizableOperation.LOAD_TABLE;
-              } else if (entitySubType == PolarisEntitySubType.VIEW) {
-                return PolarisAuthorizableOperation.LOAD_VIEW;
-              } else {
-                return null;
-              }
-            }),
-            identifier);
+        (entitySubType -> {
+          if (entitySubType == PolarisEntitySubType.TABLE) {
+            return PolarisAuthorizableOperation.LOAD_TABLE;
+          } else if (entitySubType == PolarisEntitySubType.VIEW) {
+            return PolarisAuthorizableOperation.LOAD_VIEW;
+          } else {
+            return null;
+          }
+        }),
+        identifier);
 
     PolarisResolvedPathWrapper resolvedEntities =
-            resolutionManifest.getPassthroughResolvedPath(identifier);
+        resolutionManifest.getPassthroughResolvedPath(identifier);
     if (resolvedEntities == null) {
       throw new NotFoundException("Target not found: %s", identifier);
     }
@@ -570,14 +569,14 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
     List<PolarisEntity> catalogPath = resolvedEntities.getRawParentPath();
 
     List<PolicyEntity> applicablePolicyEntities =
-            getApplicablePoliciesOnEntity(catalogPath, targetEntity, policyType);
+        getApplicablePoliciesOnEntity(catalogPath, targetEntity, policyType);
 
     return GetApplicablePoliciesResponse.builder()
-            .setPolicies(
-                    applicablePolicyEntities.stream()
-                            .map(PolicyCatalogHandlerWrapper::constructPolicy)
-                            .collect(Collectors.toSet()))
-            .build();
+        .setPolicies(
+            applicablePolicyEntities.stream()
+                .map(PolicyCatalogHandlerWrapper::constructPolicy)
+                .collect(Collectors.toSet()))
+        .build();
   }
 
   private void authorizeSetPolicyOnNamespace(

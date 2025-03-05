@@ -829,31 +829,39 @@ public class IcebergCatalogAdapter
                     catalog.getApplicablePolicies(getApplicablePoliciesRequest.getEntity(), type))
                 .build());
   }
+
   @Override
-  public Response getApplicablePoliciesUsingParameter(String prefix,String pageToken,Integer pageSize,String namespace,String tableLike,String policyType, RealmContext realmContext,SecurityContext securityContext) {
+  public Response getApplicablePoliciesUsingParameter(
+      String prefix,
+      String pageToken,
+      Integer pageSize,
+      String namespace,
+      String tableLike,
+      String policyType,
+      RealmContext realmContext,
+      SecurityContext securityContext) {
 
-    PolicyType type =
-            PolicyType.fromName(RESTUtil.decodeString(policyType));
-
+    PolicyType type = PolicyType.fromName(RESTUtil.decodeString(policyType));
 
     if (namespace != null && tableLike != null) {
       Namespace ns = decodeNamespace(namespace);
       TableIdentifier tableIdentifier = TableIdentifier.of(ns, RESTUtil.decodeString(tableLike));
-        return withPolicyHandler(
-            securityContext,
-            prefix,
-            catalog ->
-                Response.ok(catalog.getApplicablePoliciesOnTableLike(tableIdentifier, type)).build());
+      return withPolicyHandler(
+          securityContext,
+          prefix,
+          catalog ->
+              Response.ok(catalog.getApplicablePoliciesOnTableLike(tableIdentifier, type)).build());
     } else if (namespace != null) {
       Namespace ns = decodeNamespace(namespace);
       return withPolicyHandler(
-              securityContext,
-              prefix,
-              catalog -> Response.ok(catalog.getApplicablePoliciesOnNamespace(ns, type)).build());
+          securityContext,
+          prefix,
+          catalog -> Response.ok(catalog.getApplicablePoliciesOnNamespace(ns, type)).build());
     } else if (namespace == null && tableLike == null) {
       // TODO: this is the catalog case
     } else {
-      throw new BadRequestException("Please specify either a namespace, a namespace and a table-like name, or neither.");
+      throw new BadRequestException(
+          "Please specify either a namespace, a namespace and a table-like name, or neither.");
     }
 
     return Response.status(501).build(); // not implemented

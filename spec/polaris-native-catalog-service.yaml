@@ -62,15 +62,15 @@ servers:
 # The security configuration is sourced from iceberg-rest-catalog-open-api.yaml
 # All routes are currently configured using an Authorization header.
 security:
-  - OAuth2: [catalog]
+  - OAuth2: []
   - BearerAuth: []
 
 paths:
 
   /v1/{prefix}/namespaces/{namespace}/policies:
     parameters:
-      - $ref: './iceberg-rest-catalog-open-api.yaml#/components/parameters/prefix'
-      - $ref: './iceberg-rest-catalog-open-api.yaml#/components/parameters/namespace'
+      - $ref: './common/parameters.yaml#/components/parameters/prefix'
+      - $ref: './common/parameters.yaml#/components/parameters/namespace'
 
     post:
       tags:
@@ -101,17 +101,17 @@ paths:
         200:
           $ref: '#/components/responses/CreatePolicyResponse'
         400:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/BadRequestErrorResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/BadRequestErrorResponse'
         401:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/UnauthorizedResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/UnauthorizedResponse'
         403:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/ForbiddenResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/ForbiddenResponse'
         419:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/AuthenticationTimeoutResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/AuthenticationTimeoutResponse'
         503:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/ServiceUnavailableResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/ServiceUnavailableResponse'
         5XX:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/ServerErrorResponse'
 
     get:
       tags:
@@ -120,39 +120,39 @@ paths:
       description: Return all policy identifiers under this namespace
       operationId: listPolicies
       parameters:
-        - $ref: './iceberg-rest-catalog-open-api.yaml#/components/parameters/page-token'
-        - $ref: './iceberg-rest-catalog-open-api.yaml#/components/parameters/page-size'
+        - $ref: './common/parameters.yaml#/components/parameters/page-token'
+        - $ref: './common/parameters.yaml#/components/parameters/page-size'
         - $ref: '#/components/parameters/policy-type'
 
       responses:
         '200':
           $ref: '#/components/responses/ListPoliciesResponse'
         '400':
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/BadRequestErrorResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/BadRequestErrorResponse'
         '401':
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/UnauthorizedResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/UnauthorizedResponse'
         '403':
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/ForbiddenResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/ForbiddenResponse'
         '404':
           description: Not Found - The namespace specified does not exist
           content:
             application/json:
               schema:
-                $ref: './iceberg-rest-catalog-open-api.yaml#/components/schemas/ErrorModel'
+                $ref: './common/polaris-errors.yaml#/components/schemas/PolarisErrorModel'
               examples:
                 NamespaceNotFound:
-                  $ref: './iceberg-rest-catalog-open-api.yaml#/components/examples/NoSuchNamespaceError'
+                  $ref: './common/polaris-errors.yaml#/components/examples/NoSuchNamespaceError'
         '419':
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/AuthenticationTimeoutResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/AuthenticationTimeoutResponse'
         '503':
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/ServiceUnavailableResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/ServiceUnavailableResponse'
         5XX:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/ServerErrorResponse'
 
   /v1/{prefix}/namespaces/{namespace}/policies/{policyName}:
     parameters:
-      - $ref: './iceberg-rest-catalog-open-api.yaml#/components/parameters/prefix'
-      - $ref: './iceberg-rest-catalog-open-api.yaml#/components/parameters/namespace'
+      - $ref: './common/parameters.yaml#/components/parameters/prefix'
+      - $ref: './common/parameters.yaml#/components/parameters/namespace'
       - $ref: '#/components/parameters/policy-name'
 
     get:
@@ -168,27 +168,27 @@ paths:
         200:
           $ref: '#/components/responses/LoadPolicyResponse'
         400:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/BadRequestErrorResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/BadRequestErrorResponse'
         401:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/UnauthorizedResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/UnauthorizedResponse'
         403:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/ForbiddenResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/ForbiddenResponse'
         404:
           description:
             Not Found - NoSuchPolicyException, policy to get does not exist
           content:
             application/json:
               schema:
-                $ref: './iceberg-rest-catalog-open-api.yaml#/components/schemas/IcebergErrorResponse'
+                $ref: './common/polaris-errors.yaml#/components/schemas/PolarisErrorResponse'
               examples:
                 PolicyToGetDoesNotExist:
                   $ref: '#/components/examples/NoSuchPolicyError'
         419:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/AuthenticationTimeoutResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/AuthenticationTimeoutResponse'
         503:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/ServiceUnavailableResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/ServiceUnavailableResponse'
         5XX:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/ServerErrorResponse'
 
     put:
       tags:
@@ -211,27 +211,27 @@ paths:
         200:
           $ref: '#/components/responses/UpdatePolicyResponse'
         400:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/BadRequestErrorResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/BadRequestErrorResponse'
         401:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/UnauthorizedResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/UnauthorizedResponse'
         403:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/ForbiddenResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/ForbiddenResponse'
         404:
           description:
             Not Found - NoSuchPolicyException, policy to get does not exist
           content:
             application/json:
               schema:
-                $ref: './iceberg-rest-catalog-open-api.yaml#/components/schemas/IcebergErrorResponse'
+                $ref: './common/polaris-errors.yaml#/components/schemas/PolarisErrorResponse'
               examples:
                 PolicyToUpdateDoesNotExist:
                   $ref: '#/components/examples/NoSuchPolicyError'
         419:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/AuthenticationTimeoutResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/AuthenticationTimeoutResponse'
         503:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/ServiceUnavailableResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/ServiceUnavailableResponse'
         5XX:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/ServerErrorResponse'
 
     delete:
       tags:
@@ -243,32 +243,32 @@ paths:
         204:
           description: Success, no content
         400:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/BadRequestErrorResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/BadRequestErrorResponse'
         401:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/UnauthorizedResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/UnauthorizedResponse'
         403:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/ForbiddenResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/ForbiddenResponse'
         404:
           description:
             Not Found - NoSuchPolicyException, policy to get does not exist
           content:
             application/json:
               schema:
-                $ref: './iceberg-rest-catalog-open-api.yaml#/components/schemas/IcebergErrorResponse'
+                $ref: './common/polaris-errors.yaml#/components/schemas/PolarisErrorResponse'
               examples:
                 PolicyToDeleteDoesNotExist:
                   $ref: '#/components/examples/NoSuchPolicyError'
         419:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/AuthenticationTimeoutResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/AuthenticationTimeoutResponse'
         503:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/ServiceUnavailableResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/ServiceUnavailableResponse'
         5XX:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/ServerErrorResponse'
 
   /v1/{prefix}/namespaces/{namespace}/policies/{policyName}/mappings:
     parameters:
-      - $ref: './iceberg-rest-catalog-open-api.yaml#/components/parameters/prefix'
-      - $ref: './iceberg-rest-catalog-open-api.yaml#/components/parameters/namespace'
+      - $ref: './common/parameters.yaml#/components/parameters/prefix'
+      - $ref: './common/parameters.yaml#/components/parameters/namespace'
       - $ref: '#/components/parameters/policy-name'
 
     put:
@@ -296,29 +296,29 @@ paths:
         204:
           description: Success, no content
         400:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/BadRequestErrorResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/BadRequestErrorResponse'
         401:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/UnauthorizedResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/UnauthorizedResponse'
         403:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/ForbiddenResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/ForbiddenResponse'
         404:
           description:
             Not Found - NoSuchPolicyException, NoSuchEntityException
           content:
             application/json:
               schema:
-                $ref: './iceberg-rest-catalog-open-api.yaml#/components/schemas/IcebergErrorResponse'
+                $ref: './common/polaris-errors.yaml#/components/schemas/PolarisErrorResponse'
               examples:
                 PolicyToSetDoesNotExist:
                   $ref: '#/components/examples/NoSuchPolicyError'
                 EntityToSetDoesNotExist:
                   $ref: '#/components/examples/NoSuchEntityError'
         419:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/AuthenticationTimeoutResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/AuthenticationTimeoutResponse'
         503:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/ServiceUnavailableResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/ServiceUnavailableResponse'
         5XX:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/ServerErrorResponse'
 
     post:
       tags:
@@ -340,18 +340,18 @@ paths:
         204:
           description: Success, no content
         400:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/BadRequestErrorResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/BadRequestErrorResponse'
         401:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/UnauthorizedResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/UnauthorizedResponse'
         403:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/ForbiddenResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/ForbiddenResponse'
         404:
           description:
             Not Found - NoSuchPolicyException, NoSuchEntityException, NoSuchMappingException
           content:
             application/json:
               schema:
-                $ref: './iceberg-rest-catalog-open-api.yaml#/components/schemas/IcebergErrorResponse'
+                $ref: './common/polaris-errors.yaml#/components/schemas/PolarisErrorResponse'
               examples:
                 PolicyToUnsetDoesNotExist:
                   $ref: '#/components/examples/NoSuchPolicyError'
@@ -360,15 +360,15 @@ paths:
                 MappingToUnsetDoesNotExist:
                   $ref: '#/components/examples/NoSuchMappingError'
         419:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/AuthenticationTimeoutResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/AuthenticationTimeoutResponse'
         503:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/ServiceUnavailableResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/ServiceUnavailableResponse'
         5XX:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/ServerErrorResponse'
 
   /v1/{prefix}/applicablePolicies:
     parameters:
-      - $ref: './iceberg-rest-catalog-open-api.yaml#/components/parameters/prefix'
+      - $ref: './common/parameters.yaml#/components/parameters/prefix'
 
     get:
       tags:
@@ -377,8 +377,8 @@ paths:
       operationId: getApplicablePoliciesUsingParameter
       description: Get Applicable policies for catalog, namespace, table, or views
       parameters:
-        - $ref: './iceberg-rest-catalog-open-api.yaml#/components/parameters/page-token'
-        - $ref: './iceberg-rest-catalog-open-api.yaml#/components/parameters/page-size'
+        - $ref: './common/parameters.yaml#/components/parameters/page-token'
+        - $ref: './common/parameters.yaml#/components/parameters/page-size'
         - name: namespace
           in: query
           required: false
@@ -399,72 +399,28 @@ paths:
         200:
           $ref: '#/components/responses/GetApplicablePoliciesResponse'
         400:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/BadRequestErrorResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/BadRequestErrorResponse'
         401:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/UnauthorizedResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/UnauthorizedResponse'
         403:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/ForbiddenResponse'
-        404: # TODO: need a general error for no such entity
+          $ref: './common/polaris-errors.yaml#/components/responses/ForbiddenResponse'
+        404: # TODO: need a general error for no such entity No Such Namespace, No Such Table, No Such View
           description:
             Not Found - NoSuchTableException, table to load does not exist
           content:
             application/json:
               schema:
-                $ref: './iceberg-rest-catalog-open-api.yaml#/components/schemas/IcebergErrorResponse'
+                $ref: './common/polaris-errors.yaml#/components/schemas/PolarisErrorResponse'
               examples:
                 TableToLoadDoesNotExist:
-                  $ref: './iceberg-rest-catalog-open-api.yaml#/components/examples/NoSuchTableError'
+                  $ref: './common/polaris-errors.yaml#/components/examples/NoSuchTableError'
         419:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/AuthenticationTimeoutResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/AuthenticationTimeoutResponse'
         503:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/ServiceUnavailableResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/ServiceUnavailableResponse'
         5XX:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
+          $ref: './common/polaris-errors.yaml#/components/responses/ServerErrorResponse'
 
-
-
-
-  /v1/{prefix}/namespaces/{namespace}/tables/{table}/policies:
-    parameters:
-      - $ref: './iceberg-rest-catalog-open-api.yaml#/components/parameters/prefix'
-      - $ref: './iceberg-rest-catalog-open-api.yaml#/components/parameters/namespace'
-      - $ref: './iceberg-rest-catalog-open-api.yaml#/components/parameters/table'
-
-    get:
-      tags:
-        - Policy API
-      summary: Get Applicable policies for a table
-      operationId: getApplicablePoliciesOnTable
-      description: |
-        Get Applicable policies for a table
-        
-        Optionally filter by policy type
-        This API will also return all policies inherit from table's namespaces/catalogs
-      responses:
-        200:
-          $ref: '#/components/responses/GetApplicablePoliciesResponse'
-        400:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/BadRequestErrorResponse'
-        401:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/UnauthorizedResponse'
-        403:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/ForbiddenResponse'
-        404:
-          description:
-            Not Found - NoSuchTableException, table to load does not exist
-          content:
-            application/json:
-              schema:
-                $ref: './iceberg-rest-catalog-open-api.yaml#/components/schemas/IcebergErrorResponse'
-              examples:
-                TableToLoadDoesNotExist:
-                  $ref: './iceberg-rest-catalog-open-api.yaml#/components/examples/NoSuchTableError'
-        419:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/AuthenticationTimeoutResponse'
-        503:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/ServiceUnavailableResponse'
-        5XX:
-          $ref: './iceberg-rest-catalog-open-api.yaml#/components/responses/ServerErrorResponse'
 
 components:
   parameters:
@@ -599,6 +555,18 @@ components:
           $ref: '#/components/schemas/EntityIdentifier'
 
 
+    PolicyIdentifier:
+      type: object
+      required:
+        - namespace
+        - name
+      properties:
+        namespace:
+          $ref: './common/models.yaml#/components/schemas/Namespace'
+        name:
+          type: string
+          nullable: false
+
     CatalogIdentifier:
       allOf:
         - $ref: '#/components/schemas/EntityIdentifier'
@@ -681,7 +649,7 @@ components:
           type: array
           uniqueItems: true
           items:
-            $ref: './iceberg-rest-catalog-open-api.yaml#/components/schemas/TableIdentifier'
+            $ref: '#/components/schemas/PolicyIdentifier'
 
 
 

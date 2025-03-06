@@ -1,0 +1,91 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+---
+components:
+  parameters:
+
+    namespace:
+      name: namespace
+      in: path
+      required: true
+      description:
+        A namespace identifier as a single string.
+        Multipart namespace parts should be separated by the unit separator (`0x1F`) byte.
+      schema:
+        type: string
+      examples:
+        singlepart_namespace:
+          value: "accounting"
+        multipart_namespace:
+          value: "accounting%1Ftax"
+
+    prefix:
+      name: prefix
+      in: path
+      schema:
+        type: string
+      required: true
+      description: An optional prefix in the path
+
+    page-token:
+      name: pageToken
+      in: query
+      required: false
+      allowEmptyValue: true
+      schema:
+        $ref: '#/components/schemas/PageToken'
+
+    page-size:
+      name: pageSize
+      in: query
+      description:
+        For servers that support pagination, this signals an upper bound of the number of results that a client will receive.
+        For servers that do not support pagination, clients may receive results larger than the indicated `pageSize`.
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+
+  schemas:
+    PageToken:
+      description:
+        An opaque token that allows clients to make use of pagination for list APIs
+        (e.g. ListTables). Clients may initiate the first paginated request by sending an empty
+        query parameter `pageToken` to the server.
+        
+        Servers that support pagination should identify the `pageToken` parameter and return a
+        `next-page-token` in the response if there are more results available.  After the initial
+        request, the value of `next-page-token` from each response must be used as the `pageToken`
+        parameter value for the next request. The server must return `null` value for the
+        `next-page-token` in the last response.
+        
+        Servers that support pagination must return all results in a single response with the value
+        of `next-page-token` set to `null` if the query parameter `pageToken` is not set in the
+        request.
+        
+        Servers that do not support pagination should ignore the `pageToken` parameter and return
+        all results in a single response. The `next-page-token` must be omitted from the response.
+        
+        Clients must interpret either `null` or missing response value of `next-page-token` as
+        the end of the listing results.
+
+      type: string
+      nullable: true
+

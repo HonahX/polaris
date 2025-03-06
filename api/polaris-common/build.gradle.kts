@@ -69,31 +69,30 @@ val policyManagementModels =
     .joinToString(",")
 
 openApiGenerate {
-  inputSpec = "$rootDir/spec/polaris-native-catalog-service.yaml"
+  inputSpec = "$rootDir/spec/polaris-common-model.yaml"
   generatorName = "jaxrs-resteasy"
   outputDir = "$projectDir/build/generated"
-  apiPackage = "org.apache.polaris.service.catalog.api"
-  modelPackage = "org.apache.polaris.service.types"
+  modelPackage = "org.apache.polaris.service.types.common"
   ignoreFileOverride = "$rootDir/.openapi-generator-ignore"
   removeOperationIdPrefix = true
   templateDir = "$rootDir/server-templates"
-  globalProperties.put("apis", "")
-  globalProperties.put("models", policyManagementModels)
+  globalProperties.put("apis", "false")
+  globalProperties.put("models", "")
   globalProperties.put("apiDocs", "false")
   globalProperties.put("modelTests", "false")
   configOptions.put("resourceName", "catalog")
   configOptions.put("useTags", "true")
-  configOptions.put("useBeanValidation", "false")
+  configOptions.put("useBeanValidation", "true")
   configOptions.put("sourceFolder", "src/main/java")
   configOptions.put("useJakartaEe", "true")
   configOptions.put("generateBuilders", "true")
   configOptions.put("generateConstructorWithAllArgs", "true")
-  configOptions.put("openApiNullable", "false")
-  openapiNormalizer.put("REFACTOR_ALLOF_WITH_PROPERTIES_ONLY", "true")
-  additionalProperties.put("apiNamePrefix", "PolarisRest")
-  additionalProperties.put("apiNameSuffix", "")
-  additionalProperties.put("metricsPrefix", "polaris")
-  serverVariables.put("basePath", "api/catalog/polaris")
+  //  configOptions.put("openApiNullable", "false")
+  //  openapiNormalizer.put("REFACTOR_ALLOF_WITH_PROPERTIES_ONLY", "true")
+  //  additionalProperties.put("apiNamePrefix", "PolarisRest")
+  //  additionalProperties.put("apiNameSuffix", "")
+  //  additionalProperties.put("metricsPrefix", "polaris")
+  //  serverVariables.put("basePath", "api/catalog/polaris")
   importMappings =
     mapOf(
       "Namespace" to "org.apache.polaris.service.types.Namespace",

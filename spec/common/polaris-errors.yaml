@@ -1,0 +1,188 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+---
+components:
+  schemas:
+
+    # Copied from iceberg
+    PolarisErrorModel:
+      type: object
+      description: JSON error payload returned in a response with further details on the error
+      required:
+        - message
+        - type
+        - code
+      properties:
+        message:
+          type: string
+          description: Human-readable error message
+        type:
+          type: string
+          description: Internal type definition of the error
+          example: NoSuchNamespaceException
+        code:
+          type: integer
+          minimum: 400
+          maximum: 600
+          description: HTTP response code
+          example: 404
+        stack:
+          type: array
+          items:
+            type: string
+
+    PolarisErrorResponse:
+      description: JSON wrapper for all error responses (non-2xx)
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          $ref: '#/components/schemas/PolarisErrorModel'
+      additionalProperties: false
+      example:
+        error:
+          message: The server does not support this operation
+          type: UnsupportedOperationException
+          code: 406
+
+
+  responses:
+    # Copied from iceberg
+    BadRequestErrorResponse:
+      description: Indicates a bad request error. It could be caused by an unexpected request body format or other forms of request validation failure, such as invalid json. Usually serves application/json content, although in some cases simple text/plain content might be returned by the server's middleware.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PolarisErrorResponse'
+          example:
+            error:
+              message: Malformed request
+              type: BadRequestException
+              code: 400
+
+    UnauthorizedResponse:
+      description: Unauthorized. Authentication is required and has failed or has not yet been provided.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PolarisErrorResponse'
+          example:
+            error:
+              message: Not authorized to make this request
+              type: NotAuthorizedException
+              code: 401
+
+    ForbiddenResponse:
+      description: Forbidden. Authenticated user does not have the necessary permissions.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PolarisErrorResponse'
+          example:
+            error:
+              message: Not authorized to make this request
+              type: NotAuthorizedException
+              code: 403
+
+    # TODO: based on our discussion, we need to deprecate
+    AuthenticationTimeoutResponse:
+      description: Credentials have timed out. If possible, the client should refresh credentials and retry.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PolarisErrorResponse'
+          example:
+            error:
+              message: Credentials have timed out
+              type: AuthenticationTimeoutException
+              code: 419
+
+    ServiceUnavailableResponse:
+      description: |-
+        The service is not ready to handle the request. The client should wait and retry.
+        
+        The service may additionally send a Retry-After header to indicate when to retry.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PolarisErrorResponse'
+          example:
+            error:
+              message: Slow down
+              type: SlowDownException
+              code: 503
+
+    ServerErrorResponse:
+      description: A server-side problem that might not be addressable from the client side. Used for server 5xx errors without more specific documentation in individual routes.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PolarisErrorResponse'
+          example:
+            error:
+              message: Internal Server Error
+              type: InternalServerError
+              code: 500
+
+    UnsupportedOperationResponse:
+      description: Not Acceptable / Unsupported Operation. The server does not support this operation.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PolarisErrorModel'
+          example:
+            error:
+              message: The server does not support this operation
+              type: UnsupportedOperationException
+              code: 406
+  examples:
+
+    NoSuchNamespaceError:
+      summary: The requested namespace does not exist
+      value: {
+        "error": {
+          "message": "The given namespace does not exist",
+          "type": "NoSuchNamespaceException",
+          "code": 404
+        }
+      }
+
+    NoSuchTableError:
+      summary: The requested table does not exist
+      value: {
+        "error": {
+          "message": "The given table does not exist",
+          "type": "NoSuchTableException",
+          "code": 404
+        }
+      }
+
+    NoSuchViewError:
+      summary: The requested view does not exist
+      value: {
+          "error": {
+            "message": "The given view does not exist",
+            "type": "NoSuchViewException",
+            "code": 404
+          }
+        }
+
+    

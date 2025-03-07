@@ -55,7 +55,6 @@ val policyManagementModels =
       "EntityIdentifier",
       "LoadPolicyResponse",
       "PolarisErrorModel",
-      "NamespaceIdentifier",
       "Policy",
       "SetPolicyRequest",
       "TableLikeIdentifier",
@@ -98,6 +97,7 @@ openApiGenerate {
     mapOf(
       "Namespace" to "org.apache.polaris.service.types.Namespace",
       "PolicyIdentifier" to "org.apache.polaris.service.types.PolicyIdentifier",
+      "NamespaceIdentifier" to "org.apache.polaris.service.types.NamespaceIdentifier",
     )
 }
 

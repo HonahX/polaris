@@ -42,6 +42,10 @@ public final class PolarisApiEndpoints implements Serializable {
     return baseUri.resolve(baseUri.getRawPath() + "/api/catalog").normalize();
   }
 
+  public URI polarisApiEndpoint() {
+    return baseUri.resolve(baseUri.getRawPath() + "/api/catalog/polaris").normalize();
+  }
+
   public URI managementApiEndpoint() {
     return baseUri.resolve(baseUri.getRawPath() + "/api/management").normalize();
   }

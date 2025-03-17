@@ -195,7 +195,8 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
     }
 
     PolicyEntity.Builder newPolicyBuilder = new PolicyEntity.Builder(policy);
-
+    int currentPolicyVersion = policy.getPolicyVersion();
+    boolean hasUpdate = false;
     if (request.getContent() != null) {
       PolicyType policyType = policy.getPolicyType();
       PolicyValidator policyValidator = PolicyValidatorFactory.loadValidator(policyType);
@@ -203,12 +204,19 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
         throw new BadRequestException("Invalid policy content: %s", request.getContent());
       }
       newPolicyBuilder.setContent(request.getContent());
+      hasUpdate = true;
     }
 
     if (request.getDescription() != null) {
       newPolicyBuilder.setDescription(request.getDescription());
+      hasUpdate = true;
     }
 
+    if (!hasUpdate) {
+      return constructPolicyResult(policy);
+    }
+
+    newPolicyBuilder.setPolicyVersion(currentPolicyVersion + 1);
     PolicyEntity newPolicyEntity = newPolicyBuilder.build();
     newPolicyEntity = PolicyEntity.of(updatePolicy(namespace, policyName, newPolicyEntity));
 
@@ -897,7 +905,7 @@ public class PolicyCatalogHandlerWrapper implements AutoCloseable {
         .setName(policyEntity.getName())
         .setDescription(policyEntity.getDescription())
         .setContent(policyEntity.getContent())
-        .setVersion(Integer.valueOf(policyEntity.getPolicyVersion()))
+        .setVersion(policyEntity.getPolicyVersion()) // TODO: policyVersion: either long or int
         .build();
   }
 

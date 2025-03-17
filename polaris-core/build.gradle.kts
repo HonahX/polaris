@@ -78,6 +78,10 @@ dependencies {
   implementation("software.amazon.awssdk:iam-policy-builder")
   implementation("software.amazon.awssdk:s3")
 
+  // TODO: this contains a security problem so we need to use other packages or other method in
+  // production
+  implementation("org.everit.json:org.everit.json.schema:1.5.1")
+
   implementation("org.apache.iceberg:iceberg-azure")
   implementation(platform(libs.azuresdk.bom))
   implementation("com.azure:azure-storage-blob")

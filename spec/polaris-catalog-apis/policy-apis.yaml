@@ -398,9 +398,11 @@ paths:
         - Catalog:
           - Neither `namespace` nor `target-name` should be set.
 
-        An optional policyType parameter filters results to return only policies of the specified type.
+        Other optional parameters include:
+        - `policyType`: Filters the response to include only policies of the specified type.
+        - `exclude-inherited`: Determine whether to exclude policies inherited from parents based on the inheritance override rules. Defaults to `false`
 
-        This API evaluates the entity's hierarchy and applies inheritable policies from parent entities. The inheritance follows the following override rule:
+        This API evaluates the entity's hierarchy and applies inheritable policies from parent entities unless `exclude-inherited` is set to `true`. The inheritance follows the following override rule:
         
         1. Table-like level policies override namespace and catalog policies.
         2. Namespace-level policies override upper level namespace or catalog policies.
@@ -429,6 +431,13 @@ paths:
             type: string
           example: "test_table"
         - $ref: '#/components/parameters/policy-type'
+        - name: exclude-inherited
+          in: query
+          required: false
+          description: Determine whether to exclude policies inherited from parents based on the inheritance override rules.
+          schema:
+            type: boolean
+          default: false
 
       responses:
         200:
@@ -504,9 +513,10 @@ components:
         The policy object includes
         - **policy-type:** The type of the policy, which determines the expected format and semantics of the policy content.
         - **inheritable:** A boolean flag indicating whether the policy is inheritable. 
+        - **namespaces** (OPTIONAL) A list representing the hierarchical parent path to the policy, ordered from higher level namespace to lower.
         - **name:**  A human-readable name for the policy, which must be unique within a given namespace.
-        - **description:** Detailed description of the purpose and functionalities of the policy.
-        - **content:** Policy content, which can be validated against predefined schemas of a policy type.
+        - **description:** (OPTIONAL) Detailed description of the purpose and functionalities of the policy.
+        - **content:** (OPTIONAL) Policy content, which can be validated against predefined schemas of a policy type.
         - **version:** Indicates the current version of the policy. Versions increased monotonically, the default value is 0
 
         Policies stored in Polaris serve as the persistent definition for access control and governance rules.
@@ -520,6 +530,10 @@ components:
           type: string
         inheritable:
           type: boolean
+        namespaces:
+          type: array
+          items:
+            type: string
         name:
           $ref: '#/components/schemas/PolicyName'
         description:

@@ -21,6 +21,7 @@ package org.apache.polaris.core.rest;
 import com.google.common.collect.ImmutableSet;
 import java.util.Set;
 import org.apache.iceberg.rest.Endpoint;
+import org.apache.polaris.core.PolarisCallContext;
 import org.apache.polaris.core.config.FeatureConfiguration;
 import org.apache.polaris.core.context.CallContext;
 
@@ -80,8 +81,7 @@ public class PolarisEndpoints {
   public static Set<Endpoint> getSupportedGenericTableEndpoints(CallContext callContext) {
     // add the generic table endpoints as supported endpoints if generic table feature is enabled.
     boolean genericTableEnabled =
-        callContext
-            .getPolarisCallContext()
+            ((PolarisCallContext) callContext)
             .getConfigurationStore()
             .getConfiguration(
                 callContext.getRealmContext(), FeatureConfiguration.ENABLE_GENERIC_TABLES);
@@ -95,8 +95,7 @@ public class PolarisEndpoints {
    */
   public static Set<Endpoint> getSupportedPolicyEndpoints(CallContext callContext) {
     boolean policyStoreEnabled =
-        callContext
-            .getPolarisCallContext()
+            ((PolarisCallContext) callContext)
             .getConfigurationStore()
             .getConfiguration(
                 callContext.getRealmContext(), FeatureConfiguration.ENABLE_POLICY_STORE);

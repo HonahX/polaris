@@ -67,7 +67,7 @@ public class StorageCredentialCacheKey {
     this.allowedWriteLocations = allowedWriteLocations;
     this.callContext = callContext;
     if (this.callContext == null) {
-      this.callContext = CallContext.getCurrentContext().getPolarisCallContext();
+      this.callContext = (PolarisCallContext) CallContext.getCurrentContext();
     }
   }
 

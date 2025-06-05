@@ -20,6 +20,8 @@ package org.apache.polaris.core.config;
 
 import java.util.List;
 import java.util.Optional;
+
+import org.apache.polaris.core.PolarisCallContext;
 import org.apache.polaris.core.admin.model.StorageConfigInfo;
 import org.apache.polaris.core.connection.ConnectionType;
 import org.apache.polaris.core.context.CallContext;
@@ -49,8 +51,7 @@ public class FeatureConfiguration<T> extends PolarisConfiguration<T> {
   public static void enforceFeatureEnabledOrThrow(
       CallContext callContext, FeatureConfiguration<Boolean> featureConfig) {
     boolean enabled =
-        callContext
-            .getPolarisCallContext()
+            ((PolarisCallContext) callContext)
             .getConfigurationStore()
             .getConfiguration(callContext.getRealmContext(), featureConfig);
     if (!enabled) {

@@ -50,6 +50,7 @@ import org.apache.iceberg.rest.requests.UpdateNamespacePropertiesRequest;
 import org.apache.iceberg.rest.requests.UpdateTableRequest;
 import org.apache.iceberg.view.ImmutableSQLViewRepresentation;
 import org.apache.iceberg.view.ImmutableViewVersion;
+import org.apache.polaris.core.PolarisCallContext;
 import org.apache.polaris.core.admin.model.CreateCatalogRequest;
 import org.apache.polaris.core.admin.model.FileStorageConfigInfo;
 import org.apache.polaris.core.admin.model.PrincipalWithCredentialsCredentials;
@@ -222,7 +223,7 @@ public class IcebergCatalogHandlerAuthzTest extends PolarisAuthzTestBase {
     String principalName = "all_the_powers";
     CreatePrincipalResult newPrincipal =
         metaStoreManager.createPrincipal(
-            callContext.getPolarisCallContext(),
+                (PolarisCallContext) callContext,
             new PrincipalEntity.Builder()
                 .setName(principalName)
                 .setCreateTimestamp(Instant.now().toEpochMilli())
@@ -266,7 +267,7 @@ public class IcebergCatalogHandlerAuthzTest extends PolarisAuthzTestBase {
             newPrincipal.getPrincipalSecrets().getMainSecret());
     PrincipalEntity refreshPrincipal =
         rotateAndRefreshPrincipal(
-            metaStoreManager, principalName, credentials, callContext.getPolarisCallContext());
+            metaStoreManager, principalName, credentials, (PolarisCallContext) callContext);
     final AuthenticatedPolarisPrincipal authenticatedPrincipal1 =
         new AuthenticatedPolarisPrincipal(
             PrincipalEntity.of(refreshPrincipal), Set.of(PRINCIPAL_ROLE1, PRINCIPAL_ROLE2));

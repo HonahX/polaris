@@ -401,14 +401,14 @@ public abstract class PolarisAuthzTestBase {
 
   protected @Nonnull Set<String> loadPrincipalRolesNames(AuthenticatedPolarisPrincipal p) {
     return metaStoreManager
-        .loadGrantsToGrantee(callContext.getPolarisCallContext(), p.getPrincipalEntity())
+        .loadGrantsToGrantee((PolarisCallContext) callContext, p.getPrincipalEntity())
         .getGrantRecords()
         .stream()
         .filter(gr -> gr.getPrivilegeCode() == PolarisPrivilege.PRINCIPAL_ROLE_USAGE.getCode())
         .map(
             gr ->
                 metaStoreManager.loadEntity(
-                    callContext.getPolarisCallContext(),
+                        (PolarisCallContext) callContext,
                     0L,
                     gr.getSecurableId(),
                     PolarisEntityType.PRINCIPAL_ROLE))
@@ -424,13 +424,13 @@ public abstract class PolarisAuthzTestBase {
       PolarisCallContext polarisContext) {
     EntityResult lookupEntity =
         metaStoreManager.readEntityByName(
-            callContext.getPolarisCallContext(),
+                (PolarisCallContext) callContext,
             null,
             PolarisEntityType.PRINCIPAL,
             PolarisEntitySubType.NULL_SUBTYPE,
             principalName);
     metaStoreManager.rotatePrincipalSecrets(
-        callContext.getPolarisCallContext(),
+            (PolarisCallContext) callContext,
         credentials.getClientId(),
         lookupEntity.getEntity().getId(),
         false,

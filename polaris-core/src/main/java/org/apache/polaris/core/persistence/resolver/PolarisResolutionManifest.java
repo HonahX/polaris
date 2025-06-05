@@ -27,6 +27,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.apache.polaris.core.PolarisCallContext;
 import org.apache.polaris.core.PolarisDiagnostics;
 import org.apache.polaris.core.auth.AuthenticatedPolarisPrincipal;
 import org.apache.polaris.core.context.CallContext;
@@ -85,7 +87,7 @@ public class PolarisResolutionManifest implements PolarisResolutionManifestCatal
     this.callContext = callContext;
     this.catalogName = catalogName;
     this.primaryResolver = entityManager.prepareResolver(callContext, securityContext, catalogName);
-    this.diagnostics = callContext.getPolarisCallContext().getDiagServices();
+    this.diagnostics = ((PolarisCallContext) callContext).getDiagServices();
     this.diagnostics.checkNotNull(securityContext, "null_security_context_for_resolution_manifest");
     this.securityContext = securityContext;
     diagnostics.check(

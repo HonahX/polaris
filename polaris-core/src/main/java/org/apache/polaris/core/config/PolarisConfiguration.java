@@ -24,6 +24,8 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.apache.polaris.core.PolarisCallContext;
 import org.apache.polaris.core.context.CallContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -223,8 +225,7 @@ public abstract class PolarisConfiguration<T> {
               configuration.key, configuration.defaultValue));
       return configuration.defaultValue;
     }
-    return callContext
-        .getPolarisCallContext()
+    return ((PolarisCallContext) callContext)
         .getConfigurationStore()
         .getConfiguration(callContext.getRealmContext(), configuration);
   }

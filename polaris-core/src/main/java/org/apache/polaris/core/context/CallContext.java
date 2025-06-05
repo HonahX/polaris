@@ -18,8 +18,6 @@
  */
 package org.apache.polaris.core.context;
 
-import org.apache.polaris.core.PolarisCallContext;
-
 /**
  * Stores elements associated with an individual REST request such as RealmContext, caller
  * identity/role, authn/authz, etc. This class is distinct from RealmContext because implementations
@@ -48,9 +46,4 @@ public interface CallContext {
   CallContext copy();
 
   RealmContext getRealmContext();
-
-  /**
-   * @return the inner context used for delegating services
-   */
-  PolarisCallContext getPolarisCallContext();
 }

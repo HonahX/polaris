@@ -27,7 +27,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.polaris.core.PolarisCallContext;
 import org.apache.polaris.core.context.CallContext;
 import org.apache.polaris.core.entity.PolarisBaseEntity;
@@ -156,7 +155,7 @@ public class TaskExecutorImpl implements TaskExecutor {
             .addKeyValue("handlerClass", handler.getClass())
             .log("Task successfully handled");
         metaStoreManager.dropEntityIfExists(
-                (PolarisCallContext) ctx, null, taskEntity, Map.of(), false);
+            (PolarisCallContext) ctx, null, taskEntity, Map.of(), false);
       } else {
         LOGGER
             .atWarn()

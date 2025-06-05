@@ -408,7 +408,7 @@ public abstract class PolarisAuthzTestBase {
         .map(
             gr ->
                 metaStoreManager.loadEntity(
-                        (PolarisCallContext) callContext,
+                    (PolarisCallContext) callContext,
                     0L,
                     gr.getSecurableId(),
                     PolarisEntityType.PRINCIPAL_ROLE))
@@ -424,13 +424,13 @@ public abstract class PolarisAuthzTestBase {
       PolarisCallContext polarisContext) {
     EntityResult lookupEntity =
         metaStoreManager.readEntityByName(
-                (PolarisCallContext) callContext,
+            (PolarisCallContext) callContext,
             null,
             PolarisEntityType.PRINCIPAL,
             PolarisEntitySubType.NULL_SUBTYPE,
             principalName);
     metaStoreManager.rotatePrincipalSecrets(
-            (PolarisCallContext) callContext,
+        (PolarisCallContext) callContext,
         credentials.getClientId(),
         lookupEntity.getEntity().getId(),
         false,

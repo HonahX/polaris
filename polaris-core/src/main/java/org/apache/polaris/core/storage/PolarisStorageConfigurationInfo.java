@@ -36,7 +36,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.apache.polaris.core.PolarisCallContext;
 import org.apache.polaris.core.PolarisDiagnostics;
 import org.apache.polaris.core.admin.model.Catalog;
@@ -164,7 +163,7 @@ public abstract class PolarisStorageConfigurationInfo {
                       .orElse(null);
               CatalogEntity catalog = CatalogEntity.of(entityPath.get(0));
               boolean allowEscape =
-                      ((PolarisCallContext) CallContext.getCurrentContext())
+                  ((PolarisCallContext) CallContext.getCurrentContext())
                       .getConfigurationStore()
                       .getConfiguration(
                           CallContext.getCurrentContext().getRealmContext(),

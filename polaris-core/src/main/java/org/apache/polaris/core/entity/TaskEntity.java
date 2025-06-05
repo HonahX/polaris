@@ -41,7 +41,7 @@ public class TaskEntity extends PolarisEntity {
 
   public <T> T readData(Class<T> klass) {
     PolarisCallContext polarisCallContext = (PolarisCallContext) CallContext.getCurrentContext();
-      return PolarisObjectMapperUtil.deserialize(
+    return PolarisObjectMapperUtil.deserialize(
         polarisCallContext, getPropertiesAsMap().get(PolarisTaskConstants.TASK_DATA), klass);
   }
 
@@ -66,8 +66,7 @@ public class TaskEntity extends PolarisEntity {
     }
 
     public Builder withTaskType(AsyncTaskType taskType) {
-      PolarisCallContext polarisCallContext =
-              (PolarisCallContext) CallContext.getCurrentContext();
+      PolarisCallContext polarisCallContext = (PolarisCallContext) CallContext.getCurrentContext();
       properties.put(
           PolarisTaskConstants.TASK_TYPE,
           PolarisObjectMapperUtil.serialize(polarisCallContext, taskType));
@@ -75,8 +74,7 @@ public class TaskEntity extends PolarisEntity {
     }
 
     public Builder withData(Object data) {
-      PolarisCallContext polarisCallContext =
-              (PolarisCallContext) CallContext.getCurrentContext();
+      PolarisCallContext polarisCallContext = (PolarisCallContext) CallContext.getCurrentContext();
       properties.put(
           PolarisTaskConstants.TASK_DATA,
           PolarisObjectMapperUtil.serialize(polarisCallContext, data));

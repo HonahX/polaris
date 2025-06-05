@@ -40,7 +40,6 @@ import org.apache.polaris.core.auth.AuthenticatedPolarisPrincipal;
 import org.apache.polaris.core.auth.PolarisAuthorizer;
 import org.apache.polaris.core.auth.PolarisAuthorizerImpl;
 import org.apache.polaris.core.config.PolarisConfigurationStore;
-import org.apache.polaris.core.context.CallContext;
 import org.apache.polaris.core.context.RealmContext;
 import org.apache.polaris.core.persistence.BasePersistence;
 import org.apache.polaris.core.persistence.MetaStoreManagerFactory;
@@ -121,7 +120,7 @@ public class QuarkusProducers {
 
   @Produces
   @RequestScoped
-  public CallContext polarisCallContext(
+  public PolarisCallContext polarisCallContext(
       RealmContext realmContext,
       PolarisDiagnostics diagServices,
       PolarisConfigurationStore configurationStore,

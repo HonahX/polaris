@@ -99,15 +99,12 @@ public class DefaultOAuth2ApiService implements IcebergRestOAuth2ApiService {
       }
     }
     TokenResponse tokenResponse;
+    CallContext ctx = callContext;
+    PolarisCallContext polarisCallContext = (PolarisCallContext) ctx;
     if (clientSecret != null) {
       tokenResponse =
           tokenBroker.generateFromClientSecrets(
-              clientId,
-              clientSecret,
-              grantType,
-              scope,
-                  (PolarisCallContext) callContext,
-              requestedTokenType);
+              clientId, clientSecret, grantType, scope, polarisCallContext, requestedTokenType);
     } else if (subjectToken != null) {
       tokenResponse =
           tokenBroker.generateFromToken(

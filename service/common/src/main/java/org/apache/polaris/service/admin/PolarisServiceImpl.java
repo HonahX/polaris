@@ -176,14 +176,14 @@ public class PolarisServiceImpl
           String connectionType =
               externalCatalog.getConnectionConfigInfo().getConnectionType().name();
           List<String> supportedConnectionTypes =
-                  ((PolarisCallContext) callContext)
-                  .getConfigurationStore()
-                  .getConfiguration(
-                      callContext.getRealmContext(),
-                      FeatureConfiguration.SUPPORTED_CATALOG_CONNECTION_TYPES)
-                  .stream()
-                  .map(s -> s.toUpperCase(Locale.ROOT))
-                  .toList();
+              ((PolarisCallContext) callContext)
+                      .getConfigurationStore()
+                      .getConfiguration(
+                          callContext.getRealmContext(),
+                          FeatureConfiguration.SUPPORTED_CATALOG_CONNECTION_TYPES)
+                      .stream()
+                      .map(s -> s.toUpperCase(Locale.ROOT))
+                      .toList();
           if (!supportedConnectionTypes.contains(connectionType)) {
             throw new IllegalStateException("Unsupported connection type: " + connectionType);
           }

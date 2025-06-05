@@ -113,7 +113,7 @@ public class FileIOUtil {
             .getCredentialCache()
             .getOrGenerateSubScopeCreds(
                 credentialVendor,
-                    (PolarisCallContext) callContext,
+                (PolarisCallContext) callContext,
                 entity,
                 allowList,
                 tableLocations,

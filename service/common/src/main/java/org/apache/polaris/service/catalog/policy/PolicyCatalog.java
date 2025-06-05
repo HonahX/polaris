@@ -124,8 +124,7 @@ public class PolicyCatalog {
             .setParentId(resolvedParent.getRawLeafEntity().getId())
             .setDescription(description)
             .setContent(content)
-            .setId(
-                metaStoreManager.generateNewEntityId((PolarisCallContext) callContext).getId())
+            .setId(metaStoreManager.generateNewEntityId((PolarisCallContext) callContext).getId())
             .setCreateTimestamp(System.currentTimeMillis())
             .build();
 
@@ -133,7 +132,7 @@ public class PolicyCatalog {
 
     EntityResult res =
         metaStoreManager.createEntityIfNotExists(
-                (PolarisCallContext) callContext, PolarisEntity.toCoreList(catalogPath), entity);
+            (PolarisCallContext) callContext, PolarisEntity.toCoreList(catalogPath), entity);
 
     if (!res.isSuccess()) {
 
@@ -166,7 +165,7 @@ public class PolicyCatalog {
     List<PolicyEntity> policyEntities =
         metaStoreManager
             .listEntities(
-                    (PolarisCallContext) callContext,
+                (PolarisCallContext) callContext,
                 PolarisEntity.toCoreList(catalogPath),
                 PolarisEntityType.POLICY,
                 PolarisEntitySubType.NULL_SUBTYPE,
@@ -178,7 +177,7 @@ public class PolicyCatalog {
                     PolicyEntity.of(
                         metaStoreManager
                             .loadEntity(
-                                    (PolarisCallContext) callContext,
+                                (PolarisCallContext) callContext,
                                 polarisEntityActiveRecord.getCatalogId(),
                                 polarisEntityActiveRecord.getId(),
                                 polarisEntityActiveRecord.getType())
@@ -243,7 +242,7 @@ public class PolicyCatalog {
         Optional.ofNullable(
                 metaStoreManager
                     .updateEntityPropertiesIfNotChanged(
-                            (PolarisCallContext) callContext,
+                        (PolarisCallContext) callContext,
                         PolarisEntity.toCoreList(catalogPath),
                         newPolicyEntity)
                     .getEntity())
@@ -265,7 +264,7 @@ public class PolicyCatalog {
 
     var result =
         metaStoreManager.dropEntityIfExists(
-                (PolarisCallContext) callContext,
+            (PolarisCallContext) callContext,
             PolarisEntity.toCoreList(catalogPath),
             policyEntity,
             Map.of(),
@@ -302,7 +301,7 @@ public class PolicyCatalog {
 
     var result =
         metaStoreManager.attachPolicyToEntity(
-                (PolarisCallContext) callContext,
+            (PolarisCallContext) callContext,
             targetCatalogPath,
             targetEntity,
             policyCatalogPath,
@@ -336,7 +335,7 @@ public class PolicyCatalog {
 
     var result =
         metaStoreManager.detachPolicyFromEntity(
-                (PolarisCallContext) callContext,
+            (PolarisCallContext) callContext,
             targetCatalogPath,
             targetEntity,
             policyCatalogPath,
@@ -437,7 +436,7 @@ public class PolicyCatalog {
     } else {
       result =
           metaStoreManager.loadPoliciesOnEntityByType(
-                  (PolarisCallContext) callContext, target, policyType);
+              (PolarisCallContext) callContext, target, policyType);
     }
 
     return result.getEntities().stream().map(PolicyEntity::of).toList();

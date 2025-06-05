@@ -22,7 +22,6 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.ws.rs.core.SecurityContext;
 import java.util.List;
-
 import org.apache.polaris.core.PolarisCallContext;
 import org.apache.polaris.core.context.CallContext;
 import org.apache.polaris.core.entity.PolarisEntity;
@@ -69,7 +68,7 @@ public class PolarisEntityManager {
       @Nonnull SecurityContext securityContext,
       @Nullable String referenceCatalogName) {
     return new Resolver(
-            (PolarisCallContext) callContext,
+        (PolarisCallContext) callContext,
         metaStoreManager,
         securityContext,
         entityCache,
@@ -106,7 +105,7 @@ public class PolarisEntityManager {
           PolarisEntity.of(
               metaStoreManager
                   .readEntityByName(
-                          (PolarisCallContext) callContext,
+                      (PolarisCallContext) callContext,
                       null,
                       PolarisEntityType.PRINCIPAL_ROLE,
                       PolarisEntitySubType.NULL_SUBTYPE,

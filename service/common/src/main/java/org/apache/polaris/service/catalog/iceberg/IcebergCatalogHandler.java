@@ -700,7 +700,7 @@ public class IcebergCatalogHandler extends CatalogHandler implements AutoCloseab
         .checkNotNull(catalogPath, "No catalog available for loadTable request");
     CatalogEntity catalogEntity = CatalogEntity.of(catalogPath.getRawLeafEntity());
     PolarisConfigurationStore configurationStore =
-            ((PolarisCallContext) callContext).getConfigurationStore();
+        ((PolarisCallContext) callContext).getConfigurationStore();
     LOGGER.info("Catalog type: {}", catalogEntity.getCatalogType());
     LOGGER.info(
         "allow external catalog credential vending: {}",
@@ -996,7 +996,7 @@ public class IcebergCatalogHandler extends CatalogHandler implements AutoCloseab
     List<EntityWithPath> pendingUpdates = transactionMetaStoreManager.getPendingUpdates();
     EntitiesResult result =
         metaStoreManager.updateEntitiesPropertiesIfNotChanged(
-                (PolarisCallContext) callContext, pendingUpdates);
+            (PolarisCallContext) callContext, pendingUpdates);
     if (!result.isSuccess()) {
       // TODO: Retries and server-side cleanup on failure
       throw new CommitFailedException(

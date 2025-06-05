@@ -42,7 +42,7 @@ class DefaultOAuth2ApiServiceTest {
 
   @BeforeEach
   void setUp() {
-    callContext = Mockito.mock(CallContext.class);
+    callContext = Mockito.mock(PolarisCallContext.class);
   }
 
   @Test

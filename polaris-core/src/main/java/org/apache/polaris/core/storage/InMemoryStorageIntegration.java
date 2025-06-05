@@ -26,7 +26,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
 import org.apache.polaris.core.PolarisCallContext;
 import org.apache.polaris.core.context.CallContext;
 
@@ -82,7 +81,7 @@ public abstract class InMemoryStorageIntegration<T extends PolarisStorageConfigu
         Optional.ofNullable(CallContext.getCurrentContext())
             .map(
                 ctx ->
-                        ((PolarisCallContext) ctx)
+                    ((PolarisCallContext) ctx)
                         .getConfigurationStore()
                         .getConfiguration(ctx.getRealmContext(), "ALLOW_WILDCARD_LOCATION", false))
             .orElse(false);

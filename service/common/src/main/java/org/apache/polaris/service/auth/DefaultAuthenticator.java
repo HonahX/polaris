@@ -71,7 +71,7 @@ public class DefaultAuthenticator
         principal =
             PolarisEntity.of(
                 metaStoreManager.loadEntity(
-                        (PolarisCallContext) callContext,
+                    (PolarisCallContext) callContext,
                     0L,
                     credentials.getPrincipalId(),
                     PolarisEntityType.PRINCIPAL));
@@ -79,7 +79,7 @@ public class DefaultAuthenticator
         principal =
             PolarisEntity.of(
                 metaStoreManager.readEntityByName(
-                        (PolarisCallContext) callContext,
+                    (PolarisCallContext) callContext,
                     null,
                     PolarisEntityType.PRINCIPAL,
                     PolarisEntitySubType.NULL_SUBTYPE,

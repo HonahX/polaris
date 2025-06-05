@@ -30,6 +30,7 @@ import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.exceptions.NoSuchNamespaceException;
 import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.exceptions.NoSuchViewException;
+import org.apache.polaris.core.PolarisCallContext;
 import org.apache.polaris.core.PolarisDiagnostics;
 import org.apache.polaris.core.auth.AuthenticatedPolarisPrincipal;
 import org.apache.polaris.core.auth.PolarisAuthorizableOperation;
@@ -72,7 +73,7 @@ public abstract class CatalogHandler {
     this.callContext = callContext;
     this.entityManager = entityManager;
     this.catalogName = catalogName;
-    PolarisDiagnostics diagServices = callContext.getPolarisCallContext().getDiagServices();
+    PolarisDiagnostics diagServices = ((PolarisCallContext) callContext).getDiagServices();
     diagServices.checkNotNull(securityContext, "null_security_context");
     diagServices.checkNotNull(securityContext.getUserPrincipal(), "null_user_principal");
     diagServices.check(

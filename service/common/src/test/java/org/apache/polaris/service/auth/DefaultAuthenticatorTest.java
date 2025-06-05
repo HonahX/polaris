@@ -60,7 +60,7 @@ public class DefaultAuthenticatorTest {
     long principalId = 100L;
     when(token.getPrincipalId()).thenReturn(principalId);
     when(metaStoreManager.loadEntity(
-            authenticator.callContext.getPolarisCallContext(),
+            (PolarisCallContext) authenticator.callContext,
             0L,
             principalId,
             PolarisEntityType.PRINCIPAL))
@@ -78,7 +78,7 @@ public class DefaultAuthenticatorTest {
     when(token.getPrincipalId()).thenReturn(principalId);
     when(token.getClientId()).thenReturn("abc");
     when(metaStoreManager.loadEntity(
-            authenticator.callContext.getPolarisCallContext(),
+            (PolarisCallContext) authenticator.callContext,
             0L,
             principalId,
             PolarisEntityType.PRINCIPAL))

@@ -81,7 +81,7 @@ public class TableCleanupTaskHandler implements TaskHandler {
     PolarisMetaStoreManager metaStoreManager =
         metaStoreManagerFactory.getOrCreateMetaStoreManager(callContext.getRealmContext());
     IcebergTableLikeEntity tableEntity = IcebergTableLikeEntity.of(entity);
-    PolarisCallContext polarisCallContext = callContext.getPolarisCallContext();
+    PolarisCallContext polarisCallContext = (PolarisCallContext) callContext;
     LOGGER
         .atInfo()
         .addKeyValue("tableIdentifier", tableEntity.getTableIdentifier())
@@ -202,7 +202,7 @@ public class TableCleanupTaskHandler implements TaskHandler {
       IcebergTableLikeEntity tableEntity,
       PolarisMetaStoreManager metaStoreManager,
       CallContext callContext) {
-    PolarisCallContext polarisCallContext = callContext.getPolarisCallContext();
+    PolarisCallContext polarisCallContext = (PolarisCallContext) callContext;
     int batchSize =
         polarisCallContext
             .getConfigurationStore()

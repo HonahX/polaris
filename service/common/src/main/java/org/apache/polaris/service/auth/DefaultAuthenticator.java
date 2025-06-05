@@ -27,6 +27,7 @@ import java.util.Set;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.iceberg.exceptions.NotAuthorizedException;
 import org.apache.iceberg.exceptions.ServiceFailureException;
+import org.apache.polaris.core.PolarisCallContext;
 import org.apache.polaris.core.auth.AuthenticatedPolarisPrincipal;
 import org.apache.polaris.core.context.CallContext;
 import org.apache.polaris.core.entity.PolarisEntity;
@@ -70,7 +71,7 @@ public class DefaultAuthenticator
         principal =
             PolarisEntity.of(
                 metaStoreManager.loadEntity(
-                    callContext.getPolarisCallContext(),
+                        (PolarisCallContext) callContext,
                     0L,
                     credentials.getPrincipalId(),
                     PolarisEntityType.PRINCIPAL));
@@ -78,7 +79,7 @@ public class DefaultAuthenticator
         principal =
             PolarisEntity.of(
                 metaStoreManager.readEntityByName(
-                    callContext.getPolarisCallContext(),
+                        (PolarisCallContext) callContext,
                     null,
                     PolarisEntityType.PRINCIPAL,
                     PolarisEntitySubType.NULL_SUBTYPE,

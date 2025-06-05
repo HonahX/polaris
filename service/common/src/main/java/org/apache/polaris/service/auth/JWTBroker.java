@@ -119,7 +119,7 @@ public abstract class JWTBroker implements TokenBroker {
     }
     EntityResult principalLookup =
         metaStoreManager.loadEntity(
-            CallContext.getCurrentContext().getPolarisCallContext(),
+                (PolarisCallContext) CallContext.getCurrentContext(),
             0L,
             Objects.requireNonNull(decodedToken.getPrincipalId()),
             PolarisEntityType.PRINCIPAL);

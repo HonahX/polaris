@@ -43,7 +43,6 @@ class DefaultOAuth2ApiServiceTest {
   @BeforeEach
   void setUp() {
     callContext = Mockito.mock(CallContext.class);
-    when(callContext.getPolarisCallContext()).thenReturn(Mockito.mock(PolarisCallContext.class));
   }
 
   @Test
@@ -57,7 +56,7 @@ class DefaultOAuth2ApiServiceTest {
             "secret",
             CLIENT_CREDENTIALS,
             "scope",
-            callContext.getPolarisCallContext(),
+            (PolarisCallContext) callContext,
             TokenType.ACCESS_TOKEN))
         .thenReturn(new TokenResponse("token", TokenType.ACCESS_TOKEN.getValue(), 3600));
     Response response =
@@ -88,7 +87,7 @@ class DefaultOAuth2ApiServiceTest {
             "secret",
             CLIENT_CREDENTIALS,
             "scope",
-            callContext.getPolarisCallContext(),
+            (PolarisCallContext) callContext,
             TokenType.ACCESS_TOKEN))
         .thenReturn(new TokenResponse("token", TokenType.ACCESS_TOKEN.getValue(), 3600));
     Response response =
@@ -119,7 +118,7 @@ class DefaultOAuth2ApiServiceTest {
             "secret",
             CLIENT_CREDENTIALS,
             "scope",
-            callContext.getPolarisCallContext(),
+            (PolarisCallContext) callContext,
             TokenType.ACCESS_TOKEN))
         .thenReturn(new TokenResponse("token", TokenType.ACCESS_TOKEN.getValue(), 3600));
     Response response =
@@ -147,7 +146,7 @@ class DefaultOAuth2ApiServiceTest {
             "secret",
             CLIENT_CREDENTIALS,
             "scope",
-            callContext.getPolarisCallContext(),
+            (PolarisCallContext) callContext,
             TokenType.ACCESS_TOKEN))
         .thenReturn(new TokenResponse("token", TokenType.ACCESS_TOKEN.getValue(), 3600));
     Response response =
@@ -176,7 +175,7 @@ class DefaultOAuth2ApiServiceTest {
             "secret",
             TokenRequestValidator.TOKEN_EXCHANGE,
             "scope",
-            callContext.getPolarisCallContext(),
+            (PolarisCallContext) callContext,
             TokenType.ACCESS_TOKEN))
         .thenReturn(new TokenResponse("token", TokenType.ACCESS_TOKEN.getValue(), 3600));
     Response response =
@@ -207,7 +206,7 @@ class DefaultOAuth2ApiServiceTest {
             "secret",
             TokenRequestValidator.TOKEN_EXCHANGE,
             "scope",
-            callContext.getPolarisCallContext(),
+            (PolarisCallContext) callContext,
             TokenType.ACCESS_TOKEN))
         .thenReturn(new TokenResponse("token", TokenType.ACCESS_TOKEN.getValue(), 3600));
     Response response =
@@ -241,7 +240,7 @@ class DefaultOAuth2ApiServiceTest {
             "secret",
             TokenRequestValidator.TOKEN_EXCHANGE,
             "scope",
-            callContext.getPolarisCallContext(),
+            (PolarisCallContext) callContext,
             TokenType.ACCESS_TOKEN))
         .thenReturn(new TokenResponse("token", TokenType.ACCESS_TOKEN.getValue(), 3600));
     Response response =

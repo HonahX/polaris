@@ -65,7 +65,7 @@ public class DefaultActiveRolesProvider implements ActiveRolesProvider {
 
   protected List<PrincipalRoleEntity> loadActivePrincipalRoles(
       Set<String> tokenRoles, PolarisEntity principal, PolarisMetaStoreManager metaStoreManager) {
-    PolarisCallContext polarisContext = callContext.getPolarisCallContext();
+    PolarisCallContext polarisContext = (PolarisCallContext) callContext;
     LoadGrantsResult principalGrantResults =
         metaStoreManager.loadGrantsToGrantee(polarisContext, principal);
     polarisContext

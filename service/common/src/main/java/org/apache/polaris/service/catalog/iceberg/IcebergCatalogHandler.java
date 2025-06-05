@@ -73,6 +73,7 @@ import org.apache.iceberg.rest.responses.ListTablesResponse;
 import org.apache.iceberg.rest.responses.LoadTableResponse;
 import org.apache.iceberg.rest.responses.LoadViewResponse;
 import org.apache.iceberg.rest.responses.UpdateNamespacePropertiesResponse;
+import org.apache.polaris.core.PolarisCallContext;
 import org.apache.polaris.core.auth.PolarisAuthorizableOperation;
 import org.apache.polaris.core.auth.PolarisAuthorizer;
 import org.apache.polaris.core.config.FeatureConfiguration;
@@ -694,13 +695,12 @@ public class IcebergCatalogHandler extends CatalogHandler implements AutoCloseab
     }
 
     PolarisResolvedPathWrapper catalogPath = resolutionManifest.getResolvedReferenceCatalogEntity();
-    callContext
-        .getPolarisCallContext()
+    ((PolarisCallContext) callContext)
         .getDiagServices()
         .checkNotNull(catalogPath, "No catalog available for loadTable request");
     CatalogEntity catalogEntity = CatalogEntity.of(catalogPath.getRawLeafEntity());
     PolarisConfigurationStore configurationStore =
-        callContext.getPolarisCallContext().getConfigurationStore();
+            ((PolarisCallContext) callContext).getConfigurationStore();
     LOGGER.info("Catalog type: {}", catalogEntity.getCatalogType());
     LOGGER.info(
         "allow external catalog credential vending: {}",
@@ -968,8 +968,7 @@ public class IcebergCatalogHandler extends CatalogHandler implements AutoCloseab
                           if (!currentMetadata
                                   .location()
                                   .equals(((MetadataUpdate.SetLocation) singleUpdate).location())
-                              && !callContext
-                                  .getPolarisCallContext()
+                              && !((PolarisCallContext) callContext)
                                   .getConfigurationStore()
                                   .getConfiguration(
                                       callContext.getRealmContext(),
@@ -997,7 +996,7 @@ public class IcebergCatalogHandler extends CatalogHandler implements AutoCloseab
     List<EntityWithPath> pendingUpdates = transactionMetaStoreManager.getPendingUpdates();
     EntitiesResult result =
         metaStoreManager.updateEntitiesPropertiesIfNotChanged(
-            callContext.getPolarisCallContext(), pendingUpdates);
+                (PolarisCallContext) callContext, pendingUpdates);
     if (!result.isSuccess()) {
       // TODO: Retries and server-side cleanup on failure
       throw new CommitFailedException(

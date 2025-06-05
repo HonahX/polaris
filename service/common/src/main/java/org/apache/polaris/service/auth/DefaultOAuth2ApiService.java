@@ -27,6 +27,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.iceberg.rest.responses.OAuthTokenResponse;
+import org.apache.polaris.core.PolarisCallContext;
 import org.apache.polaris.core.context.CallContext;
 import org.apache.polaris.core.context.RealmContext;
 import org.apache.polaris.service.catalog.api.IcebergRestOAuth2ApiService;
@@ -105,7 +106,7 @@ public class DefaultOAuth2ApiService implements IcebergRestOAuth2ApiService {
               clientSecret,
               grantType,
               scope,
-              callContext.getPolarisCallContext(),
+                  (PolarisCallContext) callContext,
               requestedTokenType);
     } else if (subjectToken != null) {
       tokenResponse =

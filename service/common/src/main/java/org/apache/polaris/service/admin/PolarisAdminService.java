@@ -153,7 +153,7 @@ public class PolarisAdminService {
     this.entityManager = entityManager;
     this.metaStoreManager = metaStoreManager;
     this.securityContext = securityContext;
-    PolarisDiagnostics diagServices = callContext.getPolarisCallContext().getDiagServices();
+    PolarisDiagnostics diagServices = ((PolarisCallContext) callContext).getDiagServices();
     diagServices.checkNotNull(securityContext, "null_security_context");
     diagServices.checkNotNull(securityContext.getUserPrincipal(), "null_security_context");
     diagServices.check(
@@ -169,7 +169,7 @@ public class PolarisAdminService {
   }
 
   private PolarisCallContext getCurrentPolarisContext() {
-    return callContext.getPolarisCallContext();
+    return (PolarisCallContext) callContext;
   }
 
   private UserSecretsManager getUserSecretsManager() {
@@ -774,7 +774,7 @@ public class PolarisAdminService {
         findCatalogByName(name)
             .orElseThrow(() -> new NotFoundException("Catalog %s not found", name));
     // TODO: Handle return value in case of concurrent modification
-    PolarisCallContext polarisCallContext = callContext.getPolarisCallContext();
+    PolarisCallContext polarisCallContext = (PolarisCallContext) callContext;
     boolean cleanup =
         polarisCallContext
             .getConfigurationStore()

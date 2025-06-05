@@ -25,6 +25,7 @@ import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.exceptions.NoSuchNamespaceException;
 import org.apache.iceberg.exceptions.NoSuchTableException;
+import org.apache.polaris.core.PolarisCallContext;
 import org.apache.polaris.core.catalog.PolarisCatalogHelpers;
 import org.apache.polaris.core.context.CallContext;
 import org.apache.polaris.core.entity.CatalogEntity;
@@ -101,7 +102,7 @@ public class PolarisGenericTableCatalog implements GenericTableCatalog {
               .setParentId(resolvedParent.getRawLeafEntity().getId())
               .setId(
                   this.metaStoreManager
-                      .generateNewEntityId(this.callContext.getPolarisCallContext())
+                      .generateNewEntityId((PolarisCallContext) this.callContext)
                       .getId())
               .setProperties(properties)
               .setDoc(doc)
@@ -114,7 +115,7 @@ public class PolarisGenericTableCatalog implements GenericTableCatalog {
 
     EntityResult res =
         this.metaStoreManager.createEntityIfNotExists(
-            this.callContext.getPolarisCallContext(),
+                (PolarisCallContext) this.callContext,
             PolarisEntity.toCoreList(catalogPath),
             entity);
     if (!res.isSuccess()) {
@@ -166,7 +167,7 @@ public class PolarisGenericTableCatalog implements GenericTableCatalog {
 
     DropEntityResult dropEntityResult =
         this.metaStoreManager.dropEntityIfExists(
-            this.callContext.getPolarisCallContext(),
+                (PolarisCallContext) this.callContext,
             PolarisEntity.toCoreList(catalogPath),
             leafEntity,
             Map.of(),
@@ -187,7 +188,7 @@ public class PolarisGenericTableCatalog implements GenericTableCatalog {
         PolarisEntity.toNameAndIdList(
             this.metaStoreManager
                 .listEntities(
-                    this.callContext.getPolarisCallContext(),
+                        (PolarisCallContext) this.callContext,
                     PolarisEntity.toCoreList(catalogPath),
                     PolarisEntityType.TABLE_LIKE,
                     PolarisEntitySubType.GENERIC_TABLE,

@@ -40,6 +40,7 @@ import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.exceptions.BadRequestException;
 import org.apache.iceberg.exceptions.NoSuchNamespaceException;
 import org.apache.iceberg.exceptions.NoSuchTableException;
+import org.apache.polaris.core.PolarisCallContext;
 import org.apache.polaris.core.context.CallContext;
 import org.apache.polaris.core.entity.CatalogEntity;
 import org.apache.polaris.core.entity.PolarisEntity;
@@ -124,7 +125,7 @@ public class PolicyCatalog {
             .setDescription(description)
             .setContent(content)
             .setId(
-                metaStoreManager.generateNewEntityId(callContext.getPolarisCallContext()).getId())
+                metaStoreManager.generateNewEntityId((PolarisCallContext) callContext).getId())
             .setCreateTimestamp(System.currentTimeMillis())
             .build();
 
@@ -132,7 +133,7 @@ public class PolicyCatalog {
 
     EntityResult res =
         metaStoreManager.createEntityIfNotExists(
-            callContext.getPolarisCallContext(), PolarisEntity.toCoreList(catalogPath), entity);
+                (PolarisCallContext) callContext, PolarisEntity.toCoreList(catalogPath), entity);
 
     if (!res.isSuccess()) {
 
@@ -165,7 +166,7 @@ public class PolicyCatalog {
     List<PolicyEntity> policyEntities =
         metaStoreManager
             .listEntities(
-                callContext.getPolarisCallContext(),
+                    (PolarisCallContext) callContext,
                 PolarisEntity.toCoreList(catalogPath),
                 PolarisEntityType.POLICY,
                 PolarisEntitySubType.NULL_SUBTYPE,
@@ -177,7 +178,7 @@ public class PolicyCatalog {
                     PolicyEntity.of(
                         metaStoreManager
                             .loadEntity(
-                                callContext.getPolarisCallContext(),
+                                    (PolarisCallContext) callContext,
                                 polarisEntityActiveRecord.getCatalogId(),
                                 polarisEntityActiveRecord.getId(),
                                 polarisEntityActiveRecord.getType())
@@ -242,7 +243,7 @@ public class PolicyCatalog {
         Optional.ofNullable(
                 metaStoreManager
                     .updateEntityPropertiesIfNotChanged(
-                        callContext.getPolarisCallContext(),
+                            (PolarisCallContext) callContext,
                         PolarisEntity.toCoreList(catalogPath),
                         newPolicyEntity)
                     .getEntity())
@@ -264,7 +265,7 @@ public class PolicyCatalog {
 
     var result =
         metaStoreManager.dropEntityIfExists(
-            callContext.getPolarisCallContext(),
+                (PolarisCallContext) callContext,
             PolarisEntity.toCoreList(catalogPath),
             policyEntity,
             Map.of(),
@@ -301,7 +302,7 @@ public class PolicyCatalog {
 
     var result =
         metaStoreManager.attachPolicyToEntity(
-            callContext.getPolarisCallContext(),
+                (PolarisCallContext) callContext,
             targetCatalogPath,
             targetEntity,
             policyCatalogPath,
@@ -335,7 +336,7 @@ public class PolicyCatalog {
 
     var result =
         metaStoreManager.detachPolicyFromEntity(
-            callContext.getPolarisCallContext(),
+                (PolarisCallContext) callContext,
             targetCatalogPath,
             targetEntity,
             policyCatalogPath,
@@ -432,11 +433,11 @@ public class PolicyCatalog {
   private List<PolicyEntity> getPolicies(PolarisEntity target, PolicyType policyType) {
     LoadPolicyMappingsResult result;
     if (policyType == null) {
-      result = metaStoreManager.loadPoliciesOnEntity(callContext.getPolarisCallContext(), target);
+      result = metaStoreManager.loadPoliciesOnEntity((PolarisCallContext) callContext, target);
     } else {
       result =
           metaStoreManager.loadPoliciesOnEntityByType(
-              callContext.getPolarisCallContext(), target, policyType);
+                  (PolarisCallContext) callContext, target, policyType);
     }
 
     return result.getEntities().stream().map(PolicyEntity::of).toList();

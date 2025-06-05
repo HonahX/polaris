@@ -215,7 +215,7 @@ public record TestServices(
 
       CreatePrincipalResult createdPrincipal =
           metaStoreManager.createPrincipal(
-              callContext.getPolarisCallContext(),
+                  (PolarisCallContext) callContext,
               new PrincipalEntity.Builder()
                   .setName("test-principal")
                   .setCreateTimestamp(Instant.now().toEpochMilli())

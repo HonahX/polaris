@@ -152,7 +152,7 @@ public class PolarisServiceImpl
   }
 
   private void validateStorageConfig(StorageConfigInfo storageConfigInfo) {
-    PolarisCallContext polarisCallContext = callContext.getPolarisCallContext();
+    PolarisCallContext polarisCallContext = (PolarisCallContext) callContext;
     List<String> allowedStorageTypes =
         polarisCallContext
             .getConfigurationStore()
@@ -176,8 +176,7 @@ public class PolarisServiceImpl
           String connectionType =
               externalCatalog.getConnectionConfigInfo().getConnectionType().name();
           List<String> supportedConnectionTypes =
-              callContext
-                  .getPolarisCallContext()
+                  ((PolarisCallContext) callContext)
                   .getConfigurationStore()
                   .getConfiguration(
                       callContext.getRealmContext(),

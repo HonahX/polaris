@@ -21,6 +21,7 @@ package org.apache.polaris.service.catalog.io;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.iceberg.catalog.TableIdentifier;
+import org.apache.polaris.core.PolarisCallContext;
 import org.apache.polaris.core.config.FeatureConfiguration;
 import org.apache.polaris.core.config.PolarisConfigurationStore;
 import org.apache.polaris.core.context.CallContext;
@@ -112,7 +113,7 @@ public class FileIOUtil {
             .getCredentialCache()
             .getOrGenerateSubScopeCreds(
                 credentialVendor,
-                callContext.getPolarisCallContext(),
+                    (PolarisCallContext) callContext,
                 entity,
                 allowList,
                 tableLocations,

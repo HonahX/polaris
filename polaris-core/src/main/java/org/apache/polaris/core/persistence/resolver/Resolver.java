@@ -102,9 +102,6 @@ public class Resolver {
   // canonical by-name key.
   private final Map<EntityCacheByNameKey, ResolvedPolarisEntity> resolvedEntriesByName;
 
-  // all entities which have been fully resolved, by id
-  private final Map<Long, ResolvedPolarisEntity> resolvedEntriesById;
-
   private ResolverStatus resolverStatus;
 
   // Set if we determine the reference catalog is a passthrough facade, which impacts
@@ -172,7 +169,6 @@ public class Resolver {
 
     // all resolved entities, by name and by if
     this.resolvedEntriesByName = new HashMap<>();
-    resolvedEntriesById = new HashMap<>();
 
     // the resolver has not yet been called
     this.resolverStatus = null;
@@ -511,7 +507,13 @@ public class Resolver {
       refreshedEntry = null;
     } else {
       // the latest refreshed entry
-      refreshedEntry = this.resolvedEntriesById.get(originalEntity.getEntity().getId());
+      refreshedEntry =
+          this.resolvedEntriesByName.get(
+              new EntityCacheByNameKey(
+                  originalEntity.getEntity().getCatalogId(),
+                  originalEntity.getEntity().getParentId(),
+                  originalEntity.getEntity().getType(),
+                  originalEntity.getEntity().getName()));
       this.diagnostics.checkNotNull(
           refreshedEntry, "_entry_should_be_resolved", "entity={}", originalEntity.getEntity());
     }
@@ -880,16 +882,11 @@ public class Resolver {
     // underlying entity
     PolarisBaseEntity entity = refreshedResolvedEntity.getEntity();
 
-    // add it by ID
-    this.resolvedEntriesById.put(entity.getId(), refreshedResolvedEntity);
-
-    // in the by name map, only add it if it has not been dropped
-    if (!entity.isDropped()) {
-      this.resolvedEntriesByName.put(
-          new EntityCacheByNameKey(
-              entity.getCatalogId(), entity.getParentId(), entity.getType(), entity.getName()),
-          refreshedResolvedEntity);
-    }
+    // add it to the resolved entries by name
+    this.resolvedEntriesByName.put(
+        new EntityCacheByNameKey(
+            entity.getCatalogId(), entity.getParentId(), entity.getType(), entity.getName()),
+        refreshedResolvedEntity);
   }
 
   /**

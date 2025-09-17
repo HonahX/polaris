@@ -99,10 +99,10 @@ jobs:
             exit 1
           fi
 
-svn-build-artifacts:
-  needs:
-    - validate-inputs
-    - validate-client-version
-  uses: ./.github/workflows/python-client-release-svn-artifact.yml
-  with:
-    version: ${{ needs.validate-inputs.outputs.VERSION }}rc${{ needs.validate-inputs.outputs.RC }}
+  svn-build-artifacts:
+    needs:
+      - validate-inputs
+      - validate-client-version
+    uses: ./.github/workflows/python-client-release-svn-artifact.yml
+    with:
+      version: ${{ needs.validate-inputs.outputs.VERSION }}rc${{ needs.validate-inputs.outputs.RC }}

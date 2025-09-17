@@ -58,7 +58,7 @@ jobs:
         uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5
         with:
           distribution: 'temurin'
-          java-version: '21'
+          java-version: '11'
 
       - name: Build source distribution
         run: |
@@ -81,6 +81,7 @@ jobs:
 
       - name: Build wheels
         run:
+          java --version
           python -m cibuildwheel --output-dir wheelhouse --config-file "{package}/pyproject.toml" ./client/python
         env:
           # Ignore 32 bit architectures

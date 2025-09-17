@@ -40,8 +40,8 @@ jobs:
   validate-inputs:
     runs-on: ubuntu-latest
     outputs:
-      VERSION: ${{ steps.set-version.outputs.version }}
-      RC: ${{ steps.set-rc.outputs.rc }}
+      VERSION: ${{ steps.validate-inputs.outputs.VERSION }}
+      RC: ${{ steps.validate-inputs.outputs.RC }}
     steps:
       - name: Validate Version and RC
         id: validate-inputs

@@ -81,7 +81,7 @@ jobs:
 
       - name: Build wheels
         run:
-          python -m cibuildwheel --output-dir wheelhouse --package-dir="./client/python" --config-file "{package}/pyproject.toml"
+          python -m cibuildwheel --output-dir wheelhouse --config-file "{package}/pyproject.toml" ./client/python
         env:
           # Ignore 32 bit architectures
           CIBW_ARCHS: "auto64"

@@ -96,8 +96,8 @@ jobs:
           echo "Detected Poetry version: $current_polaris_client_version"
           
           # Compare the input version with the Poetry version
-          if [[ "$VERSION" != "current_polaris_client_version" ]]; then
-            echo "Error: Input version ($VERSION) does not match the Poetry version (current_polaris_client_version)"
+          if [[ "$VERSION" != "$current_polaris_client_version" ]]; then
+            echo "Error: Input version ($VERSION) does not match the Poetry version ($current_polaris_client_version)"
             exit 1
           fi
 

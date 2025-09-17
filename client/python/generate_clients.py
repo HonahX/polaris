@@ -131,35 +131,43 @@ def clean_old_tests() -> None:
 
 def generate_polaris_management_client() -> None:
     logger.info("Generating polaris management client...")
-    try:
-        subprocess.check_call(
-            [
-                "openapi-generator-cli",
-                "generate",
-                "-i",
-                POLARIS_MANAGEMENT_SPEC,
-                "-g",
-                "python",
-                "-o",
-                CLIENT_DIR,
-                PACKAGE_NAME_POLARIS_MANAGEMENT,
-                "--additional-properties=apiNamePrefix=polaris",
-                PYTHON_VERSION,
-                "--additional-properties=generateSourceCodeOnly=true",
-                "--skip-validate-spec",
-                "--ignore-file-override",
-                OPEN_API_GENERATOR_IGNORE,
-                "--global-property=apiDocs=false,modelDocs=false,modelTests=false,apiTests=false",
-            ],
-            stdout=subprocess.DEVNULL,   # suppress stdout
-            stderr=subprocess.PIPE,      # capture stderr
-            text=True,                   # decode as string instead of bytes
-        )
-    except subprocess.CalledProcessError as e:
-        logger.error("Generating polaris management client failed with exit code %s", e.returncode)
-        if e.stderr:
-            logger.error("Error Output:\n%s", e.stderr)
-        raise
+    cmd = [
+        "openapi-generator-cli",
+        "generate",
+        "-i",
+        POLARIS_MANAGEMENT_SPEC,
+        "-g",
+        "python",
+        "-o",
+        CLIENT_DIR,
+        PACKAGE_NAME_POLARIS_MANAGEMENT,
+        "--additional-properties=apiNamePrefix=polaris",
+        PYTHON_VERSION,
+        "--additional-properties=generateSourceCodeOnly=true",
+        "--skip-validate-spec",
+        "--ignore-file-override",
+        OPEN_API_GENERATOR_IGNORE,
+        "--global-property=apiDocs=false,modelDocs=false,modelTests=false,apiTests=false",
+    ]
+    # Stream output line-by-line; merge stderr into stdout to preserve ordering
+    proc = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,      # decode bytes -> str
+        bufsize=1,      # line-buffered
+    )
+
+    assert proc.stdout is not None  # for type-checkers
+    for line in iter(proc.stdout.readline, ""):
+        logger.info("[openapi-generator] %s", line.rstrip())
+
+    exit_code = proc.wait()
+    if exit_code != 0:
+        logger.error("Polaris management client generation failed with exit code %d", exit_code)
+        raise subprocess.CalledProcessError(exit_code, cmd)
+
+    logger.info("Polaris management client generation completed successfully.")
 
 
 def generate_polaris_catalog_client() -> None:
@@ -197,36 +205,47 @@ def generate_polaris_catalog_client() -> None:
 
 def generate_iceberg_catalog_client() -> None:
     logger.info("Generating Iceberg Catalog client...")
-    try:
-        subprocess.check_call(
-            [
-                "openapi-generator-cli",
-                "generate",
-                "-i",
-                ICEBERG_CATALOG_SPEC,
-                "-g",
-                "python",
-                "-o",
-                CLIENT_DIR,
-                PACKAGE_NAME_POLARIS_CATALOG,
-                "--additional-properties=apiNameSuffix=",
-                "--additional-properties=apiNamePrefix=Iceberg",
-                PYTHON_VERSION,
-                "--additional-properties=generateSourceCodeOnly=true",
-                "--skip-validate-spec",
-                "--ignore-file-override",
-                OPEN_API_GENERATOR_IGNORE,
-                "--global-property=apiDocs=false,modelDocs=false,modelTests=false,apiTests=false",
-            ],
-            stdout=subprocess.DEVNULL,   # suppress stdout
-            stderr=subprocess.PIPE,      # capture stderr
-            text=True,                   # decode as string instead of bytes
-        )
-    except subprocess.CalledProcessError as e:
-        logger.error("Generating iceberg catalog client failed with exit code %s", e.returncode)
-        if e.stderr:
-            logger.error("Error Output:\n%s", e.stderr)
-        raise
+    cmd = [
+        "openapi-generator-cli",
+        "generate",
+        "-i",
+        ICEBERG_CATALOG_SPEC,
+        "-g",
+        "python",
+        "-o",
+        CLIENT_DIR,
+        PACKAGE_NAME_POLARIS_CATALOG,
+        "--additional-properties=apiNameSuffix=",
+        "--additional-properties=apiNamePrefix=Iceberg",
+        PYTHON_VERSION,
+        "--additional-properties=generateSourceCodeOnly=true",
+        "--skip-validate-spec",
+        "--ignore-file-override",
+        OPEN_API_GENERATOR_IGNORE,
+        "--global-property=apiDocs=false,modelDocs=false,modelTests=false,apiTests=false",
+    ]
+    # Use Popen to stream logs in real-time
+    process = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,  # merge stderr into stdout
+        text=True,                 # decode bytes to str automatically
+        bufsize=1,                 # line-buffered
+    )
+
+    # Read output line-by-line
+    with process.stdout:
+        for line in iter(process.stdout.readline, ''):
+            logger.info("[polaris-catalog-client] %s", line.strip())
+
+    # Wait for the process to finish and get the exit code
+    exit_code = process.wait()
+
+    if exit_code != 0:
+        logger.error("Polaris Catalog client generation failed with exit code %d", exit_code)
+        raise subprocess.CalledProcessError(exit_code, cmd)
+
+    logger.info("Polaris Catalog client generation completed successfully.")
 
 
 def _prepend_header_to_file(file_path: Path, header_file_path: Path) -> None:

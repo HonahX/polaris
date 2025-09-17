@@ -112,13 +112,20 @@ $(VENV_DIR):
 	@python3 -m venv $(VENV_DIR)
 	@echo "Virtual environment created."
 
-.PHONY: client-install-dependencies
-client-install-dependencies: $(VENV_DIR)
-	@echo "Installing Poetry and project dependencies into $(VENV_DIR)..."
+.PHONY: client-install-poetry
+client-install-poetry: $(VENV_DIR)
+	@echo "Installing Poetry into $(VENV_DIR)..."
 	@$(VENV_DIR)/bin/pip install --upgrade pip
 	@if [ ! -f "$(VENV_DIR)/bin/poetry" ]; then \
 		$(VENV_DIR)/bin/pip install --upgrade "poetry$(POETRY_VERSION)"; \
+		echo "Poetry installed."; \
+	else \
+		echo "Poetry already installed. Skipping installation."; \
 	fi
+
+.PHONY: client-install-dependencies
+client-install-dependencies: $(VENV_DIR) client-install-poetry
+	@echo "Installing project dependencies into $(VENV_DIR)..."
 	@$(ACTIVATE_AND_CD) && poetry install --all-extras
 	@echo "Poetry and dependencies installed."
 

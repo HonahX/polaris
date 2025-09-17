@@ -53,10 +53,6 @@ jobs:
             3.12
             3.13
 
-      - name: Install dependencies
-        run: |
-          make client-install-dependencies
-
       - name: Build source distribution
         run: |
           make client-build SDIST_ONLY=true
@@ -93,10 +89,3 @@ jobs:
           name: "svn-release-candidate-${{ inputs.VERSION }}"
           pattern: svn-release-candidate*
           delete-merged: true
-
-
-
-
-
-          
-          

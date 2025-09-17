@@ -86,7 +86,7 @@ jobs:
 
       - name: Setup Environment
         run: |
-          make client-install-dependencies
+          python3 -m install poetry
 
       - name: Validate Current Client Version
         run: |
@@ -105,4 +105,4 @@ jobs:
       - validate-client-version
     uses: ./.github/workflows/python-client-release-svn-artifact.yml
     with:
-      version: ${{ needs.validate-inputs.outputs.VERSION }}rc${{ needs.validate-inputs.outputs.RC }}
+      VERSION: ${{ needs.validate-inputs.outputs.VERSION }}rc${{ needs.validate-inputs.outputs.RC }}

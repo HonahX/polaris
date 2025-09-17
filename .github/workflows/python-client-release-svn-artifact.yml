@@ -80,9 +80,8 @@ jobs:
 #          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.9,<3.14"
 
       - name: Build wheels
-        working-directory: "./client/python"
         run:
-          python -m cibuildwheel --output-dir wheelhouse --config-file pyproject.toml
+          python -m cibuildwheel --output-dir wheelhouse --package-dir="./client/python" --config-file "{package}/pyproject.toml"
         env:
           # Ignore 32 bit architectures
           CIBW_ARCHS: "auto64"

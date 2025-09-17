@@ -165,7 +165,11 @@ client-integration-test: client-setup-env ## Run client integration tests
 .PHONY: client-build
 client-build: client-setup-env ## Build client distribution
 	@echo "--- Building client distribution ---"
-	@$(ACTIVATE_AND_CD) && poetry build
+	@if [ "$(SDIST_ONLY)" = "true" ]; then \
+		$(ACTIVATE_AND_CD) && poetry build --format=sdist; \
+	else \
+		$(ACTIVATE_AND_CD) && poetry build; \
+	fi
 	@echo "--- Client distribution build complete ---"
 
 .PHONY: client-cleanup

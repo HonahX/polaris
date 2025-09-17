@@ -63,7 +63,7 @@ jobs:
         with:
           output-dir: wheelhouse
           package-dir: "./client/python"
-          config-file: "pyproject.toml"
+          config-file: "./client/python/pyproject.toml"
         env:
           # Ignore 32 bit architectures
           CIBW_ARCHS: "auto64"

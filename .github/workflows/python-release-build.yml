@@ -91,6 +91,8 @@ jobs:
 
       - name: Validate Current Client Version
         working-directory: ./client/python
+        env:
+          VERSION: ${{ needs.validate-inputs.outputs.VERSION }}
         run: |
           current_polaris_client_version=$(poetry version --short)
           echo "Detected Poetry version: $current_polaris_client_version"

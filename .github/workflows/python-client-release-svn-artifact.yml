@@ -62,7 +62,8 @@ jobs:
         uses: pypa/cibuildwheel@v3.1.4
         with:
           output-dir: wheelhouse
-          config-file: "./client/python/pyproject.toml"
+          package-dir: "./client/python"
+          config-file: "pyproject.toml"
         env:
           # Ignore 32 bit architectures
           CIBW_ARCHS: "auto64"

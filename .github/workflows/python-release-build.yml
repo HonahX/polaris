@@ -89,6 +89,7 @@ jobs:
           python3 -m pip install poetry
 
       - name: Validate Current Client Version
+        working-directory: ./client/python
         run: |
           current_polaris_client_version=$(poetry version --short)
           echo "Detected Poetry version: $current_polaris_client_version"

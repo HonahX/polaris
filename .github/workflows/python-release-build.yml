@@ -86,7 +86,8 @@ jobs:
 
       - name: Setup Environment
         run: |
-          python3 -m pip install poetry
+          export POETRY_VERSION=$(cat client/python/pyproject.toml | grep requires-poetry | sed 's/requires-poetry *= *"\(.*\)"/\1/')
+          python3 -m pip install poetry$POETRY_VERSION
 
       - name: Validate Current Client Version
         working-directory: ./client/python

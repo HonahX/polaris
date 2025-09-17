@@ -86,7 +86,7 @@ jobs:
 
       - name: Setup Environment
         run: |
-          python3 -m install poetry
+          python3 -m pip install poetry
 
       - name: Validate Current Client Version
         run: |

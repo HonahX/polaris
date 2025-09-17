@@ -157,7 +157,6 @@ def generate_polaris_management_client() -> None:
         )
     except subprocess.CalledProcessError as e:
         logger.error("Generating polaris management client failed with exit code %s", e.returncode)
-        logger.error("Command: %s", " ".join(e.cmd))
         if e.stderr:
             logger.error("Error Output:\n%s", e.stderr)
         raise
@@ -191,7 +190,6 @@ def generate_polaris_catalog_client() -> None:
         )
     except subprocess.CalledProcessError as e:
         logger.error("Generating polaris catalog client failed with exit code %s", e.returncode)
-        logger.error("Command: %s", " ".join(e.cmd))
         if e.stderr:
             logger.error("Error Output:\n%s", e.stderr)
         raise
@@ -226,7 +224,6 @@ def generate_iceberg_catalog_client() -> None:
         )
     except subprocess.CalledProcessError as e:
         logger.error("Generating iceberg catalog client failed with exit code %s", e.returncode)
-        logger.error("Command: %s", " ".join(e.cmd))
         if e.stderr:
             logger.error("Error Output:\n%s", e.stderr)
         raise

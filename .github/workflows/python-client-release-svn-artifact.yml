@@ -88,8 +88,7 @@ jobs:
           CIBW_ARCHS: "auto64"
           CIBW_PROJECT_REQUIRES_PYTHON: ">=3.9,<3.14"
           CIBW_REPAIR_WHEEL_COMMAND_MACOS: "" # Disable wheel repair since there will be no binary in the wheel
-          CIBW_BEFORE_ALL_LINUX: "export POLARIS_CLI_SKIP_CLIENT_GENERATION='true'" # java is not available in linux containers during wheel build, skip client generation
-          POLARIS_CLI_SKIP_CLIENT_GENERATION: "true"
+          CIBW_ENVIRONMENT_LINUX: POLARIS_CLI_SKIP_CLIENT_GENERATION="true" # java is not available in linux containers during wheel build, skip client generation
 
       - name: Add source distribution
         if: startsWith(matrix.os, 'ubuntu-24.04')

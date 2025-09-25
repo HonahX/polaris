@@ -18,6 +18,7 @@
  */
 package org.apache.polaris.service.spark.it;
 
+import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
@@ -41,7 +42,18 @@ public class CatalogFederationIT extends CatalogFederationIntegrationTest {
           "polaris.features.\"ENABLE_SUB_CATALOG_RBAC_FOR_FEDERATED_CATALOGS\"",
           "true",
           "polaris.features.\"ALLOW_DROPPING_NON_EMPTY_PASSTHROUGH_FACADE_CATALOG\"",
-          "true");
+          "true",
+              "polaris.features.\"ENABLE_SUB_CATALOG_RBAC_FOR_FEDERATED_CATALOGS\"", "true");
+      return ImmutableMap.<String, String>builder()
+          .put("polaris.features.\"ENABLE_CATALOG_FEDERATION\"", "true")
+          .put("polaris.features.\"SUPPORTED_CATALOG_CONNECTION_TYPES\"", "[\"ICEBERG_REST\"]")
+          .put("polaris.features.\"ALLOW_OVERLAPPING_CATALOG_URLS\"", "true")
+          .put("polaris.features.\"ENABLE_SUB_CATALOG_RBAC_FOR_FEDERATED_CATALOGS\"", "true")
+          .put("polaris.storage.aws.access-key", CatalogFederationIntegrationTest.MINIO_ACCESS_KEY)
+          .put("polaris.storage.aws.secret-key", CatalogFederationIntegrationTest.MINIO_SECRET_KEY)
+          .put("polaris.features.\"SKIP_CREDENTIAL_SUBSCOPING_INDIRECTION\"", "false")
+          .put("polaris.features.\"ALLOW_EXTERNAL_CATALOG_CREDENTIAL_VENDING\"", "true")
+          .build();
     }
   }
 }

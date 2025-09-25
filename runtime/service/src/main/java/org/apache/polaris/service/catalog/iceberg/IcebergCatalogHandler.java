@@ -60,6 +60,7 @@ import org.apache.iceberg.exceptions.BadRequestException;
 import org.apache.iceberg.exceptions.CommitFailedException;
 import org.apache.iceberg.exceptions.ForbiddenException;
 import org.apache.iceberg.exceptions.NoSuchTableException;
+import org.apache.iceberg.rest.RESTCatalog;
 import org.apache.iceberg.rest.credentials.ImmutableCredential;
 import org.apache.iceberg.rest.requests.CommitTransactionRequest;
 import org.apache.iceberg.rest.requests.CreateNamespaceRequest;
@@ -802,7 +803,8 @@ public class IcebergCatalogHandler extends CatalogHandler implements AutoCloseab
     PolarisResolvedPathWrapper resolvedStoragePath =
         CatalogUtils.findResolvedStorageEntity(resolutionManifest, tableIdentifier);
 
-    if (baseCatalog instanceof IcebergCatalog && resolvedStoragePath != null) {
+    if ((baseCatalog instanceof IcebergCatalog || baseCatalog instanceof RESTCatalog)
+        && resolvedStoragePath != null) {
 
       AccessConfig accessConfig =
           accessConfigProvider.getAccessConfig(

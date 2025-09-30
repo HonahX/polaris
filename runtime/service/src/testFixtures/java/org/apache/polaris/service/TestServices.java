@@ -69,6 +69,7 @@ import org.apache.polaris.service.catalog.credentials.CredentialVendorFactory;
 import org.apache.polaris.service.catalog.credentials.DefaultCredentialVendorFactory;
 import org.apache.polaris.service.catalog.iceberg.CatalogHandlerUtils;
 import org.apache.polaris.service.catalog.iceberg.IcebergCatalogAdapter;
+import org.apache.polaris.service.catalog.iceberg.IcebergCatalogWithPolarisExtensionFactory;
 import org.apache.polaris.service.catalog.io.FileIOFactory;
 import org.apache.polaris.service.catalog.io.MeasuredFileIOFactory;
 import org.apache.polaris.service.config.ReservedProperties;
@@ -105,7 +106,8 @@ public record TestServices(
     FileIOFactory fileIOFactory,
     TaskExecutor taskExecutor,
     PolarisEventListener polarisEventListener,
-    CredentialVendorFactory credentialVendorFactory) {
+    CredentialVendorFactory credentialVendorFactory,
+    IcebergCatalogWithPolarisExtensionFactory icebergCatalogWithPolarisExtensionFactory) {
 
   private static final RealmContext TEST_REALM = () -> "test-realm";
   private static final String GCP_ACCESS_TOKEN = "abc";
@@ -248,12 +250,20 @@ public record TestServices(
       Mockito.when(externalCatalogFactory.select(any())).thenReturn(externalCatalogFactory);
       Mockito.when(externalCatalogFactory.isUnsatisfied()).thenReturn(true);
 
+      IcebergCatalogWithPolarisExtensionFactory icebergCatalogWithPolarisExtensionFactory =
+          new IcebergCatalogWithPolarisExtensionFactory(
+              metaStoreManager,
+              callContextFactory,
+              credentialVendorFactory,
+              externalCatalogFactory,
+              userSecretsManager,
+              diagnostics);
+
       IcebergCatalogAdapter catalogService =
           new IcebergCatalogAdapter(
               diagnostics,
               realmContext,
               callContext,
-              callContextFactory,
               resolverFactory,
               resolutionManifestFactory,
               metaStoreManager,
@@ -264,7 +274,7 @@ public record TestServices(
               catalogHandlerUtils,
               externalCatalogFactory,
               polarisEventListener,
-              credentialVendorFactory);
+              icebergCatalogWithPolarisExtensionFactory);
 
       IcebergRestCatalogApi restApi = new IcebergRestCatalogApi(catalogService);
       IcebergRestConfigurationApi restConfigurationApi =
@@ -337,7 +347,8 @@ public record TestServices(
           fileIOFactory,
           taskExecutor,
           polarisEventListener,
-          credentialVendorFactory);
+          credentialVendorFactory,
+          icebergCatalogWithPolarisExtensionFactory);
     }
   }
 

@@ -82,9 +82,7 @@ import org.apache.polaris.service.catalog.CatalogPrefixParser;
 import org.apache.polaris.service.catalog.api.IcebergRestCatalogApiService;
 import org.apache.polaris.service.catalog.api.IcebergRestConfigurationApiService;
 import org.apache.polaris.service.catalog.common.CatalogAdapter;
-import org.apache.polaris.service.catalog.credentials.CredentialVendorFactory;
 import org.apache.polaris.service.config.ReservedProperties;
-import org.apache.polaris.service.context.catalog.CallContextCatalogFactory;
 import org.apache.polaris.service.events.listeners.PolarisEventListener;
 import org.apache.polaris.service.http.IcebergHttpUtil;
 import org.apache.polaris.service.http.IfNoneMatch;
@@ -144,7 +142,6 @@ public class IcebergCatalogAdapter
   private final RealmContext realmContext;
   private final CallContext callContext;
   private final RealmConfig realmConfig;
-  private final CallContextCatalogFactory catalogFactory;
   private final ResolutionManifestFactory resolutionManifestFactory;
   private final ResolverFactory resolverFactory;
   private final PolarisMetaStoreManager metaStoreManager;
@@ -155,14 +152,13 @@ public class IcebergCatalogAdapter
   private final CatalogHandlerUtils catalogHandlerUtils;
   private final Instance<ExternalCatalogFactory> externalCatalogFactories;
   private final PolarisEventListener polarisEventListener;
-  private final CredentialVendorFactory credentialVendorFactory;
+  private final IcebergCatalogWithPolarisExtensionFactory icebergCatalogWithPolarisExtensionFactory;
 
   @Inject
   public IcebergCatalogAdapter(
       PolarisDiagnostics diagnostics,
       RealmContext realmContext,
       CallContext callContext,
-      CallContextCatalogFactory catalogFactory,
       ResolverFactory resolverFactory,
       ResolutionManifestFactory resolutionManifestFactory,
       PolarisMetaStoreManager metaStoreManager,
@@ -173,12 +169,11 @@ public class IcebergCatalogAdapter
       CatalogHandlerUtils catalogHandlerUtils,
       @Any Instance<ExternalCatalogFactory> externalCatalogFactories,
       PolarisEventListener polarisEventListener,
-      CredentialVendorFactory credentialVendorFactory) {
+      IcebergCatalogWithPolarisExtensionFactory icebergCatalogWithPolarisExtensionFactory) {
     this.diagnostics = diagnostics;
     this.realmContext = realmContext;
     this.callContext = callContext;
     this.realmConfig = callContext.getRealmConfig();
-    this.catalogFactory = catalogFactory;
     this.resolutionManifestFactory = resolutionManifestFactory;
     this.resolverFactory = resolverFactory;
     this.metaStoreManager = metaStoreManager;
@@ -189,7 +184,7 @@ public class IcebergCatalogAdapter
     this.catalogHandlerUtils = catalogHandlerUtils;
     this.externalCatalogFactories = externalCatalogFactories;
     this.polarisEventListener = polarisEventListener;
-    this.credentialVendorFactory = credentialVendorFactory;
+    this.icebergCatalogWithPolarisExtensionFactory = icebergCatalogWithPolarisExtensionFactory;
   }
 
   /**
@@ -223,14 +218,13 @@ public class IcebergCatalogAdapter
         metaStoreManager,
         userSecretsManager,
         securityContext,
-        catalogFactory,
         catalogName,
         polarisAuthorizer,
         reservedProperties,
         catalogHandlerUtils,
         externalCatalogFactories,
         polarisEventListener,
-        credentialVendorFactory);
+        icebergCatalogWithPolarisExtensionFactory);
   }
 
   @Override

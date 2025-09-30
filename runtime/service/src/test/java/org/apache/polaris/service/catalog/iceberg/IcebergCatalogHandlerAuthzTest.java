@@ -107,14 +107,13 @@ public class IcebergCatalogHandlerAuthzTest extends PolarisAuthzTestBase {
         metaStoreManager,
         userSecretsManager,
         securityContext(authenticatedPrincipal),
-        factory,
         catalogName,
         polarisAuthorizer,
         reservedProperties,
         catalogHandlerUtils,
         emptyExternalCatalogFactory(),
         polarisEventListener,
-        credentialVendorFactory);
+        icebergCatalogWithPolarisExtensionFactory);
   }
 
   /**
@@ -249,14 +248,13 @@ public class IcebergCatalogHandlerAuthzTest extends PolarisAuthzTestBase {
             metaStoreManager,
             userSecretsManager,
             securityContext(authenticatedPrincipal),
-            callContextCatalogFactory,
             CATALOG_NAME,
             polarisAuthorizer,
             reservedProperties,
             catalogHandlerUtils,
             emptyExternalCatalogFactory(),
             polarisEventListener,
-            credentialVendorFactory);
+            icebergCatalogWithPolarisExtensionFactory);
 
     // a variety of actions are all disallowed because the principal's credentials must be rotated
     doTestInsufficientPrivileges(
@@ -288,14 +286,13 @@ public class IcebergCatalogHandlerAuthzTest extends PolarisAuthzTestBase {
             metaStoreManager,
             userSecretsManager,
             securityContext(authenticatedPrincipal1),
-            callContextCatalogFactory,
             CATALOG_NAME,
             polarisAuthorizer,
             reservedProperties,
             catalogHandlerUtils,
             emptyExternalCatalogFactory(),
             polarisEventListener,
-            credentialVendorFactory);
+            icebergCatalogWithPolarisExtensionFactory);
 
     doTestSufficientPrivilegeSets(
         List.of(Set.of(PolarisPrivilege.NAMESPACE_LIST)),

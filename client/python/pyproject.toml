@@ -51,6 +51,8 @@ include = [
     { path = "cli/**", format = ["sdist", "wheel"] },
     { path = "templates/**", format = "sdist" },
     { path = "spec/**", format = "sdist" },
+    { path = "LICENSE", format = ["sdist", "wheel"] },
+    { path = "NOTICE", format = ["sdist", "wheel"] },
 ]
 
 [tool.poetry.group.dev.dependencies]

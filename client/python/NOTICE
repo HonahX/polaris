@@ -1,0 +1,9 @@
+Apache Polaris Python CLI
+Copyright 2024 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+This distribution packages client stubs generated from the Apache Polaris
+OpenAPI specification using ASF-maintained templates for OpenAPI Generator.
+OpenAPI Generator is licensed under the Apache License, Version 2.0.

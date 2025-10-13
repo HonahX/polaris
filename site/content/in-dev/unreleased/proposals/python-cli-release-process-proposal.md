@@ -64,11 +64,13 @@ Only signed source artifacts approved by a PMC vote qualify as Apache releases. 
 4. **Promote the release**
    - Move artifacts from `dist/dev` to `dist/release` via `svn mv`, update the website, and tag `rel/<version>` in Git.
 5. **Publish to PyPI**
+   - **Release candidates**: Tag the version with a [PEP 440 pre-release identifier](https://peps.python.org/pep-0440/#pre-releases) (e.g., `poetry version 1.2.0rc1`) so the generated filenames already carry the `rc` suffix PyPI recognizes. Upload the artifacts as a pre-release and note the RC name in the vote thread. PyPI automatically treats `*rcN` builds as pre-releases, keeping them hidden from `pip install apache-polaris-cli` unless users opt in.
+   - **Final releases**: After the vote passes, bump the version to the final tag (e.g., `poetry version 1.2.0`), rebuild from the voted source revision, and re-run the staging signature/checksum steps so the GA binaries match the source release.
    ```bash
    python -m pip install --upgrade pip twine
    twine upload dist/*
    ```
-   Use the shared `apache` credentials, then verify the published package by downloading it into a clean virtual environment and running `polaris --help`.
+   Use the shared `apache` credentials for both RC and GA uploads, then verify the published package by downloading it into a clean virtual environment and running `polaris --help`. Reference Appendix A while validating that the GA artifact layout still matches the audited RC contents.
 6. **Announce**
    - Send `[RESULT]` and `[ANNOUNCE]` mails referencing both the downloads site and PyPI convenience binary.
 
@@ -91,18 +93,20 @@ Nightly builds provide early access to upcoming features without polluting the p
 3. **Artifact parity**: Run the same generators and tests used for releases so nightly wheels remain reproducible from source.
 4. **Consumption**: Users can test nightlies with:
    ```bash
-   python3 -m venv .venv
-   source .venv/bin/activate
-   python -m pip install --upgrade pip
    python -m pip install \
      --index-url https://test.pypi.org/simple/ \
      --extra-index-url https://pypi.org/simple/ \
      apache-polaris-cli==<next-version>.dev20250101
-   polaris --version
    ```
 5. **Housekeeping**: Periodically prune obsolete TestPyPI versions through the web UI or API to avoid clutter.
 
-## 5. Open questions
+## 5. Automation roadmap
+
+- **Release automation**: Script the staging workflow in `tools/release/` to wrap the Makefile targets, `poetry version`, signature generation, checksum creation, and Subversion publication into a single reproducible command. Capture intermediate outputs (GPG fingerprints, SHA512 sums, Appendix A listings) to streamline vote e-mails.
+- **RC to GA promotion**: Add a helper that checks out the voted Git tag, bumps the version from `rcN` to GA, rebuilds, and diffs the artifact manifests against Appendix A to confirm no layout drift before uploading to PyPI.
+- **Nightly pipeline**: Extend the GitHub Actions workflow to reuse the Makefile recipes, upload to TestPyPI with project-scoped credentials, and attach the simplified pip install instructions above to the job summary so downstream testers can copy/paste them.
+
+## 6. Open questions
 - Final decision on the PyPI name and whether the import path should match it.
 - Confirm the long-term Python support policy once Python 3.9 is dropped.
 - Determine where CLI user documentation will live (website section vs. dedicated docs site).

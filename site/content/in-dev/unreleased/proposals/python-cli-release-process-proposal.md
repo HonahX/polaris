@@ -1,116 +1,111 @@
 # Apache Polaris Python CLI Release Process Proposal
 
 ## 1. Overview
-The Apache Polaris Python Command Line Interface (CLI) provides a thin wrapper over the generated Python SDK for the Polaris management and catalog APIs. It allows administrators and integrators to:
+The Apache Polaris Python Command Line Interface (CLI) wraps the generated Python SDK for the Polaris management and catalog APIs so operators can script catalog administration, bootstrap Iceberg REST catalogs, and validate connectivity without cloning the full source tree. Packaging the CLI on the Python Package Index (PyPI) makes installation predictable for `pip`, `pipx`, and Poetry users, lets downstream automation depend on versioned releases, and still satisfies the ASF requirement that convenience binaries match the voted source artifacts described in the [ASF release policy](https://www.apache.org/legal/release-policy.html) and [release signing guidance](https://infra.apache.org/release-signing.html).
 
-- Discover and manage Polaris catalogs, tenants, and principals from local scripts or CI.
-- Execute bootstrap tasks such as seeding an Iceberg REST catalog, registering AWS credentials, and testing connectivity.
-- Scaffold configuration files for service operators using the templates that ship with the repository.
-
-Publishing the CLI to the Python Package Index (PyPI) makes installation and upgrades dramatically easier for downstream users who rely on standard Python tooling (e.g., `pip`, `pipx`, and Poetry). A formally released CLI on PyPI ensures that:
-
-- The community can install a vetted, signed build from a trusted channel without cloning the full source tree.
-- Automated systems (container images, CI workflows, infrastructure-as-code) can depend on semantic versions rather than ad-hoc commits.
-- The project complies with the ASF distribution model by providing convenience binaries that match the voted release sources.
-
-## 2. Pre-requisites
-Before we can ship an initial PyPI release we must close the remaining gaps below. These items should be completed prior to cutting a release candidate so they can be validated during the vote.
+## 2. Pre-release prerequisites
+Complete these items before proposing a release candidate so compliance can be verified during the vote as outlined in the [ASF release creation process](https://infra.apache.org/release-publishing.html).
 
 ### 2.1 Package identity and metadata
-- **Rename the distribution**: The name `polaris` is already taken on PyPI. We need to agree on and update a conflict-free project name such as `apache-polaris` or `apache-polaris-cli`. This requires updating `pyproject.toml`, import paths (if they should match the new name), entry-point definitions, documentation, and automation scripts.
-- **Confirm semantic versioning**: Adopt a versioning scheme consistent with the wider Polaris project (e.g., align the CLI version with the server release it targets) and document the support policy.
-- **Audit metadata**: Ensure the `readme`, homepage, issue tracker, license classifiers, and keywords are accurate and PyPI-compliant.
+- **Rename the distribution**: The `polaris` name is occupied on PyPI. Select an available alternative (e.g., `apache-polaris-cli`), then update `pyproject.toml`, import roots, entry points, docs, and automation to use it.
+- **Support matrix**: The CLI currently advertises `requires-python = ">=3.9,<4.0"`; update it to drop Python 3.9 support before the first release and document the supported versions alongside the CLI/server compatibility matrix (see `client/python/pyproject.toml`).
+- **Metadata audit**: Refresh the long description, project URLs, license classifiers, and keywords to match the renamed distribution and Polaris branding.
+- **Versioning**: Align CLI semantic versioning with the Polaris server releases so users can map compatibility at a glance.
 
-### 2.2 Build repeatability
-- Verify that a clean `poetry build` (or `python -m build`) from the signed source release reproduces the wheel and source distribution without network access beyond downloading declared dependencies.
-- Ensure the OpenAPI generated code is deterministic. We should pin the generator version (already done) and confirm the templates embed the ASF license header so that regenerated files remain compliant.
+### 2.2 Build, test, and automation readiness
+- **Standard tooling**: Poetry is the definitive build backend and dependency manager for the CLI. `pyproject.toml` pins the Poetry requirement and the OpenAPI generator version so builds are reproducible.
+- **Combined build and test flows**: The repository Makefile already orchestrates environment setup, linting, tests, license checks, and builds. Release managers can rely on the following recipes:
+  ```bash
+  make client-setup-env
+  make client-unit-test client-build FORMAT=wheel
+  make client-license-check
+  ```
+  These targets run under the pinned Poetry version inside the repo-managed virtualenv, ensuring local results match CI.
+- **Deterministic generation**: Regenerate the OpenAPI client with the pinned generator before the vote and confirm the diff is empty to prove determinism.
+- **Manual validation**: Smoke test the built wheel against a staging Polaris deployment, exercising authentication and catalog operations end-to-end.
 
-### 2.3 Testing and quality gates
-- Finalize unit, integration, and end-to-end tests for the CLI. Extend automation so release candidates run the same checks the main branch uses (e.g., `pytest`, linting, type checking).
-- Document manual validation steps (smoke test against a staging Polaris deployment).
+### 2.3 Licensing, NOTICE, and compliance
+- **ASF guidance**: Follow the ASF [licensing how-to](https://infra.apache.org/licensing-howto.html) for binary distributions—ship a full copy of the Apache License 2.0 and an appropriate NOTICE file alongside the wheel and sdist.
+- **Legal artifacts**: Store `client/python/LICENSE` and `client/python/NOTICE` in the repository and keep them included through the `[tool.poetry] include` list so both sdists and wheels carry them.
+- **Generated sources**: OpenAPI Generator clarifies that templates are Apache-2.0 licensed while generated code is not automatically covered by the tool's license; by generating from ASF-owned templates and specs we retain ASF copyright and can apply the standard headers ([OpenAPI Generator README §3.4](https://raw.githubusercontent.com/OpenAPITools/openapi-generator/master/README.md#34---license-information-on-generated-code)).
+- **License checks**: `pip-licenses-cli` is already configured for the client to verify that runtime dependencies use approved licenses, and we do not bundle third-party dependencies inside the published artifacts—only metadata references them. Preserve the dependency report for the vote thread even though NOTICE entries are unnecessary.
 
-### 2.4 Licensing and NOTICE obligations
-- **License file**: The binary distribution must ship a full copy of the Apache License 2.0. We will place `client/python/LICENSE` in the repository and include it via the build backend so it lands inside both the sdist and wheel.
-- **Notice file**: Create `client/python/NOTICE` describing the Apache Polaris CLI, crediting the ASF, and acknowledging bundled materials. Because the CLI packages generated code from OpenAPI Generator templates (licensed under Apache-2.0) we should explicitly mention that the generated client stubs originate from the Polaris OpenAPI specification processed by ASF-maintained templates. No third-party code is bundled directly, so no extra attributions are required beyond ASF notice statements.
-- **Third-party dependencies**: At release time run `poetry export` (or `pip-licenses-cli`) to confirm all runtime dependencies are under approved licenses. Since we do not redistribute those dependencies inside the wheel, they do not need to appear in `NOTICE`, but the dependency report should be archived for the vote thread.
-- **Source headers**: Confirm all first-party Python modules—including generated sources—carry the standard ASF header via the custom templates in `client/python/templates`.
-
-### 2.5 Distribution layout
-- Update packaging configuration so the wheel contains:
-  - `cli/` entry-point modules
-  - Generated SDK under `polaris/`
-  - Template assets required at runtime
-  - `LICENSE` and `NOTICE`
-  - README and other documentation referenced by `pyproject.toml`
-- Validate that `MANIFEST.in` (if used) or the `[tool.poetry] include` section covers the new legal files.
-
-### 2.6 Credentials and access
-- Identify at least two Apache Polaris PMC or committer accounts who will maintain the PyPI project.
-- Open an ASF Infra JIRA ticket requesting creation of the PyPI project under the shared `apache` PyPI organization. Infra will either:
-  - Assign the project to the ASF `apache` account and add nominated maintainers, or
-  - Confirm that the PMC may self-register and link the project to the ASF federated PyPI group.
-  We must complete this coordination before attempting to upload the first release.
+### 2.4 Access, credentials, and PyPI project setup
+- **ASF policy**: Only the signed source archives published via ASF infrastructure constitute the official release; PyPI uploads remain convenience binaries and must be traceable back to the voted source (see the [ASF release policy](https://www.apache.org/legal/release-policy.html) and [release creation process](https://infra.apache.org/release-publishing.html)).
+- **Infra coordination**: File an INFRA JIRA ticket if a new distribution target or directory is required—Infra uses those tickets to grant write access or create missing resources. Use the same channel to request PyPI project creation under the shared `apache` organization and add at least two PMC members as maintainers ([release publishing guide](https://infra.apache.org/release-publishing.html#distribution), [Infra contact page](https://infra.apache.org/contact.html)).
+- **Credential storage**: Store the shared `apache` PyPI API token in ASF password management systems rather than personal vaults; document rotation expectations on the private PMC wiki.
 
 ## 3. Formal release process
-Apache releases follow the ASF policy: only signed source archives voted on by the PMC are official releases. PyPI uploads are convenience binaries that must match the voted source.
+Only signed source artifacts approved by a PMC vote qualify as Apache releases. Wheels and sdists uploaded to PyPI must match the voted source bits, carry matching version numbers, and be accompanied by signatures and checksums stored in the ASF dist repository (per the [ASF release policy](https://www.apache.org/legal/release-policy.html) and [release distribution guidance](https://infra.apache.org/release-publishing.html#distribution)).
 
-### 3.1 Artifacts to produce
-From the release-tagged source tree:
-- **Source archive**: `apache-polaris-cli-<version>-source.tar.gz` + `.asc` + `.sha512` uploaded to `https://dist.apache.org/repos/dist/release/polaris/` after a successful vote.
-- **Python distributions**: Build both a source distribution (`.tar.gz`) and a universal wheel (`.whl`). Each file must have accompanying GPG signature (`.asc`) and SHA-512 checksum even though PyPI itself will only store the artifacts. Keep copies in SVN alongside the source release for archival.
+### 3.1 Artifact list
+- **Source release**: `apache-polaris-cli-<version>-source.tar.gz` plus `.asc` and `.sha512`, uploaded to `https://dist.apache.org/repos/dist/release/polaris/` after the vote succeeds.
+- **Python distributions**: Build both an sdist and wheel via Poetry, then generate detached ASCII-armored signatures and SHA-512 checksums for each file. Retain the signatures and checksums in Subversion even though PyPI stores only the artifacts.
+- **KEYS**: Update the `KEYS` file with new release manager public keys before staging so voters can verify signatures.
 
-### 3.2 High-level release steps
-1. **Prepare the release branch/tag**
-   - Update changelog, version numbers, dependency pins, and ensure `LICENSE`/`NOTICE` are accurate.
-   - Regenerate the OpenAPI client code from the voted OpenAPI specification.
-   - Run the full test suite and document results.
+### 3.2 High-level workflow
+1. **Prep the candidate**
+   - Merge the package rename, Python support updates, changelog, and regenerated OpenAPI client into a release branch.
+   - Confirm `make client-unit-test client-license-check client-build` passes locally and in CI.
 2. **Stage artifacts**
-   - Execute `poetry build` (or `python -m build`) to produce `dist/<name>-<version>.tar.gz` and `.whl`.
-   - Generate SHA-512 checksums and sign each artifact: `gpg --armor --detach-sign dist/<artifact>` and `shasum -a 512 dist/<artifact> > dist/<artifact>.sha512`.
-   - Upload the artifacts, signatures, checksums, and KEYS file to the `dist/dev/polaris/` Subversion staging area.
-3. **Run the community vote**
-   - Send a `[VOTE]` email to `dev@polaris.apache.org` including download links, checksums, `pip install` smoke-test instructions, and the dependency license summary.
-   - After receiving at least three +1 PMC votes and no blocking issues, close the vote and call the result.
-4. **Promote artifacts**
-   - Move the staged artifacts from `dist/dev` to `dist/release` in Subversion.
-   - Tag the release in Git (`rel/<version>`).
-   - Publish release notes on the website.
+   ```bash
+   make client-build
+   gpg --armor --detach-sign dist/*.whl dist/*.tar.gz
+   shasum -a 512 dist/* > SHA512SUMS
+   svn co https://dist.apache.org/repos/dist/dev/polaris tmp-dist
+   cp dist/* tmp-dist/
+   svn add tmp-dist/*
+   svn commit -m "Polaris CLI <version> RC"
+   ```
+   These steps follow the ASF [release signing guidance](https://infra.apache.org/release-signing.html) for producing the required signatures and checksums.
+3. **Community vote**
+   - Start a 72-hour `[VOTE]` thread on `dev@polaris.apache.org` with links to staged artifacts, SHA-512 sums, GPG fingerprints, and the dependency license report.
+   - Respond to review feedback, producing additional RCs if necessary.
+4. **Promote the release**
+   - Move artifacts from `dist/dev` to `dist/release` via `svn mv`, update the website, and tag `rel/<version>` in Git.
 5. **Publish to PyPI**
-   - Using the shared ASF PyPI credentials (`apache` user via API token), run `twine upload dist/*` from the release workspace. PyPI does not host `.asc`/`.sha512`, but we must keep those files in SVN and link them in the announcement.
-   - Verify the published metadata, download the wheel from PyPI, and run a sanity test (`pip install apache-polaris-cli && polaris --help`).
+   ```bash
+   python -m pip install --upgrade pip twine
+   twine upload dist/*
+   ```
+   Use the shared `apache` credentials, then verify the published package by downloading it into a clean virtual environment and running `polaris --help`.
 6. **Announce**
-   - Send a `[ANNOUNCE]` email after PyPI propagation, referencing both the official source download and the convenience binary on PyPI.
+   - Send `[RESULT]` and `[ANNOUNCE]` mails referencing both the downloads site and PyPI convenience binary.
 
 ### 3.3 Access management
-- The PMC should maintain API tokens for the `apache` PyPI user in ASF password storage (not personal accounts).
-- Add at least two release managers as project maintainers in PyPI to ensure redundancy.
-- Document the credential rotation process in the private PMC wiki.
+- Maintain PyPI access through the shared `apache` organization account; add at least two PMC members as project maintainers for redundancy.
+- Store PyPI tokens in ASF-managed secrets backends (e.g., password.apache.org) and rotate them after each release manager handoff.
+- Document procedures for recovering credentials and verifying uploads on the private PMC wiki.
 
-## 4. Nightly build strategy (TestPyPI)
-To provide early access to unreleased features without polluting the official PyPI project:
+## 4. Nightly TestPyPI publishing
+Nightly builds provide early access to upcoming features without polluting the production PyPI namespace.
 
-1. **Versioning**: Adopt a nightly suffix such as `<next-version>.dev<YYYYMMDD>` generated from the commit timestamp.
-2. **Automation**: Extend the existing CI (e.g., GitHub Actions) to run on `main` merges. Steps:
-   - Checkout the repository, set up Python, and install Poetry.
-   - Run the generators and tests to ensure the nightly artifact matches the branch state.
-   - Build the distributions (`poetry build`).
-   - Upload to TestPyPI using a token stored in ASF-managed GitHub secrets: `twine upload --repository testpypi dist/*`.
-3. **Retention**: Optionally prune older nightly versions using the TestPyPI UI to avoid clutter.
-4. **Consumption example**:
+1. **Version scheme**: Emit calendar-based dev versions such as `<next-version>.dev<YYYYMMDD>` to distinguish nightlies from voted releases.
+2. **Automation**: Extend CI to run on every merge to `main`:
+   ```bash
+   make client-setup-env
+   make client-unit-test client-build
+   twine upload --repository testpypi dist/*
+   ```
+   Use a dedicated TestPyPI token stored in ASF-managed GitHub secrets, and gate the workflow to avoid production uploads.
+3. **Artifact parity**: Run the same generators and tests used for releases so nightly wheels remain reproducible from source.
+4. **Consumption**: Users can test nightlies with:
    ```bash
    python3 -m venv .venv
    source .venv/bin/activate
    python -m pip install --upgrade pip
-   python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ apache-polaris-cli==<version>.dev20250101
+   python -m pip install \
+     --index-url https://test.pypi.org/simple/ \
+     --extra-index-url https://pypi.org/simple/ \
+     apache-polaris-cli==<next-version>.dev20250101
    polaris --version
    ```
-5. **Isolation from releases**: Nightly automation must never upload to the production PyPI project. Use separate API tokens, repositories (`testpypi`), and version numbers that clearly mark the build as non-voted.
+5. **Housekeeping**: Periodically prune obsolete TestPyPI versions through the web UI or API to avoid clutter.
 
-## 5. Open items for discussion
-- Final decision on package name and import path.
-- Whether to continue using Poetry for packaging or transition to the PEP 517 `build` frontend to reduce bootstrap requirements.
-- Definition of a support matrix (Python versions, Polaris server compatibility).
-- Documentation hosting for CLI usage (ReadTheDocs vs. project website).
+## 5. Open questions
+- Final decision on the PyPI name and whether the import path should match it.
+- Confirm the long-term Python support policy once Python 3.9 is dropped.
+- Determine where CLI user documentation will live (website section vs. dedicated docs site).
 
 ---
 Prepared for discussion by the Apache Polaris community.

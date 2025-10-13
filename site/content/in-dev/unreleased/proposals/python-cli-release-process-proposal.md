@@ -64,13 +64,23 @@ Only signed source artifacts approved by a PMC vote qualify as Apache releases. 
 4. **Promote the release**
    - Move artifacts from `dist/dev` to `dist/release` via `svn mv`, update the website, and tag `rel/<version>` in Git.
 5. **Publish to PyPI**
-   - **Release candidates**: Tag the version with a [PEP 440 pre-release identifier](https://peps.python.org/pep-0440/#pre-releases) (e.g., `poetry version 1.2.0rc1`) so the generated filenames already carry the `rc` suffix PyPI recognizes. Upload the artifacts as a pre-release and note the RC name in the vote thread. PyPI automatically treats `*rcN` builds as pre-releases, keeping them hidden from `pip install apache-polaris-cli` unless users opt in.
-   - **Final releases**: After the vote passes, bump the version to the final tag (e.g., `poetry version 1.2.0`), rebuild from the voted source revision, and re-run the staging signature/checksum steps so the GA binaries match the source release.
-   ```bash
-   python -m pip install --upgrade pip twine
-   twine upload dist/*
-   ```
-   Use the shared `apache` credentials for both RC and GA uploads, then verify the published package by downloading it into a clean virtual environment and running `polaris --help`. Reference Appendix A while validating that the GA artifact layout still matches the audited RC contents.
+   - **Release candidates**: Tag the version with a [PEP 440 pre-release identifier](https://peps.python.org/pep-0440/#pre-releases) (e.g., `poetry version 1.2.0rc1`) so the generated filenames already carry the `rc` suffix PyPI recognizes. Build from the staged source, then upload with Twine; PyPI marks these uploads as pre-releases automatically, so they are excluded from default installs.
+     ```bash
+     poetry version 1.2.0rc1
+     poetry build
+     python -m pip install --upgrade pip twine
+     twine upload --repository-url https://upload.pypi.org/legacy/ dist/*
+     ```
+     Call out the RC identifier in the `[VOTE]` thread and test the upload with `pip install --pre apache-polaris-cli==1.2.0rc1` to prove that the artifact is discoverable when users opt in to pre-releases. Retain the signed artifacts and manifests under `dist/dev` for the vote.
+   - **Final releases**: After the vote passes, check out the voted Git commit, bump to the GA version (e.g., `poetry version 1.2.0`), rebuild, and regenerate signatures/checksums so the binaries match the approved source.
+     ```bash
+     poetry version 1.2.0
+     poetry build
+     python -m pip install --upgrade pip twine
+     twine upload --repository-url https://upload.pypi.org/legacy/ dist/*
+     ```
+     Validate the GA package from a clean virtualenv with `pip install apache-polaris-cli==1.2.0` and `polaris --help`, comparing the installed tree against Appendix A to confirm parity with the audited RC layout before announcing.
+   Use the shared `apache` credentials for both RC and GA uploads, and document completion in the vote thread and release notes.
 6. **Announce**
    - Send `[RESULT]` and `[ANNOUNCE]` mails referencing both the downloads site and PyPI convenience binary.
 

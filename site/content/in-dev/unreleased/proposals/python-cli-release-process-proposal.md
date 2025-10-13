@@ -26,7 +26,7 @@ Complete these items before proposing a release candidate so compliance can be v
 
 ### 2.3 Licensing, NOTICE, and compliance
 - **ASF guidance**: Follow the ASF [licensing how-to](https://infra.apache.org/licensing-howto.html) for binary distributions—ship a full copy of the Apache License 2.0 and an appropriate NOTICE file alongside the wheel and sdist.
-- **Legal artifacts**: Store `client/python/LICENSE` and `client/python/NOTICE` in the repository and keep them included through the `[tool.poetry] include` list so both sdists and wheels carry them.
+- **Legal artifacts**: Store `client/python/LICENSE` and `client/python/NOTICE` in the repository and keep them included through the `[tool.poetry] include` list so both sdists and wheels carry them (see Appendix A for the packaged layouts).
 - **Generated sources**: OpenAPI Generator clarifies that templates are Apache-2.0 licensed while generated code is not automatically covered by the tool's license; by generating from ASF-owned templates and specs we retain ASF copyright and can apply the standard headers ([OpenAPI Generator README §3.4](https://raw.githubusercontent.com/OpenAPITools/openapi-generator/master/README.md#34---license-information-on-generated-code)).
 - **License checks**: `pip-licenses-cli` is already configured for the client to verify that runtime dependencies use approved licenses, and we do not bundle third-party dependencies inside the published artifacts—only metadata references them. Preserve the dependency report for the vote thread even though NOTICE entries are unnecessary.
 
@@ -40,7 +40,7 @@ Only signed source artifacts approved by a PMC vote qualify as Apache releases. 
 
 ### 3.1 Artifact list
 - **Source release**: `apache-polaris-cli-<version>-source.tar.gz` plus `.asc` and `.sha512`, uploaded to `https://dist.apache.org/repos/dist/release/polaris/` after the vote succeeds.
-- **Python distributions**: Build both an sdist and wheel via Poetry, then generate detached ASCII-armored signatures and SHA-512 checksums for each file. Retain the signatures and checksums in Subversion even though PyPI stores only the artifacts.
+- **Python distributions**: Build both an sdist and wheel via Poetry, then generate detached ASCII-armored signatures and SHA-512 checksums for each file. Retain the signatures and checksums in Subversion even though PyPI stores only the artifacts, and confirm the contents against Appendix A.
 - **KEYS**: Update the `KEYS` file with new release manager public keys before staging so voters can verify signatures.
 
 ### 3.2 High-level workflow
@@ -106,6 +106,206 @@ Nightly builds provide early access to upcoming features without polluting the p
 - Final decision on the PyPI name and whether the import path should match it.
 - Confirm the long-term Python support policy once Python 3.9 is dropped.
 - Determine where CLI user documentation will live (website section vs. dedicated docs site).
+
+## Appendix A. Distribution contents
+
+Use the scripted listings below to verify which files land in each artifact produced by `poetry build`. The ellipses (`...`) indicate deeper subdirectories that contain the generated API modules and templates.
+
+### Wheel (`dist/*.whl`)
+
+```bash
+python - <<'PY'
+import zipfile
+from pathlib import Path
+
+wheel_path = Path('dist/polaris-1.2.0-cp311-cp311-manylinux_2_39_x86_64.whl')
+with zipfile.ZipFile(wheel_path) as zf:
+    files = [Path(p) for p in zf.namelist() if not p.endswith('/')]
+
+def build_tree(paths):
+    tree = {}
+    for path in paths:
+        parts = path.parts
+        cur = tree
+        for part in parts[:-1]:
+            cur = cur.setdefault(part, {})
+        cur.setdefault(parts[-1], None)
+    return tree
+
+def format_tree(tree, prefix="", depth=0, max_depth=3):
+    lines = []
+    entries = sorted(tree.items())
+    total = len(entries)
+    for idx, (name, subtree) in enumerate(entries):
+        connector = "└── " if idx == total - 1 else "├── "
+        lines.append(f"{prefix}{connector}{name}")
+        if isinstance(subtree, dict):
+            if depth + 1 >= max_depth:
+                if subtree:
+                    extension = "    " if idx == total - 1 else "│   "
+                    lines.append(f"{prefix}{extension}└── ...")
+            else:
+                extension = "    " if idx == total - 1 else "│   "
+                lines.extend(format_tree(subtree, prefix + extension, depth + 1, max_depth))
+    return lines
+
+tree = build_tree(files)
+print('polaris-1.2.0-cp311-cp311-manylinux_2_39_x86_64.whl')
+for line in format_tree(tree):
+    print(line)
+PY
+```
+
+```text
+polaris-1.2.0-cp311-cp311-manylinux_2_39_x86_64.whl
+├── LICENSE
+├── NOTICE
+├── cli
+│   ├── __init__.py
+│   ├── command
+│   │   ├── __init__.py
+│   │   ├── catalog_roles.py
+│   │   ├── catalogs.py
+│   │   ├── namespaces.py
+│   │   ├── principal_roles.py
+│   │   ├── principals.py
+│   │   ├── privileges.py
+│   │   └── profiles.py
+│   ├── constants.py
+│   ├── options
+│   │   ├── __init__.py
+│   │   ├── option_tree.py
+│   │   └── parser.py
+│   └── polaris_cli.py
+├── polaris
+│   ├── .keep
+│   ├── __init__.py
+│   ├── catalog
+│   │   ├── .keep
+│   │   ├── __init__.py
+│   │   ├── api
+│   │   │   └── ...
+│   │   ├── api_client.py
+│   │   ├── api_response.py
+│   │   ├── configuration.py
+│   │   ├── exceptions.py
+│   │   ├── models
+│   │   │   └── ...
+│   │   └── rest.py
+│   └── management
+│       ├── .keep
+│       ├── __init__.py
+│       ├── api
+│       │   └── ...
+│       ├── api_client.py
+│       ├── api_response.py
+│       ├── configuration.py
+│       ├── exceptions.py
+│       ├── models
+│       │   └── ...
+│       └── rest.py
+└── polaris-1.2.0.dist-info
+    ├── METADATA
+    ├── RECORD
+    ├── WHEEL
+    ├── entry_points.txt
+    └── licenses
+        ├── LICENSE
+        └── NOTICE
+```
+
+### Source distribution (`dist/*.tar.gz`)
+
+```bash
+python - <<'PY'
+import tarfile
+from pathlib import Path
+
+sdist_path = Path('dist/polaris-1.2.0.tar.gz')
+with tarfile.open(sdist_path, 'r:gz') as tf:
+    names = [Path(m.name) for m in tf.getmembers() if m.isfile()]
+
+def build_tree(paths):
+    tree = {}
+    for path in paths:
+        parts = path.parts
+        cur = tree
+        for part in parts[:-1]:
+            cur = cur.setdefault(part, {})
+        cur.setdefault(parts[-1], None)
+    return tree
+
+def format_tree(tree, prefix="", depth=0, max_depth=3):
+    lines = []
+    entries = sorted(tree.items())
+    total = len(entries)
+    for idx, (name, subtree) in enumerate(entries):
+        connector = "└── " if idx == total - 1 else "├── "
+        lines.append(f"{prefix}{connector}{name}")
+        if isinstance(subtree, dict):
+            if depth + 1 >= max_depth:
+                if subtree:
+                    extension = "    " if idx == total - 1 else "│   "
+                    lines.append(f"{prefix}{extension}└── ...")
+            else:
+                extension = "    " if idx == total - 1 else "│   "
+                lines.extend(format_tree(subtree, prefix + extension, depth + 1, max_depth))
+    return lines
+
+tree = build_tree(names)
+print('polaris-1.2.0.tar.gz')
+for line in format_tree(tree):
+    print(line)
+PY
+```
+
+```text
+polaris-1.2.0.tar.gz
+└── polaris-1.2.0
+    ├── LICENSE
+    ├── NOTICE
+    ├── PKG-INFO
+    ├── README.md
+    ├── cli
+    │   ├── __init__.py
+    │   ├── command
+    │   │   └── ...
+    │   ├── constants.py
+    │   ├── options
+    │   │   └── ...
+    │   └── polaris_cli.py
+    ├── generate_clients.py
+    ├── polaris
+    │   ├── .keep
+    │   ├── __init__.py
+    │   ├── catalog
+    │   │   └── ...
+    │   └── management
+    │       └── ...
+    ├── pyproject.toml
+    ├── spec
+    │   ├── README.md
+    │   ├── generated
+    │   │   └── ...
+    │   ├── iceberg-rest-catalog-open-api.yaml
+    │   ├── polaris-catalog-apis
+    │   │   └── ...
+    │   ├── polaris-catalog-service.yaml
+    │   └── polaris-management-service.yml
+    └── templates
+        ├── header-cfg.txt
+        ├── header-ini.txt
+        ├── header-json5.txt
+        ├── header-md.txt
+        ├── header-py.txt
+        ├── header-sh.txt
+        ├── header-toml.txt
+        ├── header-txt.txt
+        ├── header-typed.txt
+        ├── header-xml.txt
+        ├── header-yaml.txt
+        └── header-yml.txt
+```
 
 ---
 Prepared for discussion by the Apache Polaris community.

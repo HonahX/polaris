@@ -60,6 +60,8 @@ EXCLUDE_PATHS = [
     Path(".pytest_cache/"),
     Path("test/test_cli_parsing.py"),
     Path("cli/"),
+    Path("LICENSE"),
+    Path("NOTICE"),
     Path("polaris/__pycache__/"),
     Path("polaris/catalog/__pycache__/"),
     Path("polaris/catalog/models/__pycache__/"),

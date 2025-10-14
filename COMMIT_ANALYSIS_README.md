@@ -14,7 +14,7 @@ This directory contains a comprehensive analysis of all commits from `94c94f197f
 
 ## Analysis Documents
 
-This analysis is divided into seven comprehensive markdown documents:
+This analysis is divided into nine comprehensive markdown documents:
 
 ### 1. [FILE_CHANGES_SUMMARY.md](./FILE_CHANGES_SUMMARY.md) (1.4 MB)
 
@@ -165,6 +165,54 @@ IMPACT: Affects: Catalog Operations, External Integrations, Management Operation
 - Filtering by component (e.g., all Persistence changes)
 - Export/import to spreadsheets
 - Generating filtered reports
+
+### 7. [FOCUSED_COMMIT_ANALYSIS.md](./FOCUSED_COMMIT_ANALYSIS.md) (454 KB) 🆕 RECOMMENDED FOR REVIEW
+
+**Purpose:** Filtered version focusing ONLY on core infrastructure changes.
+
+**Filters out:**
+- Python client commits (77 commits)
+- Trivial dependency updates (162 commits)
+- Quickstart/getting-started updates (29 commits)
+- Integration tests, site, plugins, extensions only (80 commits)
+- One-line changes (6 commits)
+
+**Result:** **441 core commits** (55% of total) that represent substantive changes
+
+**Contents:**
+- Same detailed format as DETAILED_COMMIT_ANALYSIS.md
+- PURPOSE, WHAT, WHY, IMPACT for each commit
+- Only commits affecting core functionality
+- **62,815 additions** and **25,742 deletions** in core code
+
+**Use Case:**
+- **Primary document for technical code review**
+- Understanding architectural changes without noise
+- Release planning focused on core features
+- Impact assessment for critical systems
+- Upgrade path planning
+- **Start here for understanding what really changed**
+
+### 8. [EXCLUDED_COMMITS_REPORT.md](./EXCLUDED_COMMITS_REPORT.md) (11 KB) 🆕
+
+**Purpose:** Transparency report showing what was filtered out.
+
+**Contents:**
+- Complete list of 354 excluded commits
+- Organized by exclusion reason
+- Includes commit hash, PR, title, and date
+- Breakdown:
+  - 162 trivial dependency updates
+  - 80 documentation/website/testing only
+  - 77 Python client commits
+  - 29 quickstart/tutorial updates
+  - 6 one-line changes
+
+**Use Case:**
+- Verify filtering accuracy
+- Find excluded commits if needed
+- Understand what wasn't considered "core"
+- Audit trail for filtering decisions
 
 ## Key Insights
 

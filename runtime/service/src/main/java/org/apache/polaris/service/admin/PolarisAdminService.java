@@ -49,6 +49,8 @@ import org.apache.iceberg.exceptions.ValidationException;
 import org.apache.polaris.core.PolarisCallContext;
 import org.apache.polaris.core.PolarisDiagnostics;
 import org.apache.polaris.core.admin.model.AuthenticationParameters;
+import org.apache.polaris.core.entity.AsyncTaskType;
+import org.apache.polaris.core.entity.PolarisTaskConstants;
 import org.apache.polaris.core.admin.model.BearerAuthenticationParameters;
 import org.apache.polaris.core.admin.model.Catalog;
 import org.apache.polaris.core.admin.model.CatalogGrant;
@@ -824,11 +826,29 @@ public class PolarisAdminService {
         authorizeBasicTopLevelEntityOperationOrThrow(op, name, PolarisEntityType.CATALOG);
 
     CatalogEntity entity = getCatalogByName(resolutionManifest, name);
+    
+    // For passthrough-facade catalogs with orphan cleanup enabled, 
+    // pass cleanup properties to trigger orphan cleanup task creation
+    boolean allowDroppingNonEmptyPassthroughFacade = 
+        realmConfig.getConfig(FeatureConfiguration.ALLOW_DROPPING_NON_EMPTY_PASSTHROUGH_FACADE_CATALOG);
+    boolean enableOrphanCleanup = Boolean.TRUE.equals(
+        realmConfig.getConfig("ENABLE_ORPHAN_ENTITY_CLEANUP"));
+    
+    Map<String, String> cleanupProperties = Map.of();
+    if (allowDroppingNonEmptyPassthroughFacade && enableOrphanCleanup && isPassthroughFacadeCatalog(entity)) {
+      // Signal that orphan cleanup is needed
+      cleanupProperties = Map.of("orphanCleanup", "true", "catalogId", String.valueOf(entity.getId()));
+      LOGGER.atInfo()
+          .addKeyValue("catalogName", name)
+          .addKeyValue("catalogId", entity.getId())
+          .log("Will schedule orphan entity cleanup task after catalog deletion");
+    }
+    
     // TODO: Handle return value in case of concurrent modification
     boolean cleanup = realmConfig.getConfig(FeatureConfiguration.CLEANUP_ON_CATALOG_DROP);
     DropEntityResult dropEntityResult =
         metaStoreManager.dropEntityIfExists(
-            getCurrentPolarisContext(), null, entity, Map.of(), cleanup);
+            getCurrentPolarisContext(), null, entity, cleanupProperties, cleanup);
 
     // at least some handling of error
     if (!dropEntityResult.isSuccess()) {
@@ -842,6 +862,49 @@ public class PolarisAdminService {
             entity.getName());
       }
     }
+    
+    // After catalog deletion, create orphan cleanup task if needed
+    if (allowDroppingNonEmptyPassthroughFacade && enableOrphanCleanup && isPassthroughFacadeCatalog(entity)) {
+      scheduleOrphanCleanupTask(entity.getId());
+    }
+  }
+  
+  /**
+   * Check if a catalog is a passthrough facade catalog (federated external catalog).
+   */
+  private boolean isPassthroughFacadeCatalog(CatalogEntity catalog) {
+    return catalog.getInternalPropertiesAsMap()
+        .containsKey(org.apache.polaris.core.entity.PolarisEntityConstants.getConnectionConfigInfoPropertyName());
+  }
+  
+  /**
+   * Schedule orphan entity cleanup task for a catalog that has just been deleted.
+   * This task will clean up orphan entities (those belonging to the deleted catalog).
+   */
+  private void scheduleOrphanCleanupTask(long catalogId) {
+    Map<String, String> properties = new HashMap<>();
+    properties.put(
+        PolarisTaskConstants.TASK_TYPE,
+        String.valueOf(AsyncTaskType.ORPHAN_ENTITY_CLEANUP.typeCode()));
+    properties.put(
+        PolarisTaskConstants.TASK_DATA, String.valueOf(catalogId));
+    
+    PolarisBaseEntity taskEntity =
+        new PolarisBaseEntity.Builder()
+            .id(metaStoreManager.generateNewEntityId(getCurrentPolarisContext()).getId())
+            .catalogId(0L)
+            .name("orphanCleanup_catalog_" + catalogId)
+            .typeCode(PolarisEntityType.TASK.getCode())
+            .subTypeCode(PolarisEntitySubType.NULL_SUBTYPE.getCode())
+            .createTimestamp(System.currentTimeMillis())
+            .propertiesAsMap(properties)
+            .build();
+    
+    metaStoreManager.createEntityIfNotExists(getCurrentPolarisContext(), null, taskEntity);
+    LOGGER.atInfo()
+        .addKeyValue("taskId", taskEntity.getId())
+        .addKeyValue("catalogId", catalogId)
+        .log("Created orphan cleanup task for deleted catalog");
   }
 
   public @Nonnull CatalogEntity getCatalog(String name) {

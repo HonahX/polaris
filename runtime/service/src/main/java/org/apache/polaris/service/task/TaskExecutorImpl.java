@@ -98,6 +98,7 @@ public class TaskExecutorImpl implements TaskExecutor {
     addTaskHandler(
         new BatchFileCleanupTaskHandler(
             fileIOSupplier, Executors.newVirtualThreadPerTaskExecutor()));
+    addTaskHandler(new OrphanEntityCleanupTaskHandler(metaStoreManagerFactory));
   }
 
   /**

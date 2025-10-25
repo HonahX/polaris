@@ -377,8 +377,8 @@ public class ServiceProducers {
   @Produces
   @RequestScoped
   public UserSecretsManager userSecretsManager(
-      RealmContext realmContext, UserSecretsManagerFactory userSecretsManagerFactory) {
-    return userSecretsManagerFactory.getOrCreateUserSecretsManager(realmContext);
+      CallContext callContext, UserSecretsManagerFactory userSecretsManagerFactory) {
+    return userSecretsManagerFactory.getOrCreateUserSecretsManager(callContext);
   }
 
   @Produces

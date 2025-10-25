@@ -22,7 +22,7 @@ import io.smallrye.common.annotation.Identifier;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.polaris.core.context.RealmContext;
+import org.apache.polaris.core.context.CallContext;
 import org.apache.polaris.core.secrets.UnsafeInMemorySecretsManager;
 import org.apache.polaris.core.secrets.UserSecretsManager;
 import org.apache.polaris.core.secrets.UserSecretsManagerFactory;
@@ -33,8 +33,9 @@ public class UnsafeInMemorySecretsManagerFactory implements UserSecretsManagerFa
   private final Map<String, UserSecretsManager> cachedSecretsManagers = new ConcurrentHashMap<>();
 
   @Override
-  public UserSecretsManager getOrCreateUserSecretsManager(RealmContext realmContext) {
+  public UserSecretsManager getOrCreateUserSecretsManager(CallContext callContext) {
     return cachedSecretsManagers.computeIfAbsent(
-        realmContext.getRealmIdentifier(), key -> new UnsafeInMemorySecretsManager());
+        callContext.getRealmContext().getRealmIdentifier(),
+        key -> new UnsafeInMemorySecretsManager());
   }
 }

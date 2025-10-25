@@ -18,6 +18,7 @@
  */
 package org.apache.polaris.core.secrets;
 
+import org.apache.polaris.core.context.CallContext;
 import org.apache.polaris.core.context.RealmContext;
 
 /**
@@ -27,5 +28,5 @@ import org.apache.polaris.core.context.RealmContext;
  * responsible for managing the secrets for the user in that realm.
  */
 public interface UserSecretsManagerFactory {
-  UserSecretsManager getOrCreateUserSecretsManager(RealmContext realmContext);
+  UserSecretsManager getOrCreateUserSecretsManager(CallContext callContext);
 }

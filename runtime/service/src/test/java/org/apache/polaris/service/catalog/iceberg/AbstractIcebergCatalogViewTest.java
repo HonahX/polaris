@@ -156,12 +156,13 @@ public abstract class AbstractIcebergCatalogViewTest extends ViewCatalogTests<Ic
     QuarkusMock.installMockForType(realmContext, RealmContext.class);
 
     metaStoreManager = metaStoreManagerFactory.getOrCreateMetaStoreManager(realmContext);
-    userSecretsManager = userSecretsManagerFactory.getOrCreateUserSecretsManager(realmContext);
+
     polarisContext =
         new PolarisCallContext(
             realmContext,
             metaStoreManagerFactory.getOrCreateSession(realmContext),
             configurationStore);
+    userSecretsManager = userSecretsManagerFactory.getOrCreateUserSecretsManager(polarisContext);
     realmConfig = polarisContext.getRealmConfig();
 
     PrincipalEntity rootPrincipal =

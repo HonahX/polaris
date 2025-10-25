@@ -247,11 +247,11 @@ public abstract class PolarisAuthzTestBase {
         .thenReturn("request-id-1");
     QuarkusMock.installMockForType(containerRequestContext, ContainerRequestContext.class);
     metaStoreManager = managerFactory.getOrCreateMetaStoreManager(realmContext);
-    userSecretsManager = userSecretsManagerFactory.getOrCreateUserSecretsManager(realmContext);
 
     polarisContext =
         new PolarisCallContext(
             realmContext, managerFactory.getOrCreateSession(realmContext), configurationStore);
+    userSecretsManager = userSecretsManagerFactory.getOrCreateUserSecretsManager(polarisContext);
 
     callContext = polarisContext;
     realmConfig = polarisContext.getRealmConfig();

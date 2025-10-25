@@ -224,7 +224,7 @@ public record TestServices(
           new ResolutionManifestFactoryImpl(diagnostics, realmContext, resolverFactory);
 
       UserSecretsManager userSecretsManager =
-          userSecretsManagerFactory.getOrCreateUserSecretsManager(realmContext);
+          userSecretsManagerFactory.getOrCreateUserSecretsManager(callContext);
       ServiceIdentityProvider serviceIdentityProvider = new DefaultServiceIdentityProvider();
 
       // Create credential vendors for testing

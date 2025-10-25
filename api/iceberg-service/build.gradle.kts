@@ -108,7 +108,7 @@ openApiGenerate {
         "org.apache.iceberg.rest.responses.UpdateNamespacePropertiesResponse",
       "CommitTransactionRequest" to "org.apache.iceberg.rest.requests.CommitTransactionRequest",
       "CreateViewRequest" to "org.apache.iceberg.rest.requests.CreateViewRequest",
-      "RegisterTableRequest" to "org.apache.iceberg.rest.requests.RegisterTableRequest",
+      "RegisterTableRequest" to "org.apache.polaris.service.types.RegisterTableRequest",
       "IcebergErrorResponse" to "org.apache.iceberg.rest.responses.ErrorResponse",
       "OAuthError" to "org.apache.iceberg.rest.responses.ErrorResponse",
 

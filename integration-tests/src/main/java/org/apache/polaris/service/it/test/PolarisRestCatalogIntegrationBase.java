@@ -835,6 +835,61 @@ public abstract class PolarisRestCatalogIntegrationBase extends CatalogTests<RES
   }
 
   @Test
+  public void testRegisterTableOverwriteUpdatesMetadataLocation() {
+    Namespace ns1 = Namespace.of("ns1");
+    restCatalog.createNamespace(ns1);
+    TableIdentifier tableIdentifier = TableIdentifier.of(ns1, "overwrite_table");
+
+    TableMetadata tableMetadata =
+        TableMetadata.newTableMetadata(
+            new Schema(List.of(Types.NestedField.required(1, "col1", new Types.StringType()))),
+            PartitionSpec.unpartitioned(),
+            externalCatalogBaseLocation + "/ns1/overwrite_table",
+            Map.of());
+
+    try (ResolvingFileIO resolvingFileIO = new ResolvingFileIO()) {
+      initializeClientFileIO(resolvingFileIO);
+      resolvingFileIO.setConf(new Configuration());
+      String metadataDir = externalCatalogBaseLocation + "/ns1/overwrite_table/metadata";
+      String fileLocationV1 = metadataDir + "/v1.metadata.json";
+      String fileLocationV2 = metadataDir + "/v2.metadata.json";
+      TableMetadataParser.write(tableMetadata, resolvingFileIO.newOutputFile(fileLocationV1));
+      TableMetadataParser.write(tableMetadata, resolvingFileIO.newOutputFile(fileLocationV2));
+
+      restCatalog.registerTable(tableIdentifier, fileLocationV1);
+
+      Invocation overwriteInvocation =
+          catalogApi
+              .request("v1/" + currentCatalogName + "/namespaces/ns1/register")
+              .buildPost(
+                  Entity.json(
+                      Map.of(
+                          "name",
+                          "overwrite_table",
+                          "metadata-location",
+                          fileLocationV2,
+                          "overwrite",
+                          true)));
+
+      try (Response overwriteResponse = overwriteInvocation.invoke()) {
+        Assertions.assertThat(overwriteResponse.getStatus())
+            .isEqualTo(Response.Status.OK.getStatusCode());
+      }
+
+      Assertions.assertThat(restCatalog.loadTable(tableIdentifier))
+          .isInstanceOf(BaseTable.class)
+          .asInstanceOf(InstanceOfAssertFactories.type(BaseTable.class))
+          .returns(
+              fileLocationV2,
+              baseTable -> baseTable.operations().current().metadataFileLocation());
+
+      restCatalog.dropTable(tableIdentifier, false);
+      resolvingFileIO.deleteFile(fileLocationV1);
+      resolvingFileIO.deleteFile(fileLocationV2);
+    }
+  }
+
+  @Test
   public void testCreateAndLoadTableWithReturnedEtag() {
     Namespace ns1 = Namespace.of("ns1");
     restCatalog.createNamespace(ns1);

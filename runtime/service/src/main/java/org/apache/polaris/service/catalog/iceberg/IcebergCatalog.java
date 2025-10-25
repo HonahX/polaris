@@ -274,6 +274,11 @@ public class IcebergCatalog extends BaseMetastoreViewCatalog
 
   @Override
   public Table registerTable(TableIdentifier identifier, String metadataFileLocation) {
+    return registerTable(identifier, metadataFileLocation, false);
+  }
+
+  public Table registerTable(
+      TableIdentifier identifier, String metadataFileLocation, boolean overwrite) {
     Preconditions.checkArgument(
         identifier != null && isValidIdentifier(identifier), "Invalid identifier: %s", identifier);
     Preconditions.checkArgument(
@@ -286,8 +291,8 @@ public class IcebergCatalog extends BaseMetastoreViewCatalog
         "Invalid metadata file location; metadata file location must be absolute and contain a '/': %s",
         metadataFileLocation);
 
-    // Throw an exception if this table already exists in the catalog.
-    if (tableExists(identifier)) {
+    boolean tableExists = tableExists(identifier);
+    if (tableExists && !overwrite) {
       throw new AlreadyExistsException("Table already exists: %s", identifier);
     }
 
@@ -312,7 +317,14 @@ public class IcebergCatalog extends BaseMetastoreViewCatalog
 
     InputFile metadataFile = fileIO.newInputFile(metadataFileLocation);
     TableMetadata metadata = TableMetadataParser.read(metadataFile);
-    ops.commit(null, metadata);
+
+    TableMetadata currentMetadata = null;
+    if (tableExists) {
+      ops.refresh();
+      currentMetadata = ops.current();
+    }
+
+    ops.commit(currentMetadata, metadata);
 
     return new BaseTable(ops, fullTableName(name(), identifier), metricsReporter());
   }

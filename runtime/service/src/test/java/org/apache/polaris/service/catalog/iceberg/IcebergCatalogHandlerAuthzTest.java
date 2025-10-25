@@ -47,7 +47,6 @@ import org.apache.iceberg.rest.requests.CreateNamespaceRequest;
 import org.apache.iceberg.rest.requests.CreateTableRequest;
 import org.apache.iceberg.rest.requests.CreateViewRequest;
 import org.apache.iceberg.rest.requests.ImmutableCreateViewRequest;
-import org.apache.iceberg.rest.requests.RegisterTableRequest;
 import org.apache.iceberg.rest.requests.RenameTableRequest;
 import org.apache.iceberg.rest.requests.UpdateNamespacePropertiesRequest;
 import org.apache.iceberg.rest.requests.UpdateTableRequest;
@@ -76,6 +75,7 @@ import org.apache.polaris.service.context.catalog.PolarisCallContextCatalogFacto
 import org.apache.polaris.service.http.IfNoneMatch;
 import org.apache.polaris.service.types.NotificationRequest;
 import org.apache.polaris.service.types.NotificationType;
+import org.apache.polaris.service.types.RegisterTableRequest;
 import org.apache.polaris.service.types.TableUpdateNotification;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -796,18 +796,9 @@ public class IcebergCatalogHandlerAuthzTest extends PolarisAuthzTestBase {
     final String metadataLocation = newWrapper().loadTable(TABLE_NS1_1, "all").metadataLocation();
     newWrapper(Set.of(PRINCIPAL_ROLE2)).dropTableWithoutPurge(TABLE_NS1_1);
 
-    final RegisterTableRequest registerRequest =
-        new RegisterTableRequest() {
-          @Override
-          public String name() {
-            return TABLE_NS1_1.name();
-          }
-
-          @Override
-          public String metadataLocation() {
-            return metadataLocation;
-          }
-        };
+    final RegisterTableRequest registerRequest = new RegisterTableRequest();
+    registerRequest.setName(TABLE_NS1_1.name());
+    registerRequest.setMetadataLocation(metadataLocation);
 
     // Use PRINCIPAL_ROLE1 for privilege-testing, PRINCIPAL_ROLE2 for cleanup.
     doTestSufficientPrivileges(
@@ -824,6 +815,33 @@ public class IcebergCatalogHandlerAuthzTest extends PolarisAuthzTestBase {
   }
 
   @Test
+  public void testRegisterTableOverwriteAllSufficientPrivileges() {
+    assertSuccess(
+        adminService.grantPrivilegeOnCatalogToRole(
+            CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.TABLE_DROP));
+    assertSuccess(
+        adminService.grantPrivilegeOnCatalogToRole(
+            CATALOG_NAME, CATALOG_ROLE2, PolarisPrivilege.TABLE_READ_PROPERTIES));
+
+    final String metadataLocation = newWrapper().loadTable(TABLE_NS1_1, "all").metadataLocation();
+
+    final RegisterTableRequest registerRequest = new RegisterTableRequest();
+    registerRequest.setName(TABLE_NS1_1.name());
+    registerRequest.setMetadataLocation(metadataLocation);
+    registerRequest.setOverwrite(true);
+
+    doTestSufficientPrivileges(
+        List.of(
+            PolarisPrivilege.TABLE_CREATE,
+            PolarisPrivilege.TABLE_FULL_METADATA,
+            PolarisPrivilege.CATALOG_MANAGE_CONTENT),
+        () -> {
+          newWrapper(Set.of(PRINCIPAL_ROLE1)).registerTable(NS1, registerRequest);
+        },
+        null /* cleanupAction */);
+  }
+
+  @Test
   public void testRegisterTableInsufficientPermissions() {
     assertSuccess(
         adminService.grantPrivilegeOnCatalogToRole(
@@ -832,18 +850,9 @@ public class IcebergCatalogHandlerAuthzTest extends PolarisAuthzTestBase {
     // To get a handy metadata file we can use one from another table.
     final String metadataLocation = newWrapper().loadTable(TABLE_NS1_1, "all").metadataLocation();
 
-    final RegisterTableRequest registerRequest =
-        new RegisterTableRequest() {
-          @Override
-          public String name() {
-            return "newtable";
-          }
-
-          @Override
-          public String metadataLocation() {
-            return metadataLocation;
-          }
-        };
+    final RegisterTableRequest registerRequest = new RegisterTableRequest();
+    registerRequest.setName("newtable");
+    registerRequest.setMetadataLocation(metadataLocation);
 
     doTestInsufficientPrivileges(
         List.of(

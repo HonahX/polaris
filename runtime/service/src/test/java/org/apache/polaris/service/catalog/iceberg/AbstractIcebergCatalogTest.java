@@ -2120,6 +2120,70 @@ public abstract class AbstractIcebergCatalogTest extends CatalogTests<IcebergCat
   }
 
   @Test
+  public void testRegisterTableWithOverwriteFlagFalseFailsWhenTableExists() {
+    IcebergCatalog catalog = catalog();
+    createNonExistingNamespaces(TestData.NAMESPACE);
+
+    final String tableLocation = "s3://externally-owned-bucket/table/";
+    final String metadataLocation = tableLocation + "metadata/v1.metadata.json";
+
+    fileIO.addFile(
+        metadataLocation,
+        TableMetadataParser.toJson(createSampleTableMetadata(tableLocation)).getBytes(UTF_8));
+
+    catalog.registerTable(TABLE, metadataLocation, false);
+
+    try {
+      Assertions.assertThatThrownBy(() -> catalog.registerTable(TABLE, metadataLocation, false))
+          .isInstanceOf(AlreadyExistsException.class)
+          .hasMessageContaining("Table already exists");
+    } finally {
+      catalog.dropTable(TABLE);
+    }
+  }
+
+  @Test
+  public void testRegisterTableWithOverwriteReplacesMetadataLocation() {
+    IcebergCatalog catalog = catalog();
+    createNonExistingNamespaces(TestData.NAMESPACE);
+
+    final String tableLocation = "s3://externally-owned-bucket/table/";
+    final String metadataLocationV1 = tableLocation + "metadata/v1.metadata.json";
+    final String metadataLocationV2 = tableLocation + "metadata/v2.metadata.json";
+
+    TableMetadata metadataV1 = createSampleTableMetadata(tableLocation);
+    fileIO.addFile(
+        metadataLocationV1, TableMetadataParser.toJson(metadataV1).getBytes(UTF_8));
+
+    catalog.registerTable(TABLE, metadataLocationV1);
+
+    BaseTable baseTable = (BaseTable) catalog.loadTable(TABLE);
+    String originalMetadataLocation = baseTable.operations().current().metadataFileLocation();
+
+    TableMetadata metadataV2 =
+        TableMetadata.buildFrom(metadataV1)
+            .setProperties(ImmutableMap.of("overwrite-test", "true"))
+            .build();
+    fileIO.addFile(
+        metadataLocationV2, TableMetadataParser.toJson(metadataV2).getBytes(UTF_8));
+
+    catalog.registerTable(TABLE, metadataLocationV2, true);
+
+    try {
+      BaseTable reloadedTable = (BaseTable) catalog.loadTable(TABLE);
+      Assertions.assertThat(reloadedTable)
+          .as("Table should remain loadable after overwrite")
+          .isNotNull();
+      Assertions.assertThat(reloadedTable.operations().current().metadataFileLocation())
+          .isNotEqualTo(originalMetadataLocation);
+      Assertions.assertThat(reloadedTable.operations().current().properties())
+          .containsEntry("overwrite-test", "true");
+    } finally {
+      catalog.dropTable(TABLE);
+    }
+  }
+
+  @Test
   public void testConcurrencyConflictCreateTableUpdatedDuringFinalTransaction() {
     Assumptions.assumeTrue(
         requiresNamespaceCreate(),

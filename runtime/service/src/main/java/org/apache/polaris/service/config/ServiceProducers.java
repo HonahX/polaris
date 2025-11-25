@@ -36,6 +36,8 @@ import jakarta.ws.rs.core.SecurityContext;
 import java.security.Principal;
 import java.time.Clock;
 import java.util.stream.Collectors;
+
+import org.apache.iceberg.exceptions.NotAuthorizedException;
 import org.apache.polaris.core.PolarisCallContext;
 import org.apache.polaris.core.PolarisDefaultDiagServiceImpl;
 import org.apache.polaris.core.PolarisDiagnostics;
@@ -460,4 +462,17 @@ public class ServiceProducers {
       MetricsReportingConfiguration config, @Any Instance<PolarisMetricsReporter> reporters) {
     return reporters.select(Identifier.Literal.of(config.type())).get();
   }
+
+   @Produces
+    @ApplicationScoped
+    public PolarisPrincipal polarisPrincipal(
+           SecurityContext securityContext
+  ) {
+      var authenticatedPrincipal = securityContext.getUserPrincipal();
+      if (authenticatedPrincipal instanceof PolarisPrincipal polarisPrincipal) {
+          return polarisPrincipal;
+      }
+      throw new NotAuthorizedException("Failed to find authenticatedPrincipal in SecurityContext");
+  }
+
 }

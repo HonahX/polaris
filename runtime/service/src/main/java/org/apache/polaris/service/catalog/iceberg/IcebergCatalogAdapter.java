@@ -78,6 +78,7 @@ import org.apache.polaris.core.rest.PolarisEndpoints;
 import org.apache.polaris.core.rest.PolarisResourcePaths;
 import org.apache.polaris.service.catalog.AccessDelegationMode;
 import org.apache.polaris.service.catalog.CatalogPrefixParser;
+import org.apache.polaris.service.catalog.CatalogResolutionManifest;
 import org.apache.polaris.service.catalog.api.IcebergRestCatalogApiService;
 import org.apache.polaris.service.catalog.api.IcebergRestConfigurationApiService;
 import org.apache.polaris.service.catalog.common.CatalogAdapter;
@@ -150,24 +151,26 @@ public class IcebergCatalogAdapter
   private final Instance<ExternalCatalogFactory> externalCatalogFactories;
   private final StorageAccessConfigProvider storageAccessConfigProvider;
   private final PolarisMetricsReporter metricsReporter;
+  private final CatalogResolutionManifest catalogResolutionManifest;
 
   @Inject
   public IcebergCatalogAdapter(
-      PolarisDiagnostics diagnostics,
-      RealmContext realmContext,
-      CallContext callContext,
-      CallContextCatalogFactory catalogFactory,
-      ResolverFactory resolverFactory,
-      ResolutionManifestFactory resolutionManifestFactory,
-      PolarisMetaStoreManager metaStoreManager,
-      PolarisCredentialManager credentialManager,
-      PolarisAuthorizer polarisAuthorizer,
-      CatalogPrefixParser prefixParser,
-      ReservedProperties reservedProperties,
-      CatalogHandlerUtils catalogHandlerUtils,
-      @Any Instance<ExternalCatalogFactory> externalCatalogFactories,
-      StorageAccessConfigProvider storageAccessConfigProvider,
-      PolarisMetricsReporter metricsReporter) {
+          PolarisDiagnostics diagnostics,
+          RealmContext realmContext,
+          CallContext callContext,
+          CallContextCatalogFactory catalogFactory,
+          ResolverFactory resolverFactory,
+          ResolutionManifestFactory resolutionManifestFactory,
+          PolarisMetaStoreManager metaStoreManager,
+          PolarisCredentialManager credentialManager,
+          PolarisAuthorizer polarisAuthorizer,
+          CatalogPrefixParser prefixParser,
+          ReservedProperties reservedProperties,
+          CatalogHandlerUtils catalogHandlerUtils,
+          @Any Instance<ExternalCatalogFactory> externalCatalogFactories,
+          StorageAccessConfigProvider storageAccessConfigProvider,
+          PolarisMetricsReporter metricsReporter,
+          CatalogResolutionManifest catalogResolutionManifest) {
     this.diagnostics = diagnostics;
     this.realmContext = realmContext;
     this.callContext = callContext;
@@ -184,6 +187,7 @@ public class IcebergCatalogAdapter
     this.externalCatalogFactories = externalCatalogFactories;
     this.storageAccessConfigProvider = storageAccessConfigProvider;
     this.metricsReporter = metricsReporter;
+    this.catalogResolutionManifest = catalogResolutionManifest;
   }
 
   /**

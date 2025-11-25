@@ -438,4 +438,16 @@ public class FeatureConfiguration<T> extends PolarisConfiguration<T> {
               "If set to true (default), allow credential vending for external catalogs. Note this requires ALLOW_EXTERNAL_CATALOG_CREDENTIAL_VENDING to be true first.")
           .defaultValue(true)
           .buildFeatureConfiguration();
+
+  // TODO: restrict it to be unchanged after catalog creation. And note that realm-level overrides only take effect at catalog creation time.
+  // Note, we may choose to not use the FeatureConfiguration completely
+  public static final FeatureConfiguration<Boolean> ENABLE_CASE_INSENSITIVE_MODE =
+        PolarisConfiguration.<Boolean>builder()
+            .key("ENABLE_CASE_INSENSITIVE_MODE")
+            .catalogConfig("polaris.config.enable-case-insensitive-mode")
+            .description(
+                "When true, enables case insensitive handling of entity names in Polaris. "
+                    + "Note that this setting is applied at catalog creation time and cannot be changed later")
+            .defaultValue(false)
+            .buildFeatureConfiguration();
 }

@@ -18,7 +18,9 @@
  */
 package org.apache.polaris.core.entity;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 
 /**
@@ -140,6 +142,24 @@ public class PolarisEntityCore implements Identifiable {
   @Override
   public long getCatalogId() {
     return catalogId;
+  }
+
+  @JsonCreator
+  private static PolarisEntityCore fromJson(
+      @JsonProperty("catalogId") long catalogId,
+      @JsonProperty("id") long id,
+      @JsonProperty("parentId") long parentId,
+      @JsonProperty("typeCode") int typeCode,
+      @JsonProperty("name") String name,
+      @JsonProperty("entityVersion") int entityVersion) {
+    return new Builder<>()
+        .catalogId(catalogId)
+        .id(id)
+        .parentId(parentId)
+        .typeCode(typeCode)
+        .name(name)
+        .entityVersion(entityVersion)
+        .build();
   }
 
   /**

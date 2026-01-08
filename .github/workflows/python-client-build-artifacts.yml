@@ -22,6 +22,10 @@ name: "Python Client Build Snapshot Artifacts"
 on:
   workflow_dispatch:
   workflow_call:
+    outputs:
+      artifact-name:
+        description: "Name of the merged artifact containing all wheels and sdist"
+        value: ${{ jobs.merge-artifacts.outputs.artifact-name }}
   pull_request:
     paths:
       - '.github/workflows/python-client-build-artifacts.yml'
@@ -106,6 +110,8 @@ jobs:
     needs:
       - generate-version
       - build-artifacts
+    outputs:
+      artifact-name: ${{ steps.output-name.outputs.artifact-name }}
     steps:
       - name: Merge Artifacts
         uses: actions/upload-artifact/merge@v4
@@ -113,3 +119,7 @@ jobs:
           name: python-client-artifacts-${{ needs.generate-version.outputs.version }}
           pattern: python-client-artifacts-*
           delete-merged: true
+
+      - name: Output artifact name
+        id: output-name
+        run: echo "artifact-name=python-client-artifacts-${{ needs.generate-version.outputs.version }}" >> $GITHUB_OUTPUT

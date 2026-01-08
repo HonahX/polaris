@@ -70,3 +70,27 @@ jobs:
           ORG_GRADLE_PROJECT_apacheUsername: ${{ secrets.NEXUS_USER }}
           ORG_GRADLE_PROJECT_apachePassword: ${{ secrets.NEXUS_PW }}
           DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
+
+  python-client-snapshot-build:
+    if: github.repository == 'apache/polaris'
+    uses: ./.github/workflows/python-client-build-artifacts.yml
+
+  python-client-snapshot-publish:
+    runs-on: ubuntu-latest
+    needs: python-client-snapshot-build
+    if: github.repository == 'apache/polaris'
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.python-client-snapshot-build.outputs.artifact-name }}
+          path: dist/
+
+      - name: List artifacts
+        run: ls -la dist/
+
+      - name: Publish to Test PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          password: ${{ secrets.TEST_PYPI_API_TOKEN }}

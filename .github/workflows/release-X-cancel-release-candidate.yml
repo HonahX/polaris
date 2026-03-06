@@ -215,6 +215,10 @@ jobs:
         run: |
           source "${LIBS_DIR}/_version.sh"
 
+          # Compute Python CLI version for the email
+          python_base_version=$(grep '^version' client/python/pyproject.toml | sed 's/version *= *"\(.*\)"/\1/')
+          python_version="${python_base_version}rc${rc_number}"
+
           cat <<EOT >> $GITHUB_STEP_SUMMARY
           # Vote Failure Email
 
@@ -243,5 +247,6 @@ jobs:
           | Nexus staging repository | ✅ Dropped |
           | Distribution artifacts (dist dev) | ✅ Deleted |
           | Helm chart (dist dev) | ✅ Deleted |
+          | Python CLI on PyPI (${python_version}) | ⚠️ Pre-release, no action needed |
           EOT
 

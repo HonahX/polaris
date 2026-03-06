@@ -350,6 +350,64 @@ jobs:
           ✅ Polaris Server and Admin Tool Docker images published to Docker Hub
           EOT
 
+      - name: Set up Python for CLI publishing
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        with:
+          python-version: "3.13"
+
+      - name: Publish Python CLI wheel to PyPI from SVN release
+        env:
+          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+          SVN_USERNAME: ${{ secrets.POLARIS_SVN_DEV_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.POLARIS_SVN_DEV_PASSWORD }}
+        run: |
+          echo "::add-mask::$SVN_PASSWORD"
+
+          source "${LIBS_DIR}/_constants.sh"
+          source "${LIBS_DIR}/_exec.sh"
+
+          if [[ ${DRY_RUN:-1} -ne 1 ]]; then
+            # Download the exact wheel that was voted on from SVN release space
+            release_artifacts_url="${APACHE_DIST_URL}/release/polaris/${version_without_rc}"
+            wheel_dir="${RELEASEY_DIR}/python-cli-wheel"
+            mkdir -p "${wheel_dir}"
+
+            # Find and download the wheel file from SVN
+            wheel_name=$(svn list --username "$SVN_USERNAME" --password "$SVN_PASSWORD" --non-interactive "${release_artifacts_url}" | grep '\.whl$')
+
+            if [[ -z "${wheel_name}" ]]; then
+              echo "❌ No Python wheel found in SVN release artifacts at ${release_artifacts_url}" >> $GITHUB_STEP_SUMMARY
+              exit 1
+            fi
+
+            svn export --username "$SVN_USERNAME" --password "$SVN_PASSWORD" --non-interactive \
+              "${release_artifacts_url}/${wheel_name}" "${wheel_dir}/${wheel_name}"
+
+            # Install uv for publishing
+            pip install uv
+
+            # Publish the exact voted-on wheel to PyPI
+            uv publish --index pypi "${wheel_dir}/${wheel_name}"
+
+            cat <<EOT >> $GITHUB_STEP_SUMMARY
+            ## Python CLI
+            ✅ Python CLI wheel published to PyPI from SVN release artifacts: \`${wheel_name}\`
+            EOT
+          else
+            echo "## Python CLI" >> $GITHUB_STEP_SUMMARY
+            echo "Dry-run, WOULD download wheel from SVN release and publish to PyPI" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Release candidate repository on Nexus
+        env:
+          ORG_GRADLE_PROJECT_apacheUsername: ${{ secrets.NEXUS_STAGE_DEPLOYER_USER }}
+          ORG_GRADLE_PROJECT_apachePassword: ${{ secrets.NEXUS_STAGE_DEPLOYER_PW }}
+        run: |
+          source "${LIBS_DIR}/_exec.sh"
+
+          # Use the Gradle task to release the Apache staging repository with the specific staging repository ID
+          exec_process ./gradlew releaseApacheStagingRepository --staging-repository-id "${STAGING_REPOSITORY_ID}"
+
       - name: Create GitHub release with artifacts
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -385,6 +443,7 @@ jobs:
           ## Release Artifacts
           This release includes:
           - Source and binary distributions
+          - Python CLI wheel published to PyPI
           - Helm chart package
           - Docker images published to Docker Hub
           - Maven artifacts published to Maven Central
@@ -398,7 +457,7 @@ jobs:
           # ********************************************************************************
 
           # Collect all artifacts to attach from the artifacts directory
-          readarray -t artifacts_to_attach < <(find "${artifacts_dir}" -type f -name "*.tar.gz" -o -name "*.tgz" -o -name "*.asc" -o -name "*.sha512" -o -name "*.prov")
+          readarray -t artifacts_to_attach < <(find "${artifacts_dir}" -type f \( -name "*.tar.gz" -o -name "*.tgz" -o -name "*.whl" -o -name "*.asc" -o -name "*.sha512" -o -name "*.prov" \))
 
           # Create GitHub release and immediately publish it
           exec_process gh release create \
@@ -407,21 +466,6 @@ jobs:
             --target "${rc_commit}" \
             "${final_release_tag}" \
             "${artifacts_to_attach[@]}"
-
-          cat <<EOT >> $GITHUB_STEP_SUMMARY
-          ## GitHub Release
-          GitHub release created: \`${final_release_tag}\`
-          EOT
-
-      - name: Release candidate repository on Nexus
-        env:
-          ORG_GRADLE_PROJECT_apacheUsername: ${{ secrets.NEXUS_STAGE_DEPLOYER_USER }}
-          ORG_GRADLE_PROJECT_apachePassword: ${{ secrets.NEXUS_STAGE_DEPLOYER_PW }}
-        run: |
-          source "${LIBS_DIR}/_exec.sh"
-
-          # Use the Gradle task to release the Apache staging repository with the specific staging repository ID
-          exec_process ./gradlew releaseApacheStagingRepository --staging-repository-id "${STAGING_REPOSITORY_ID}"
 
           cat <<EOT >> $GITHUB_STEP_SUMMARY
           ## Summary
@@ -433,9 +477,10 @@ jobs:
           | Helm chart and index | ✅ Updated in release space |
           | Old releases cleanup | ✅ Removed from dist release |
           | Git release tag | ✅ Created and pushed |
-          | GitHub release | ✅ Created with artifacts attached |
           | Docker images | ✅ Published to Docker Hub |
+          | Python CLI | ✅ Published to PyPI |
           | Nexus repository | ✅ Released |
+          | GitHub release | ✅ Created with artifacts attached |
           | Version | \`${version_without_rc}\` |
           | Final release tag | \`${final_release_tag}\` |
           EOT

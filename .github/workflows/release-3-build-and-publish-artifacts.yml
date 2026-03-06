@@ -240,6 +240,161 @@ jobs:
           | Close Nexus staging repository | ✅ |
           EOT
 
+  build-and-publish-python-cli:
+    name: Build and Publish Python CLI Wheel (Pre-release)
+    runs-on: ubuntu-latest
+    needs: prerequisite-checks
+    permissions:
+      contents: read
+    env:
+      DRY_RUN: ${{ needs.prerequisite-checks.outputs.dry_run }}
+      git_tag: ${{ needs.prerequisite-checks.outputs.git_tag }}
+      version_without_rc: ${{ needs.prerequisite-checks.outputs.version_without_rc }}
+      rc_number: ${{ needs.prerequisite-checks.outputs.rc_number }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup test environment
+        uses: ./.github/actions/setup-test-env
+
+      - name: Set up environment variables
+        run: |
+          echo "RELEASEY_DIR=$(pwd)/releasey" >> $GITHUB_ENV
+          echo "LIBS_DIR=$(pwd)/releasey/libs" >> $GITHUB_ENV
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        with:
+          python-version: "3.13"
+
+      - name: Set up JDK for openapi-generator-cli
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Install Subversion
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y subversion
+
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@e89d40939c28e39f97cf32126055eeae86ba74ec # v6.3.0
+        with:
+          gpg_private_key: ${{ secrets.POLARIS_GPG_PRIVATE_KEY }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+
+      - name: Compute Python versions
+        id: python-version
+        run: |
+          # Read base version directly from pyproject.toml (already without -incubating)
+          python_base_version=$(grep '^version' client/python/pyproject.toml | sed 's/version *= *"\(.*\)"/\1/')
+          python_rc_version="${python_base_version}rc${rc_number}"
+
+          echo "python_base_version=${python_base_version}" >> $GITHUB_ENV
+          echo "python_rc_version=${python_rc_version}" >> $GITHUB_ENV
+
+          echo "## Python CLI Versions" >> $GITHUB_STEP_SUMMARY
+          cat <<EOT >> $GITHUB_STEP_SUMMARY
+          | Parameter | Value |
+          | --- | --- |
+          | Base version (for SVN) | \`${python_base_version}\` |
+          | RC version (for PyPI) | \`${python_rc_version}\` |
+          EOT
+
+      - name: Build release wheel (clean version for SVN)
+        run: |
+          source "${LIBS_DIR}/_exec.sh"
+
+          # Build using the version from pyproject.toml as-is (no override)
+          exec_process make client-release-build
+
+      - name: Sign wheel and compute checksums
+        run: |
+          source "${LIBS_DIR}/_exec.sh"
+
+          wheel_dir="client/python/dist"
+
+          if [[ ${DRY_RUN:-1} -ne 1 ]]; then
+            wheel_file=$(ls ${wheel_dir}/*.whl)
+
+            # GPG detached signature
+            exec_process gpg --armor --output "${wheel_file}.asc" --detach-sig "${wheel_file}"
+
+            # SHA-512 checksum
+            calculate_sha512 "${wheel_file}"
+
+            echo "## Python CLI Signing" >> $GITHUB_STEP_SUMMARY
+            cat <<EOT >> $GITHUB_STEP_SUMMARY
+            | File | Status |
+            | --- | --- |
+            | $(basename ${wheel_file}) | ✅ Built |
+            | $(basename ${wheel_file}).asc | ✅ GPG signed |
+            | $(basename ${wheel_file}).sha512 | ✅ Checksum computed |
+            EOT
+          else
+            echo "## Python CLI Signing" >> $GITHUB_STEP_SUMMARY
+            echo "Dry-run, WOULD sign and checksum wheel in ${wheel_dir}" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Stage Python CLI wheel to Apache dist dev repository
+        env:
+          SVN_USERNAME: ${{ secrets.POLARIS_SVN_DEV_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.POLARIS_SVN_DEV_PASSWORD }}
+        run: |
+          echo "::add-mask::$SVN_PASSWORD"
+
+          source "${LIBS_DIR}/_constants.sh"
+          source "${LIBS_DIR}/_exec.sh"
+
+          dist_dev_dir=${RELEASEY_DIR}/polaris-dist-dev
+
+          # Retry logic for SVN checkout (Apache SVN can have transient connectivity issues)
+          exec_process_with_retries 5 60 "${dist_dev_dir}" svn checkout --username "$SVN_USERNAME" --password "$SVN_PASSWORD" --non-interactive "${APACHE_DIST_URL}${APACHE_DIST_PATH}" "${dist_dev_dir}"
+
+          # Stage wheel, signature, and checksum under the version directory
+          version_dir="${dist_dev_dir}/${version_without_rc}"
+          exec_process mkdir -p "${version_dir}"
+          exec_process cp client/python/dist/*.whl "${version_dir}/"
+          exec_process cp client/python/dist/*.whl.asc "${version_dir}/"
+          exec_process cp client/python/dist/*.whl.sha512 "${version_dir}/"
+
+          exec_process cd "${dist_dev_dir}"
+          exec_process svn add --force "${version_without_rc}"
+
+          exec_process svn commit --username "$SVN_USERNAME" --password "$SVN_PASSWORD" --non-interactive -m "Stage Apache Polaris Python CLI wheel ${version_without_rc} RC${rc_number}"
+
+          cat <<EOT >> $GITHUB_STEP_SUMMARY
+          ## Python CLI SVN Staging
+          ✅ Python CLI wheel staged to Apache dist dev repository
+          EOT
+
+      - name: Build RC wheel and publish to PyPI (convenience pre-release)
+        env:
+          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          source "${LIBS_DIR}/_exec.sh"
+
+          # Build a separate wheel with RC version for PyPI convenience
+          exec_process make client-release-build VERSION="${python_rc_version}"
+          exec_process make client-release-publish
+
+          cat <<EOT >> $GITHUB_STEP_SUMMARY
+          ## Python CLI Summary
+          🎉 Python CLI release artifacts created:
+
+          | Component | Status |
+          | --- | --- |
+          | Release wheel (${python_base_version}) | ✅ Signed and staged to SVN |
+          | RC wheel (${python_rc_version}) | ✅ Published to PyPI |
+          | PyPI URL | https://pypi.org/project/apache-polaris/${python_rc_version}/ |
+          EOT
+
   build-docker:
     name: Build Docker Images
     runs-on: ubuntu-latest
@@ -502,7 +657,7 @@ jobs:
   generate-release-email:
     name: Generate Release Email Body
     runs-on: ubuntu-latest
-    needs: [prerequisite-checks, build-and-publish-artifacts, build-docker, build-and-stage-helm-chart]
+    needs: [prerequisite-checks, build-and-publish-artifacts, build-and-publish-python-cli, build-docker, build-and-stage-helm-chart]
     permissions:
       contents: read
     env:
@@ -533,6 +688,10 @@ jobs:
           # Get current commit SHA
           commit_sha=$(git rev-parse HEAD)
 
+          # Compute Python CLI version for the email
+          python_base_version=$(grep '^version' client/python/pyproject.toml | sed 's/version *= *"\(.*\)"/\1/')
+          python_version="${python_base_version}rc${rc_number}"
+
           cat <<EOT >> $GITHUB_STEP_SUMMARY
           # Vote e-mail
 
@@ -555,6 +714,12 @@ jobs:
           * https://dist.apache.org/repos/dist/dev/polaris/helm-chart/${version_without_rc}
 
           NB: you have to build the Docker images locally in order to test Helm charts.
+
+          The Python CLI pre-release is available on PyPI for convenience testing:
+          * https://pypi.org/project/apache-polaris/${python_version}/
+
+          The Python CLI release wheel (with GPG signature and checksum) is staged alongside other artifacts:
+          * https://dist.apache.org/repos/dist/dev/incubator/polaris/${version_without_rc}
 
           You can find the KEYS file here:
           * https://downloads.apache.org/polaris/KEYS

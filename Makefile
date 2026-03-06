@@ -201,6 +201,26 @@ client-nightly-publish: client-setup-env ## Build and publish nightly version to
 	uv publish --index testpypi
 	@echo "--- Nightly publish complete ---"
 
+.PHONY: client-release-build
+client-release-build: client-setup-env ## Build client wheel for release. Pass VERSION to override the package version.
+	@echo "--- Building client release wheel ---"
+	@$(ACTIVATE_AND_CD) && \
+	if [ -n "$(VERSION)" ]; then \
+		echo "Overriding version to: $(VERSION)"; \
+		uv version "$(VERSION)"; \
+	else \
+		echo "Using version from pyproject.toml: $$(uv version --short)"; \
+	fi && \
+	uv build --format wheel --clear
+	@echo "--- Client release wheel build complete ---"
+
+.PHONY: client-release-publish
+client-release-publish: ## Publish client wheel to PyPI. Pass INDEX=testpypi for test publishing.
+	@echo "--- Publishing client wheel ---"
+	@$(ACTIVATE_AND_CD) && \
+	uv publish --index $(or $(INDEX),pypi) dist/*
+	@echo "--- Client wheel publish complete ---"
+
 .PHONY: client-regenerate
 client-regenerate: client-setup-env ## Regenerate the client code
 	@echo "--- Regenerating client code ---"
